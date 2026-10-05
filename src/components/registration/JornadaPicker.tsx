@@ -11,29 +11,21 @@ interface Props {
 
 /** Picker de jornadas por día entero (5 días). */
 export function JornadaPicker({ selected, onChange, error }: Props) {
-  const toggle = (id: string) =>
-    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
-  const allSelected = selected.length === JORNADAS.length;
+  const toggle = (id: string) => onChange([id]);
+  const isSelected = (id: string) => selected.includes(id);
 
   return (
     <fieldset aria-describedby={error ? "jornadas-error" : undefined}>
       <legend className="mb-1.5 flex w-full items-center justify-between text-sm font-semibold text-ink">
         <span>
-          Días a los que asistirás<span className="ml-0.5 text-brand-500" aria-hidden>*</span>
+          Día al que asistirás<span className="ml-0.5 text-brand-500" aria-hidden>*</span>
         </span>
-        <button
-          type="button"
-          onClick={() => onChange(allSelected ? [] : JORNADAS.map((j) => j.id))}
-          className="text-xs font-semibold text-brand-600 hover:text-brand-800 hover:underline"
-        >
-          {allSelected ? "Limpiar" : "Seleccionar todos"}
-        </button>
       </legend>
 
       <div className="glass-input rounded-2xl p-2.5">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {JORNADAS.map((j) => {
-            const on = selected.includes(j.id);
+            const on = isSelected(j.id);
             return (
               <button
                 key={j.id}
