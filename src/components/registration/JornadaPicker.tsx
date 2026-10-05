@@ -11,14 +11,15 @@ interface Props {
 
 /** Picker de jornadas por día entero (5 días). */
 export function JornadaPicker({ selected, onChange, error }: Props) {
-  const toggle = (id: string) => onChange([id]);
+  const toggle = (id: string) =>
+    onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
   const isSelected = (id: string) => selected.includes(id);
 
   return (
     <fieldset aria-describedby={error ? "jornadas-error" : undefined}>
       <legend className="mb-1.5 flex w-full items-center justify-between text-sm font-semibold text-ink">
         <span>
-          Día al que asistirás<span className="ml-0.5 text-brand-500" aria-hidden>*</span>
+          Días a los que asistirás<span className="ml-0.5 text-brand-500" aria-hidden>*</span>
         </span>
       </legend>
 

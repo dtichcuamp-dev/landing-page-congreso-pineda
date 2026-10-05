@@ -280,7 +280,7 @@ export const AGENDA: DaySchedule[] = [
   {
     id: "2026-11-03", day: 3, weekday: "Martes",
     salones: {
-      principal: { manana: basic("emergencia", "Emergencia y UCI"), tarde: NEUROCIRUGIA },
+      principal: { manana: basic("emergencia", "Emergencia"), tarde: NEUROCIRUGIA },
       alterno: { manana: IMAGENES, tarde: basic("rehabilitacion", "Rehabilitación") },
     },
   },
