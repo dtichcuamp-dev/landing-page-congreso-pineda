@@ -1,26 +1,128 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/* ───────────────────────── Design tokens ───────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-ink: #0b2545;
+  --color-ink-soft: #4a5d78;
+  --color-ink-mute: #7a8aa3;
+
+  /* Azul del logotipo (letra C) */
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9eaff;
+  --color-brand-200: #bcdbff;
+  --color-brand-300: #8ec3ff;
+  --color-brand-400: #59a2fb;
+  --color-brand-500: #2f80ed;
+  --color-brand-600: #1d63d8;
+  --color-brand-700: #1a4fb0;
+  --color-brand-800: #1b448f;
+  --color-brand-900: #1c3c73;
+
+  /* Verde azulado del logotipo (letra P) */
+  --color-clinic-50: #e8fafa;
+  --color-clinic-100: #c8f2f3;
+  --color-clinic-200: #98e5e8;
+  --color-clinic-400: #2cc4c7;
+  --color-clinic-500: #14a7ac;
+  --color-clinic-600: #0f8791;
+  --color-clinic-700: #11696f;
+
+  --animate-float: float 9s ease-in-out infinite;
+  --animate-float-slow: float 14s ease-in-out infinite reverse;
+
+  @keyframes float {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(0, -22px, 0) scale(1.05); }
   }
 }
 
+/* ───────────────────────── Base ───────────────────────── */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f3f8fc;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-ink);
+}
+
+/* Fondo "aurora" fijo: da profundidad para que el vidrio tenga qué desenfocar */
+.bg-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(60rem 40rem at 8% -10%, rgb(47 128 237 / 0.24), transparent 60%),
+    radial-gradient(50rem 36rem at 96% 4%, rgb(20 167 172 / 0.22), transparent 60%),
+    radial-gradient(48rem 40rem at 50% 112%, rgb(89 162 251 / 0.2), transparent 60%),
+    linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
+}
+
+/* ───────────────────────── Glassmorfismo ───────────────────────── */
+@utility glass {
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.68), rgb(255 255 255 / 0.42));
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+  border: 1px solid rgb(255 255 255 / 0.75);
+  box-shadow:
+    0 10px 40px -12px rgb(29 99 216 / 0.18),
+    0 2px 6px rgb(11 37 69 / 0.04),
+    inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+@utility glass-strong {
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.86), rgb(255 255 255 / 0.62));
+  -webkit-backdrop-filter: blur(26px) saturate(180%);
+  backdrop-filter: blur(26px) saturate(180%);
+  border: 1px solid rgb(255 255 255 / 0.9);
+  box-shadow:
+    0 24px 60px -18px rgb(29 99 216 / 0.28),
+    0 2px 8px rgb(11 37 69 / 0.05),
+    inset 0 1px 0 #fff;
+}
+
+@utility glass-input {
+  background: rgb(255 255 255 / 0.6);
+  border: 1px solid rgb(188 219 255 / 0.9);
+  box-shadow: inset 0 1px 2px rgb(11 37 69 / 0.04);
+}
+
+/* Navegadores sin backdrop-filter: más opacidad para mantener legibilidad */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background: rgb(255 255 255 / 0.92); }
+  .glass-strong { background: rgb(255 255 255 / 0.97); }
+}
+
+/* ───────────────────────── Animaciones de entrada ───────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  * { animation: none !important; }
 }

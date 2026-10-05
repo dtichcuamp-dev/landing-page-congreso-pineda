@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# XIV Congreso Pineda 2026 · Landing + Sistema de Inscripciones
 
-## Getting Started
+Next.js (App Router) + Tailwind CSS v4 · Backend en Google Apps Script (Sheets + Drive) · Hosting en Vercel.
 
-First, run the development server:
+## Estructura del proyecto
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+congreso-pineda/
+├─ apps-script/
+│  ├─ Codigo.gs            ← Backend (doPost/doGet). Pegar en el editor de Apps Script
+│  └─ appsscript.json      ← Manifiesto (zona horaria, acceso, scopes)
+├─ public/images/
+│  └─ logo-congreso-pineda.png
+├─ src/
+│  ├─ app/
+│  │  ├─ layout.tsx        ← Fuente, metadatos SEO, fondo aurora
+│  │  ├─ page.tsx          ← SPA: compone todas las secciones
+│  │  └─ globals.css       ← Tokens + utilidades glass (glassmorfismo)
+│  ├─ components/
+│  │  ├─ layout/           Navbar · Footer · FloatingCTA
+│  │  ├─ sections/         Hero · About · Highlights · Specialties · Agenda · Registration · Countdown
+│  │  ├─ registration/     RegistrationForm · Field · JornadaPicker · PriceSummary · FileDrop
+│  │  └─ ui/               Reveal · SectionHeading
+│  ├─ data/                ← Contenido editable (sin tocar componentes)
+│  │  ├─ event.ts          Textos institucionales, atractivos
+│  │  ├─ specialties.ts    17 especialidades + nº de ponencias
+│  │  ├─ agenda.ts         Programa por día/salón/turno + ponencias
+│  │  └─ pricing.ts        Tarifas, jornadas y datos de pago
+│  ├─ lib/                 validation · api (POST a Apps Script) · agendaEvents · useBcvRate
+│  └─ types/registration.ts
+└─ .env.example
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Desarrollo local
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+cp .env.example .env.local     # y pega la URL /exec de tu Apps Script
+npm run dev                    # http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 1) Desplegar el backend (Google Apps Script)
 
-## Learn More
+1. Entra a <https://script.google.com> → **Nuevo proyecto** (usa la misma cuenta dueña de la hoja y del Drive).
+2. Pega el contenido de `apps-script/Codigo.gs` en `Código.gs`.
+   - (Opcional) *Configuración del proyecto → Mostrar archivo de manifiesto* y pega `appsscript.json`.
+3. Revisa `CONFIG` arriba del archivo:
+   - `SPREADSHEET_ID` ya apunta a `1cXFd-gwbyeyw2ME3KA_z_KeMQLj4VEk5Q_7_UpEUQG4`.
+   - `DRIVE_FOLDER_ID`: ID de una carpeta existente (la parte final de su URL). Si lo dejas vacío se crea
+     «Comprobantes - Congreso Pineda 2026» en *Mi unidad*.
+4. Selecciona la función **`setup`** → **Ejecutar** y acepta los permisos. Crea la hoja `Inscripciones` y la carpeta.
+5. **Implementar → Nueva implementación → Aplicación web**
+   - Ejecutar como: **Yo**
+   - Quién tiene acceso: **Cualquier usuario**
+6. Copia la URL `https://script.google.com/macros/s/…/exec`. Ábrela en el navegador: debe responder `{"ok":true,…}`.
 
-To learn more about Next.js, take a look at the following resources:
+> Cada vez que modifiques `Codigo.gs` debes crear una **nueva versión** (Implementar → Administrar implementaciones → ✏️ → Nueva versión). La URL `/exec` se mantiene.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 2) Subir a GitHub
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+git add .
+git commit -m "Landing y sistema de inscripciones Congreso Pineda 2026"
+git branch -M main
+git remote add origin https://github.com/<usuario>/<repo>.git
+git push -u origin main
+```
 
-## Deploy on Vercel
+## 3) Desplegar en Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. <https://vercel.com/new> → **Import Git Repository** → elige el repo. Framework: *Next.js* (autodetectado).
+2. **Environment Variables**:
+   | Nombre | Valor |
+   |---|---|
+   | `NEXT_PUBLIC_GAS_URL` | URL `/exec` de Apps Script |
+   | `NEXT_PUBLIC_SITE_URL` | `https://<tu-dominio>.vercel.app` |
+3. **Deploy**.
+4. Despliegue manual posterior: `git push` a `main` (o *Deployments → Redeploy*). Si cambias variables de entorno, haz **Redeploy**.
+5. (Opcional) *Settings → Domains* para un dominio propio.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Cómo editar contenido
+
+| Quiero cambiar… | Archivo |
+|---|---|
+| Tarifas / tipos de participante | `src/data/pricing.ts` **y** `RATES` en `apps-script/Codigo.gs` |
+| Datos de pago (banco, pago móvil) | `PAYMENT_INFO` en `src/data/pricing.ts` |
+| Agenda y ponentes | `src/data/agenda.ts` |
+| N.º de ponencias por especialidad | `src/data/specialties.ts` |
+| Textos de misión/visión/objetivos | `src/data/event.ts` |
+
+## Seguridad y buenas prácticas incluidas
+
+- El servidor **valida todo y recalcula el monto**; el valor del cliente es solo informativo.
+- Honeypot anti-spam, `LockService` (IDs sin colisiones), saneamiento contra inyección de fórmulas en Sheets.
+- Comprobantes privados por defecto (`SHARE_LINK_PUBLIC: false`). Solo ven el enlace quienes tengan acceso a la carpeta/hoja.
+- Imágenes comprimidas en el navegador (≤1600 px, JPEG) antes de enviarse.
