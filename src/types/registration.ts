@@ -9,8 +9,13 @@ export interface RegistrationValues {
   correo: string;
   tipoParticipante: ParticipantTypeId | "";
   institucion: string;
+  pais: string;
+  estado: string;
+  municipio: string;
+  parroquia: string;
   jornadas: string[];
   comprobante: File | null;
+  aceptaTerminos: boolean;
   /** Honeypot anti-spam: debe permanecer vacío. */
   website: string;
 }
@@ -26,8 +31,13 @@ export const EMPTY_VALUES: RegistrationValues = {
   correo: "",
   tipoParticipante: "",
   institucion: "",
+  pais: "",
+  estado: "",
+  municipio: "",
+  parroquia: "",
   jornadas: [],
   comprobante: null,
+  aceptaTerminos: false,
   website: "",
 };
 
@@ -46,6 +56,10 @@ export interface RegistrationPayload {
   correo: string;
   tipoParticipante: ParticipantTypeId;
   institucion: string;
+  pais: string;
+  estado: string;
+  municipio: string;
+  parroquia: string;
   jornadas: string[];
   /** Monto calculado en cliente (solo informativo: el servidor lo recalcula). */
   montoCliente: number;

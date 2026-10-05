@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import { CalendarDays, MapPin } from "lucide-react";
 import { EVENT } from "@/data/event";
 
@@ -21,9 +21,15 @@ export function Footer() {
             <MapPin className="size-4 text-clinic-500" aria-hidden /> {EVENT.venue}
           </p>
         </div>
-        <p className="max-w-xs text-xs leading-relaxed text-ink-mute">
-          © {new Date().getFullYear()} {EVENT.institution}. Todos los derechos reservados.
-        </p>
+        <div className="flex flex-col items-center gap-3 sm:items-end sm:text-right">
+          <p className="max-w-md text-[11px] leading-relaxed text-ink-mute">
+            Diseñado y desarrollado por el Departamento de Tecnología, Información y Comunicación (DTIC) del Hospital Central Universitario Dr. Antonio María Pineda RIF G-20011811-3. Todos los Derechos Reservados 2026.
+          </p>
+          <div className="flex gap-4 text-xs font-medium text-brand-600">
+            <a href="/terminos" className="hover:underline">Términos de Uso</a>
+            <a href="/privacidad" className="hover:underline">Política de Privacidad</a>
+          </div>
+        </div>
       </div>
     </footer>
   );

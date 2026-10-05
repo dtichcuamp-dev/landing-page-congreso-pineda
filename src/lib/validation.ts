@@ -36,7 +36,11 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
   if (step === 1) {
     if (!v.tipoParticipante) e.tipoParticipante = "Selecciona tu tipo de participante.";
     if (v.institucion.trim().length < 2) e.institucion = "Indica tu institución de origen.";
-    if (v.jornadas.length === 0) e.jornadas = "Selecciona al menos una jornada.";
+    if (v.pais.trim().length < 2) e.pais = "Indica tu país.";
+    if (v.estado.trim().length < 2) e.estado = "Indica tu estado.";
+    if (v.municipio.trim().length < 2) e.municipio = "Indica tu municipio.";
+    if (v.parroquia.trim().length < 2) e.parroquia = "Indica tu parroquia.";
+    if (v.jornadas.length === 0) e.jornadas = "Selecciona al menos un día.";
   }
 
   if (step === 2) {
@@ -51,6 +55,7 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
       else if (isPdf && f.size > MAX_PDF_BYTES) e.comprobante = "El PDF supera 3 MB. Envía una captura o un archivo más liviano.";
       else if (isImg && f.size > MAX_IMAGE_BYTES) e.comprobante = "La imagen supera 10 MB.";
     }
+    if (!v.aceptaTerminos) e.aceptaTerminos = "Debes aceptar los términos y condiciones.";
   }
 
   return e;

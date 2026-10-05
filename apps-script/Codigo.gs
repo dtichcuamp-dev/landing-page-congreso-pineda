@@ -68,16 +68,16 @@ var RATES = {
 };
 
 var JORNADAS = {
-  '2026-11-02-M': '02/11 Mañana', '2026-11-02-T': '02/11 Tarde',
-  '2026-11-03-M': '03/11 Mañana', '2026-11-03-T': '03/11 Tarde',
-  '2026-11-04-M': '04/11 Mañana', '2026-11-04-T': '04/11 Tarde',
-  '2026-11-05-M': '05/11 Mañana', '2026-11-05-T': '05/11 Tarde',
-  '2026-11-06-M': '06/11 Mañana', '2026-11-06-T': '06/11 Tarde'
+  '2026-11-02': '02/11',
+  '2026-11-03': '03/11',
+  '2026-11-04': '04/11',
+  '2026-11-05': '05/11',
+  '2026-11-06': '06/11'
 };
 
 var HEADERS = [
   'ID', 'Fecha de registro', 'Nombres', 'Apellidos', 'Cédula', 'Teléfono', 'Correo',
-  'Tipo de participante', 'Institución', 'Jornadas', 'N.º jornadas',
+  'Tipo de participante', 'Institución', 'País', 'Estado', 'Municipio', 'Parroquia', 'Jornadas', 'N.º jornadas',
   'Tarifa por jornada (USD)', 'Monto a pagar (USD)', 'Comprobante (URL)',
   'Estado del pago', 'Observaciones'
 ];
@@ -150,7 +150,19 @@ function validate_(b) {
   var institucion = str_(b.institucion, 120);
   if (institucion.length < 2) throw new UserError_('Indica la institución de origen.');
 
-  if (!Array.isArray(b.jornadas) || b.jornadas.length === 0) throw new UserError_('Selecciona al menos una jornada.');
+  var pais = str_(b.pais, 120);
+  if (pais.length < 2) throw new UserError_('Indica el país.');
+  
+  var estado = str_(b.estado, 120);
+  if (estado.length < 2) throw new UserError_('Indica el estado.');
+  
+  var municipio = str_(b.municipio, 120);
+  if (municipio.length < 2) throw new UserError_('Indica el municipio.');
+  
+  var parroquia = str_(b.parroquia, 120);
+  if (parroquia.length < 2) throw new UserError_('Indica la parroquia.');
+
+  if (!Array.isArray(b.jornadas) || b.jornadas.length === 0) throw new UserError_('Selecciona al menos un día.');
   var seen = {}, jornadaIds = [];
   b.jornadas.forEach(function (id) {
     if (!JORNADAS[id]) throw new UserError_('Jornada inválida.');
@@ -164,7 +176,7 @@ function validate_(b) {
   return {
     nombres: nombres, apellidos: apellidos, cedula: cedula, telefono: telefono, correo: correo,
     tipoId: b.tipoParticipante, tipoLabel: tipo.label, rate: tipo.rate,
-    institucion: institucion, jornadaIds: jornadaIds,
+    institucion: institucion, pais: pais, estado: estado, municipio: municipio, parroquia: parroquia, jornadaIds: jornadaIds,
     jornadasLabel: jornadaIds.map(function (id) { return JORNADAS[id]; }).join(', '),
     total: total
   };
@@ -257,6 +269,10 @@ function appendRow_(d, receiptFile) {
       safe_(d.correo),
       d.tipoLabel,
       safe_(d.institucion),
+      safe_(d.pais),
+      safe_(d.estado),
+      safe_(d.municipio),
+      safe_(d.parroquia),
       d.jornadasLabel,
       d.jornadaIds.length,
       d.rate,
@@ -279,7 +295,7 @@ function sendEmail_(d, id) {
     var monto = d.total === 0 ? 'Exonerado' : 'USD ' + d.total + ' (al cambio BCV)';
     var html =
       '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#0b2545">' +
-      '<h2 style="color:#1d63d8">¡Inscripción recibida!</h2>' +
+      '<h2 style="color:#1d63d8">Comprobante de Inscripción</h2>' +
       '<p>Hola <b>' + esc_(d.nombres) + '</b>, recibimos tu inscripción al <b>XIV Congreso Pineda 2026</b> ' +
       '(2 al 6 de noviembre · Biotel Suites, Barquisimeto).</p>' +
       '<table style="border-collapse:collapse;width:100%;font-size:14px">' +
@@ -291,7 +307,7 @@ function sendEmail_(d, id) {
 
     MailApp.sendEmail({
       to: d.correo,
-      subject: 'Inscripción recibida · Congreso Pineda 2026 · ' + id,
+      subject: 'Comprobante de Inscripción · Congreso Pineda 2026 · ' + id,
       htmlBody: html,
       name: CONFIG.EMAIL_SENDER_NAME
     });

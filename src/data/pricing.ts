@@ -42,14 +42,11 @@ export const PARTICIPANT_BY_ID = Object.fromEntries(
   PARTICIPANT_TYPES.map((p) => [p.id, p]),
 ) as Record<ParticipantTypeId, ParticipantType>;
 
-export type Turno = "manana" | "tarde";
-
 export interface Jornada {
-  /** Formato AAAA-MM-DD-M|T  (ej. 2026-11-02-M) */
+  /** Formato AAAA-MM-DD  (ej. 2026-11-02) */
   id: string;
   day: number; // día de noviembre
-  turno: Turno;
-  label: string; // "Lun 02/11 · Mañana"
+  label: string; // "Lun 02/11 · Todo el día"
 }
 
 const DAYS = [
@@ -60,17 +57,14 @@ const DAYS = [
   { day: 6, weekday: "Vie" },
 ];
 
-export const JORNADAS: Jornada[] = DAYS.flatMap(({ day, weekday }) =>
-  (["manana", "tarde"] as Turno[]).map((turno) => {
-    const dd = String(day).padStart(2, "0");
-    return {
-      id: `2026-11-${dd}-${turno === "manana" ? "M" : "T"}`,
-      day,
-      turno,
-      label: `${weekday} ${dd}/11 · ${turno === "manana" ? "Mañana" : "Tarde"}`,
-    };
-  }),
-);
+export const JORNADAS: Jornada[] = DAYS.map(({ day, weekday }) => {
+  const dd = String(day).padStart(2, "0");
+  return {
+    id: `2026-11-${dd}`,
+    day,
+    label: `${weekday} ${dd}/11 · Todo el día`,
+  };
+});
 
 export const DAYS_META = DAYS;
 

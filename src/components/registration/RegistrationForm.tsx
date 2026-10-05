@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   AlertTriangle,
@@ -230,6 +230,23 @@ export function RegistrationForm() {
               <input id="institucion" className={inputClass(!!errors.institucion)} autoComplete="organization" placeholder="Ej.: HCUAMP"
                 value={values.institucion} onChange={(e) => set("institucion", e.target.value)} aria-invalid={!!errors.institucion} aria-describedby={errors.institucion ? "institucion-error" : undefined} />
             </Field>
+
+            <Field id="pais" label="País" error={errors.pais}>
+              <input id="pais" className={inputClass(!!errors.pais)} autoComplete="country-name" placeholder="Ej.: Venezuela"
+                value={values.pais} onChange={(e) => set("pais", e.target.value)} aria-invalid={!!errors.pais} aria-describedby={errors.pais ? "pais-error" : undefined} />
+            </Field>
+            <Field id="estado" label="Estado" error={errors.estado}>
+              <input id="estado" className={inputClass(!!errors.estado)} autoComplete="address-level1" placeholder="Ej.: Lara"
+                value={values.estado} onChange={(e) => set("estado", e.target.value)} aria-invalid={!!errors.estado} aria-describedby={errors.estado ? "estado-error" : undefined} />
+            </Field>
+            <Field id="municipio" label="Municipio" error={errors.municipio}>
+              <input id="municipio" className={inputClass(!!errors.municipio)} autoComplete="address-level2" placeholder="Ej.: Iribarren"
+                value={values.municipio} onChange={(e) => set("municipio", e.target.value)} aria-invalid={!!errors.municipio} aria-describedby={errors.municipio ? "municipio-error" : undefined} />
+            </Field>
+            <Field id="parroquia" label="Parroquia" error={errors.parroquia}>
+              <input id="parroquia" className={inputClass(!!errors.parroquia)} autoComplete="address-level3" placeholder="Ej.: Concepción"
+                value={values.parroquia} onChange={(e) => set("parroquia", e.target.value)} aria-invalid={!!errors.parroquia} aria-describedby={errors.parroquia ? "parroquia-error" : undefined} />
+            </Field>
           </div>
 
           <JornadaPicker selected={values.jornadas} onChange={(ids) => set("jornadas", ids)} error={errors.jornadas} />
@@ -260,6 +277,20 @@ export function RegistrationForm() {
           <Field id="comprobante" label="Comprobante de pago" required={total > 0} error={errors.comprobante}>
             <FileDrop id="comprobante" file={values.comprobante} onChange={(f) => set("comprobante", f)} error={errors.comprobante} />
           </Field>
+
+          <div className="flex items-start gap-3 mt-4">
+            <input
+              type="checkbox"
+              id="terminos"
+              className="mt-1 h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
+              checked={values.aceptaTerminos}
+              onChange={(e) => set("aceptaTerminos", e.target.checked)}
+            />
+            <label htmlFor="terminos" className="text-sm text-ink-soft">
+              He leído y acepto los <a href="/terminos" target="_blank" className="font-semibold text-brand-600 hover:underline">Términos de Uso</a> y la <a href="/privacidad" target="_blank" className="font-semibold text-brand-600 hover:underline">Política de Privacidad</a>, reconociendo que los datos ingresados son correctos y el pago emitido no es reembolsable.
+            </label>
+          </div>
+          {errors.aceptaTerminos && <p className="text-xs font-medium text-red-600">{errors.aceptaTerminos}</p>}
 
           {serverError && (
             <div role="alert" className="flex items-start gap-2.5 rounded-2xl bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-200">
