@@ -99,7 +99,8 @@ export const usd = (n: number) =>
  */
 export const PAYMENT_INFO: { label: string; value: string }[] = [
   { label: "Modalidad", value: "Pago en bolívares al cambio BCV del día" },
-  { label: "Banco", value: "POR DEFINIR" },
-  { label: "Pago móvil / Cuenta", value: "POR DEFINIR" },
-  { label: "Titular / RIF", value: "POR DEFINIR" },
+  { label: "Banco", value: "BANCAMIGA" },
+  { label: "Cuenta", value: "01720302973028756199" },
+  { label: "Titular", value: "LOS HÉROES DE LA SALUD C.A." },
+  { label: "RIF", value: "J-503798424" },
 ];
