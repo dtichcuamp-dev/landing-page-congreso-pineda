@@ -348,9 +348,47 @@ function approvePayment_(id) {
     
     // Columna 19 es "Estado del pago"
     sh.getRange(rowIndex, 19).setValue('Aprobado');
+    
+    // Enviar correo de aprobación con QR
+    var rowData = sh.getRange(rowIndex, 1, 1, HEADERS.length).getValues()[0];
+    sendApprovalEmail_(rowData);
+
     return { success: true, id: id };
   } finally {
     lock.releaseLock();
+  }
+}
+
+function sendApprovalEmail_(r) {
+  try {
+    var id = r[0];
+    var nombres = r[2];
+    var correo = r[6];
+    var tipoLabel = r[7];
+    var jornadasLabel = r[13];
+    var qrUrl = 'https://quickchart.io/qr?size=300&text=' + encodeURIComponent(id);
+
+    var html =
+      '<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#0b2545">' +
+      '<h2 style="color:#059669">¡Inscripción Aprobada!</h2>' +
+      '<p>Hola <b>' + esc_(nombres) + '</b>, tu pago ha sido verificado y tu inscripción al <b>XIV Congreso Pineda 2026</b> está confirmada.</p>' +
+      '<div style="background:#f4f8fb;padding:20px;border-radius:12px;text-align:center;margin:24px 0">' +
+      '<p style="margin-top:0;font-size:14px;color:#7a8aa3">Muestra este código QR cada día del evento para validar tu asistencia</p>' +
+      '<img src="' + qrUrl + '" alt="QR de acceso" width="200" height="200" style="background:#fff;padding:10px;border-radius:8px;border:1px solid #e3ecf7"/>' +
+      '</div>' +
+      '<table style="border-collapse:collapse;width:100%;font-size:14px">' +
+      row_('Código', id) + row_('Participante', esc_(tipoLabel)) +
+      row_('Jornadas', esc_(jornadasLabel)) + '</table>' +
+      '<p style="color:#7a8aa3;font-size:12px;margin-top:24px">Hospital Central Universitario «Dr. Antonio María Pineda»</p></div>';
+
+    MailApp.sendEmail({
+      to: correo,
+      subject: 'Entrada Aprobada · Congreso Pineda 2026 · ' + id,
+      htmlBody: html,
+      name: CONFIG.EMAIL_SENDER_NAME
+    });
+  } catch (err) {
+    console.warn('No se pudo enviar el correo de aprobación: ' + err);
   }
 }
 
