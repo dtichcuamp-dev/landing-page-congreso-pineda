@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
+
 
 export const alt = "XIV Congreso Pineda 2026";
 export const size = {

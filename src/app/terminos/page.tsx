@@ -8,7 +8,10 @@ export default function TerminosPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-24 sm:px-6">
       <div className="glass rounded-3xl p-8 sm:p-12">
-        <SectionHeading title="Términos de Uso" />
+        <SectionHeading 
+          eyebrow="Congreso Pineda"
+          title="Términos de Uso" 
+        />
         <div className="prose prose-sm prose-slate mt-8 text-ink-soft">
           <p>
             Bienvenido al sistema de inscripciones del XIV Congreso Pineda. Al acceder y utilizar nuestra plataforma, aceptas cumplir con los siguientes términos y condiciones.

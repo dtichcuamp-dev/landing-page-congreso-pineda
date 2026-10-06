@@ -1,4 +1,4 @@
-import type { Turno } from "./pricing";
+export type Turno = "manana" | "tarde";
 
 export type Salon = "principal" | "alterno";
 export type TalkKind = "talk" | "break" | "ceremony";

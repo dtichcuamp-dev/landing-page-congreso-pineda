@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   ChevronDown,
@@ -16,8 +16,8 @@ import {
   TURNO_LABEL,
   type Salon,
   type Session,
+  type Turno,
 } from "@/data/agenda";
-import type { Turno } from "@/data/pricing";
 import { SPECIALTY_BY_ID } from "@/data/specialties";
 import {
   AGENDA_FOCUS_EVENT,

@@ -8,7 +8,10 @@ export default function PrivacidadPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-24 sm:px-6">
       <div className="glass rounded-3xl p-8 sm:p-12">
-        <SectionHeading title="Política de Privacidad" />
+        <SectionHeading 
+          eyebrow="Congreso Pineda"
+          title="Política de Privacidad" 
+        />
         <div className="prose prose-sm prose-slate mt-8 text-ink-soft">
           <p>
             El Comité Organizador del XIV Congreso Pineda respeta tu privacidad y se compromete a proteger los datos personales que nos proporciones a través de este sistema.
