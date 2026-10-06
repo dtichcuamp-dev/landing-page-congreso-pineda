@@ -44,6 +44,7 @@ var CONFIG = {
 
   SEND_CONFIRMATION_EMAIL: true,
   EMAIL_SENDER_NAME: 'Congreso Pineda 2026 · HCUAMP',
+  ADMIN_TOKEN: 'token-secreto-admin-1234',
 
   ID_PREFIX: 'CP26',
   MAX_FILE_BYTES: 8 * 1024 * 1024,
@@ -97,6 +98,16 @@ function doPost(e) {
     var body;
     try { body = JSON.parse(e.postData.contents); }
     catch (err) { throw new UserError_('El formato de la solicitud no es válido.'); }
+
+    // Endpoints administrativos
+    if (body.action === 'get_dashboard') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: getDashboardData_() });
+    }
+    if (body.action === 'approve_payment') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: approvePayment_(body.id) });
+    }
 
     // Honeypot: los bots suelen rellenar este campo oculto. Se responde "ok" sin guardar.
     if (body.website) return json_({ ok: true, id: 'CP26-0000', total: 0 });
@@ -286,6 +297,58 @@ function appendRow_(d, receiptFile) {
     ]]);
     SpreadsheetApp.flush();
     return { id: id, row: row };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// ─────────────────────────────── DASHBOARD ───────────────────────────────
+
+function getDashboardData_() {
+  var sh = getSheet_();
+  var rows = sh.getDataRange().getValues();
+  if (rows.length < 2) return [];
+  
+  var data = [];
+  // HEADERS:
+  // 0: ID, 1: Fecha, 2: Nombres, 3: Apellidos, 4: Cédula, 5: Teléfono, 6: Correo
+  // 7: Tipo, 8: Institución, 9: País, 10: Estado, 11: Municipio, 12: Parroquia
+  // 13: Jornadas, 14: N jornadas, 15: Tarifa, 16: Monto, 17: Comprobante, 18: Estado, 19: Notas
+  for (var i = 1; i < rows.length; i++) {
+    var r = rows[i];
+    data.push({
+      id: r[0],
+      fecha: r[1],
+      nombres: r[2],
+      apellidos: r[3],
+      cedula: r[4],
+      telefono: r[5],
+      correo: r[6],
+      tipo: r[7],
+      monto: r[16],
+      comprobante: r[17],
+      estado: r[18]
+    });
+  }
+  // Devolvemos en orden inverso (más recientes primero)
+  return data.reverse();
+}
+
+function approvePayment_(id) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var sh = getSheet_();
+    var rows = sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues();
+    var rowIndex = -1;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i][0] === id) { rowIndex = i + 2; break; }
+    }
+    if (rowIndex === -1) throw new UserError_('Registro no encontrado.');
+    
+    // Columna 19 es "Estado del pago"
+    sh.getRange(rowIndex, 19).setValue('Aprobado');
+    return { success: true, id: id };
   } finally {
     lock.releaseLock();
   }
