@@ -301,6 +301,8 @@ function appendRow_(d, receiptFile) {
     ]]);
     SpreadsheetApp.flush();
     return { id: id, row: row };
+  } catch (err) {
+    throw err;
   } finally {
     lock.releaseLock();
   }
@@ -358,6 +360,8 @@ function approvePayment_(id) {
     sendApprovalEmail_(rowData);
 
     return { success: true, id: id };
+  } catch (err) {
+    throw err;
   } finally {
     lock.releaseLock();
   }
@@ -460,6 +464,8 @@ function scanQr_(body) {
       nombres: found[2] + ' ' + found[3],
       tipo: found[7]
     };
+  } catch (err) {
+    throw err;
   } finally {
     lock.releaseLock();
   }
