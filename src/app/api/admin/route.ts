@@ -6,8 +6,16 @@ export async function POST(req: Request) {
     const { password, action, id } = body;
 
     const correctPassword = process.env.ADMIN_PASSWORD;
-    if (!correctPassword || password !== correctPassword) {
-      return NextResponse.json({ ok: false, error: "Contraseña incorrecta." }, { status: 401 });
+    const scannerPassword = process.env.SCANNER_PASSWORD || correctPassword;
+    
+    if (action === "scan_qr") {
+      if (!scannerPassword || password !== scannerPassword) {
+        return NextResponse.json({ ok: false, error: "Contraseña incorrecta." }, { status: 401 });
+      }
+    } else {
+      if (!correctPassword || password !== correctPassword) {
+        return NextResponse.json({ ok: false, error: "Contraseña incorrecta." }, { status: 401 });
+      }
     }
 
     const gasUrl = process.env.NEXT_PUBLIC_GAS_URL;
@@ -22,6 +30,8 @@ export async function POST(req: Request) {
 
     const payload = action === "approve" 
       ? { action: "approve_payment", token: adminToken, id }
+      : action === "scan_qr" 
+      ? { action: "scan_qr", token: adminToken, id: body.id, salon: body.salon, jornada: body.jornada, user: body.user }
       : { action: "get_dashboard", token: adminToken };
 
     const res = await fetch(gasUrl, {

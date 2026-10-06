@@ -108,6 +108,10 @@ function doPost(e) {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
       return json_({ ok: true, data: approvePayment_(body.id) });
     }
+    if (body.action === 'scan_qr') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: scanQr_(body) });
+    }
 
     // Honeypot: los bots suelen rellenar este campo oculto. Se responde "ok" sin guardar.
     if (body.website) return json_({ ok: true, id: 'CP26-0000', total: 0 });
@@ -389,6 +393,75 @@ function sendApprovalEmail_(r) {
     });
   } catch (err) {
     console.warn('No se pudo enviar el correo de aprobación: ' + err);
+  }
+}
+
+// ─────────────────────────────── SCANNER ───────────────────────────────
+
+function scanQr_(body) {
+  var id = body.id;
+  var salon = body.salon;
+  var jornada = body.jornada;
+  var validador = body.user || 'Desconocido';
+  
+  if (!id) throw new UserError_('Código inválido.');
+  if (!salon) throw new UserError_('Salón no seleccionado.');
+  if (!jornada) throw new UserError_('Jornada no seleccionada.');
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+    var shInsc = ss.getSheetByName(CONFIG.SHEET_NAME);
+    
+    // Buscar en Inscripciones
+    var data = shInsc.getDataRange().getValues();
+    var found = null;
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][0] === id) {
+        found = data[i];
+        break;
+      }
+    }
+    
+    if (!found) throw new UserError_('Registro no encontrado.');
+    
+    // Validar pago (Estado está en la columna 18 (index base 0))
+    var estado = String(found[18]).trim();
+    if (estado !== 'Aprobado' && estado !== 'Exonerado') {
+      throw new UserError_('Pago no aprobado (' + estado + ').');
+    }
+    
+    // Validar que esté inscrito ese día. jornadas (label) está en col 13. N jornadas en col 14
+    // Pero la búsqueda debe coincidir con la jornada enviada.
+    // Ej jornada = "2026-11-02", el JORNADAS["2026-11-02"] = "02/11"
+    var labelDia = JORNADAS[jornada] || jornada;
+    var jornadasString = String(found[13]);
+    if (jornadasString.indexOf(labelDia) === -1) {
+      throw new UserError_('El participante no está inscrito para este día.');
+    }
+    
+    // Registrar asistencia
+    var shAsist = ss.getSheetByName('Asistencias');
+    if (!shAsist) {
+      shAsist = ss.insertSheet('Asistencias');
+      shAsist.getRange(1, 1, 1, 7).setValues([['ID', 'Nombres', 'Apellidos', 'Tipo', 'Salón', 'Jornada', 'Validador']])
+        .setFontWeight('bold').setBackground('#059669').setFontColor('#ffffff');
+      shAsist.setFrozenRows(1);
+    }
+    
+    // Registrar
+    shAsist.appendRow([
+      found[0], found[2], found[3], found[7], salon, labelDia, validador
+    ]);
+    
+    return { 
+      success: true, 
+      nombres: found[2] + ' ' + found[3],
+      tipo: found[7]
+    };
+  } finally {
+    lock.releaseLock();
   }
 }
 
