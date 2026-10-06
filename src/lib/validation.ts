@@ -27,6 +27,9 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
     const ced = cleanCedula(v.cedula);
     if (ced.length < 5 || ced.length > 9) e.cedula = "Cédula inválida (5 a 9 dígitos).";
 
+    if (!v.sexo) e.sexo = "Selecciona tu sexo.";
+    if (!v.fechaNacimiento) e.fechaNacimiento = "Indica tu fecha de nacimiento.";
+
     if (!/^0(2\d{2}|4(12|14|16|24|26))\d{7}$/.test(normalizePhone(v.telefono)))
       e.telefono = "Número inválido. Ej.: 0414-1234567";
 

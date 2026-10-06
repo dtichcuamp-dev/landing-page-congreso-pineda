@@ -77,7 +77,7 @@ var JORNADAS = {
 };
 
 var HEADERS = [
-  'ID', 'Fecha de registro', 'Nombres', 'Apellidos', 'Cédula', 'Teléfono', 'Correo',
+  'ID', 'Fecha de registro', 'Nombres', 'Apellidos', 'Cédula', 'Sexo', 'Fecha de Nacimiento', 'Teléfono', 'Correo',
   'Tipo de participante', 'Institución', 'País', 'Estado', 'Municipio', 'Parroquia', 'Jornadas', 'N.º jornadas',
   'Tarifa por jornada (USD)', 'Monto a pagar (USD)', 'Comprobante (URL)',
   'Estado del pago', 'Observaciones'
@@ -153,6 +153,12 @@ function validate_(b) {
   var cedula = str_(b.cedula, 15).toUpperCase();
   if (!/^[VE]-\d{5,9}$/.test(cedula)) throw new UserError_('Cédula inválida.');
 
+  var sexo = str_(b.sexo, 20);
+  if (sexo !== 'M' && sexo !== 'F') throw new UserError_('Selecciona tu sexo.');
+
+  var fechaNacimiento = str_(b.fechaNacimiento, 20);
+  if (!fechaNacimiento) throw new UserError_('Indica tu fecha de nacimiento.');
+
   var telefono = str_(b.telefono, 20).replace(/\D/g, '');
   if (!/^0(2\d{2}|4(12|14|16|24|26))\d{7}$/.test(telefono)) throw new UserError_('Número telefónico inválido.');
 
@@ -192,7 +198,7 @@ function validate_(b) {
   if (total > 0 && !b.comprobante) throw new UserError_('Debes adjuntar el comprobante de pago.');
 
   return {
-    nombres: nombres, apellidos: apellidos, cedula: cedula, telefono: telefono, correo: correo,
+    nombres: nombres, apellidos: apellidos, cedula: cedula, sexo: sexo, fechaNacimiento: fechaNacimiento, telefono: telefono, correo: correo,
     tipoId: b.tipoParticipante, tipoLabel: tipo.label, rate: tipo.rate,
     institucion: institucion, pais: pais, estado: estado, municipio: municipio, parroquia: parroquia, jornadaIds: jornadaIds,
     jornadasLabel: jornadaIds.map(function (id) { return JORNADAS[id]; }).join(', '),
@@ -274,7 +280,7 @@ function appendRow_(d, receiptFile) {
       }
     }
 
-    sh.getRange(row, 5, 1, 2).setNumberFormat('@');
+    sh.getRange(row, 5, 1, 3).setNumberFormat('@'); // cedula, sexo, fecha como texto para no perder formato
     sh.getRange(row, 2).setNumberFormat('dd/MM/yyyy HH:mm:ss');
 
     sh.getRange(row, 1, 1, HEADERS.length).setValues([[
@@ -283,6 +289,8 @@ function appendRow_(d, receiptFile) {
       safe_(d.nombres),
       safe_(d.apellidos),
       d.cedula,
+      d.sexo,
+      d.fechaNacimiento,
       d.telefono,
       safe_(d.correo),
       d.tipoLabel,
@@ -317,9 +325,9 @@ function getDashboardData_() {
   
   var data = [];
   // HEADERS:
-  // 0: ID, 1: Fecha, 2: Nombres, 3: Apellidos, 4: Cédula, 5: Teléfono, 6: Correo
-  // 7: Tipo, 8: Institución, 9: País, 10: Estado, 11: Municipio, 12: Parroquia
-  // 13: Jornadas, 14: N jornadas, 15: Tarifa, 16: Monto, 17: Comprobante, 18: Estado, 19: Notas
+  // 0: ID, 1: Fecha, 2: Nombres, 3: Apellidos, 4: Cédula, 5: Sexo, 6: Fecha Nac, 7: Teléfono, 8: Correo
+  // 9: Tipo, 10: Institución, 11: País, 12: Estado, 13: Municipio, 14: Parroquia
+  // 15: Jornadas, 16: N jornadas, 17: Tarifa, 18: Monto, 19: Comprobante, 20: Estado, 21: Notas
   for (var i = 1; i < rows.length; i++) {
     var r = rows[i];
     data.push({
@@ -328,12 +336,14 @@ function getDashboardData_() {
       nombres: r[2],
       apellidos: r[3],
       cedula: r[4],
-      telefono: r[5],
-      correo: r[6],
-      tipo: r[7],
-      monto: r[16],
-      comprobante: r[17],
-      estado: r[18]
+      sexo: r[5],
+      fechaNacimiento: r[6],
+      telefono: r[7],
+      correo: r[8],
+      tipo: r[9],
+      monto: r[18],
+      comprobante: r[19],
+      estado: r[20]
     });
   }
   // Devolvemos en orden inverso (más recientes primero)
@@ -352,8 +362,8 @@ function approvePayment_(id) {
     }
     if (rowIndex === -1) throw new UserError_('Registro no encontrado.');
     
-    // Columna 19 es "Estado del pago"
-    sh.getRange(rowIndex, 19).setValue('Aprobado');
+    // Columna 21 es "Estado del pago"
+    sh.getRange(rowIndex, 21).setValue('Aprobado');
     
     // Enviar correo de aprobación con QR
     var rowData = sh.getRange(rowIndex, 1, 1, HEADERS.length).getValues()[0];
@@ -371,9 +381,9 @@ function sendApprovalEmail_(r) {
   try {
     var id = r[0];
     var nombres = r[2];
-    var correo = r[6];
-    var tipoLabel = r[7];
-    var jornadasLabel = r[13];
+    var correo = r[8];
+    var tipoLabel = r[9];
+    var jornadasLabel = r[15];
     var qrUrl = 'https://quickchart.io/qr?size=300&text=' + encodeURIComponent(id);
 
     var html =
@@ -430,17 +440,15 @@ function scanQr_(body) {
     
     if (!found) throw new UserError_('Registro no encontrado.');
     
-    // Validar pago (Estado está en la columna 18 (index base 0))
-    var estado = String(found[18]).trim();
+    // Validar pago (Estado está en la columna 20 (index base 0))
+    var estado = String(found[20]).trim();
     if (estado !== 'Aprobado' && estado !== 'Exonerado') {
       throw new UserError_('Pago no aprobado (' + estado + ').');
     }
     
-    // Validar que esté inscrito ese día. jornadas (label) está en col 13. N jornadas en col 14
-    // Pero la búsqueda debe coincidir con la jornada enviada.
-    // Ej jornada = "2026-11-02", el JORNADAS["2026-11-02"] = "02/11"
+    // Validar que esté inscrito ese día. jornadas (label) está en col 15. N jornadas en col 16
     var labelDia = JORNADAS[jornada] || jornada;
-    var jornadasString = String(found[13]);
+    var jornadasString = String(found[15]);
     if (jornadasString.indexOf(labelDia) === -1) {
       throw new UserError_('El participante no está inscrito para este día.');
     }
@@ -457,7 +465,7 @@ function scanQr_(body) {
     // Registrar (Se permite escaneo múltiple para mantener la continuidad)
     var timestamp = new Date();
     shAsist.appendRow([
-      found[0], found[2], found[3], found[7], salon, labelDia, validador, timestamp
+      found[0], found[2], found[3], found[9], salon, labelDia, validador, timestamp
     ]);
     
     // Formatear la fecha para que se vea legible en Sheets
@@ -467,7 +475,7 @@ function scanQr_(body) {
     return { 
       success: true, 
       nombres: found[2] + ' ' + found[3],
-      tipo: found[7]
+      tipo: found[9]
     };
   } catch (err) {
     throw err;

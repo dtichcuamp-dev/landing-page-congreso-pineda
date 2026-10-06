@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { CheckCircle, Clock, Users, DollarSign, ExternalLink, RefreshCw, LogOut, Eye, EyeOff } from "lucide-react";
 import { usd } from "@/data/pricing";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface Registration {
   id: string;
@@ -10,6 +11,8 @@ interface Registration {
   nombres: string;
   apellidos: string;
   cedula: string;
+  sexo: string;
+  fechaNacimiento: string;
   telefono: string;
   correo: string;
   tipo: string;
@@ -133,6 +136,35 @@ export default function AdminDashboard() {
   const pendientes = data.filter((r) => r.estado === "Pendiente de verificación").length;
   const aprobados = data.filter((r) => r.estado === "Aprobado").length;
 
+  // Estadísticas
+  const tipoStatsMap: Record<string, number> = {};
+  const sexoStatsMap: Record<string, number> = { Femenino: 0, Masculino: 0 };
+  const edadStatsMap: Record<string, number> = { "18-25": 0, "26-35": 0, "36-45": 0, "46-55": 0, "56+": 0 };
+  const currentYear = new Date().getFullYear();
+
+  data.forEach((r) => {
+    tipoStatsMap[r.tipo] = (tipoStatsMap[r.tipo] || 0) + 1;
+    if (r.sexo === "F") sexoStatsMap.Femenino++;
+    else if (r.sexo === "M") sexoStatsMap.Masculino++;
+    
+    if (r.fechaNacimiento) {
+      const birthYear = new Date(r.fechaNacimiento).getFullYear();
+      const age = currentYear - birthYear;
+      if (age >= 18 && age <= 25) edadStatsMap["18-25"]++;
+      else if (age >= 26 && age <= 35) edadStatsMap["26-35"]++;
+      else if (age >= 36 && age <= 45) edadStatsMap["36-45"]++;
+      else if (age >= 46 && age <= 55) edadStatsMap["46-55"]++;
+      else if (age >= 56) edadStatsMap["56+"]++;
+    }
+  });
+
+  const tipoData = Object.entries(tipoStatsMap).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
+  const sexoData = [
+    { name: "Femenino", value: sexoStatsMap.Femenino, color: "#ec4899" },
+    { name: "Masculino", value: sexoStatsMap.Masculino, color: "#3b82f6" },
+  ].filter(d => d.value > 0);
+  const edadData = Object.entries(edadStatsMap).map(([name, value]) => ({ name, value }));
+
   return (
     <main className="min-h-screen bg-clinic-50 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -189,6 +221,53 @@ export default function AdminDashboard() {
             <span className="text-3xl font-bold text-ink">{aprobados}</span>
           </div>
         </div>
+
+        {/* Gráficos Estadísticos */}
+        {totalInscritos > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="glass rounded-3xl p-6 flex flex-col items-center">
+              <h3 className="text-lg font-bold text-ink mb-4 w-full text-center">Inscritos por Sexo</h3>
+              <div className="w-full h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={sexoData} dataKey="value" cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={5}>
+                      {sexoData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip cursor={{fill: 'rgba(0,0,0,0.05)'}} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            <div className="glass rounded-3xl p-6 flex flex-col items-center">
+              <h3 className="text-lg font-bold text-ink mb-4 w-full text-center">Inscritos por Edades</h3>
+              <div className="w-full h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={edadData}>
+                    <XAxis dataKey="name" tick={{fontSize: 12}} />
+                    <Tooltip cursor={{fill: 'rgba(0,0,0,0.05)'}} />
+                    <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-6 flex flex-col items-center">
+              <h3 className="text-lg font-bold text-ink mb-4 w-full text-center">Inscritos por Tipo</h3>
+              <div className="w-full h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={tipoData} layout="vertical" margin={{ left: 0 }}>
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={90} tick={{fontSize: 11}} />
+                    <Tooltip cursor={{fill: 'rgba(0,0,0,0.05)'}} />
+                    <Bar dataKey="value" fill="#0ea5e9" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tabla */}
         <div className="glass rounded-3xl overflow-hidden shadow-sm">

@@ -198,6 +198,20 @@ export function RegistrationForm() {
             </div>
           </Field>
 
+          <Field id="sexo" label="Sexo" error={errors.sexo}>
+            <select id="sexo" className={inputClass(!!errors.sexo)} value={values.sexo}
+              onChange={(e) => set("sexo", e.target.value as "M" | "F" | "")} aria-invalid={!!errors.sexo} aria-describedby={errors.sexo ? "sexo-error" : undefined}>
+              <option value="">Selecciona...</option>
+              <option value="F">Femenino</option>
+              <option value="M">Masculino</option>
+            </select>
+          </Field>
+          
+          <Field id="fechaNacimiento" label="Fecha de Nacimiento" error={errors.fechaNacimiento}>
+            <input id="fechaNacimiento" type="date" className={inputClass(!!errors.fechaNacimiento)} value={values.fechaNacimiento}
+              onChange={(e) => set("fechaNacimiento", e.target.value)} aria-invalid={!!errors.fechaNacimiento} aria-describedby={errors.fechaNacimiento ? "fechaNacimiento-error" : undefined} />
+          </Field>
+
           <Field id="telefono" label="Número telefónico" error={errors.telefono} hint="Preferiblemente WhatsApp.">
             <input id="telefono" type="tel" inputMode="tel" autoComplete="tel" placeholder="0414-1234567" className={inputClass(!!errors.telefono)}
               value={values.telefono} onChange={(e) => set("telefono", e.target.value)} aria-invalid={!!errors.telefono} aria-describedby={errors.telefono ? "telefono-error" : "telefono-hint"} />

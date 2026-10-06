@@ -8,6 +8,7 @@ import { Highlights } from "@/components/sections/Highlights";
 import { Gallery } from "@/components/sections/Gallery";
 import { Registration } from "@/components/sections/Registration";
 import { Specialties } from "@/components/sections/Specialties";
+import { Sponsors } from "@/components/sections/Sponsors";
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
         <Specialties />
         <Agenda />
         <Registration />
+        <Sponsors />
       </main>
       <Footer />
       <FloatingCTA />

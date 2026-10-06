@@ -5,6 +5,8 @@ export interface RegistrationValues {
   apellidos: string;
   nacionalidad: "V" | "E";
   cedula: string;
+  sexo: "M" | "F" | "";
+  fechaNacimiento: string;
   telefono: string;
   correo: string;
   tipoParticipante: ParticipantTypeId | "";
@@ -27,6 +29,8 @@ export const EMPTY_VALUES: RegistrationValues = {
   apellidos: "",
   nacionalidad: "V",
   cedula: "",
+  sexo: "",
+  fechaNacimiento: "",
   telefono: "",
   correo: "",
   tipoParticipante: "",
@@ -52,6 +56,8 @@ export interface RegistrationPayload {
   nombres: string;
   apellidos: string;
   cedula: string;
+  sexo: string;
+  fechaNacimiento: string;
   telefono: string;
   correo: string;
   tipoParticipante: ParticipantTypeId;

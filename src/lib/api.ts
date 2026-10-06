@@ -64,6 +64,8 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     nombres: v.nombres.trim(),
     apellidos: v.apellidos.trim(),
     cedula: `${v.nacionalidad}-${cleanCedula(v.cedula)}`,
+    sexo: v.sexo,
+    fechaNacimiento: v.fechaNacimiento,
     telefono: normalizePhone(v.telefono),
     correo: v.correo.trim().toLowerCase(),
     tipoParticipante: v.tipoParticipante as RegistrationPayload["tipoParticipante"],
