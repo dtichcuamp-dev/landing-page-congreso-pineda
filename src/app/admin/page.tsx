@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, Clock, Users, DollarSign, ExternalLink, RefreshCw, LogOut } from "lucide-react";
+import { CheckCircle, Clock, Users, DollarSign, ExternalLink, RefreshCw, LogOut, Eye, EyeOff } from "lucide-react";
 import { usd } from "@/data/pricing";
 
 interface Registration {
@@ -20,6 +20,7 @@ interface Registration {
 
 export default function AdminDashboard() {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [data, setData] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(false);
@@ -98,13 +99,22 @@ export default function AdminDashboard() {
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">{error}</div>}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-ink-soft mb-2">Contraseña</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="glass-input w-full rounded-xl p-3"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="glass-input w-full rounded-xl p-3 pr-10"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-mute hover:text-ink transition"
+              >
+                {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+              </button>
+            </div>
           </div>
           <button
             type="submit"

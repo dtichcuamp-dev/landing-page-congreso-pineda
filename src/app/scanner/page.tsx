@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { CheckCircle, XCircle, Camera, Users, Building, Calendar } from "lucide-react";
+import { CheckCircle, XCircle, Camera, Users, Building, Calendar, Eye, EyeOff } from "lucide-react";
 
 export default function ScannerPage() {
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [user, setUser] = useState("");
   const [salon, setSalon] = useState("Salón Principal");
   const [jornada, setJornada] = useState("2026-11-02");
@@ -134,13 +135,22 @@ export default function ScannerPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-ink-soft mb-2">Contraseña de Scanner</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="glass-input w-full rounded-xl p-3"
-                required
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="glass-input w-full rounded-xl p-3 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-ink-mute hover:text-ink transition"
+                >
+                  {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                </button>
+              </div>
             </div>
           </div>
           <button
