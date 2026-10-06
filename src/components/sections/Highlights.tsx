@@ -1,10 +1,10 @@
-﻿import { HIGHLIGHTS } from "@/data/event";
+import { HIGHLIGHTS } from "@/data/event";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 export function Highlights() {
   return (
-    <section id="atractivos" className="px-4 py-20 sm:px-6 sm:py-28">
+    <section id="atractivos" className="px-4 pt-20 pb-10 sm:px-6 sm:pt-28 sm:pb-14">
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           eyebrow="Atractivos"
