@@ -449,15 +449,20 @@ function scanQr_(body) {
     var shAsist = ss.getSheetByName('Asistencias');
     if (!shAsist) {
       shAsist = ss.insertSheet('Asistencias');
-      shAsist.getRange(1, 1, 1, 7).setValues([['ID', 'Nombres', 'Apellidos', 'Tipo', 'Salón', 'Jornada', 'Validador']])
+      shAsist.getRange(1, 1, 1, 8).setValues([['ID', 'Nombres', 'Apellidos', 'Tipo', 'Salón', 'Jornada', 'Validador', 'Hora de escaneo']])
         .setFontWeight('bold').setBackground('#059669').setFontColor('#ffffff');
       shAsist.setFrozenRows(1);
     }
     
-    // Registrar
+    // Registrar (Se permite escaneo múltiple para mantener la continuidad)
+    var timestamp = new Date();
     shAsist.appendRow([
-      found[0], found[2], found[3], found[7], salon, labelDia, validador
+      found[0], found[2], found[3], found[7], salon, labelDia, validador, timestamp
     ]);
+    
+    // Formatear la fecha para que se vea legible en Sheets
+    var lastRow = shAsist.getLastRow();
+    shAsist.getRange(lastRow, 8).setNumberFormat('dd/MM/yyyy HH:mm:ss');
     
     return { 
       success: true, 
