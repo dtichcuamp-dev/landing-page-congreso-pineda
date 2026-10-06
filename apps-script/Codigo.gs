@@ -170,7 +170,10 @@ function validate_(b) {
   });
   jornadaIds.sort();
 
-  var total = tipo.rate * jornadaIds.length;      // ← el monto SIEMPRE se calcula aquí
+  var total = tipo.rate * jornadaIds.length;
+  if (b.tipoParticipante === "bachiller" && jornadaIds.length === 5) {
+    total = 40;
+  }
   if (total > 0 && !b.comprobante) throw new UserError_('Debes adjuntar el comprobante de pago.');
 
   return {

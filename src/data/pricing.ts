@@ -72,10 +72,21 @@ export function calcTotal(typeId: ParticipantTypeId | "", jornadaIds: string[]) 
   const type = typeId ? PARTICIPANT_BY_ID[typeId] : undefined;
   const count = jornadaIds.length;
   const rate = type?.rate ?? 0;
+  
+  let total = rate * count;
+  let hasPromo = false;
+
+  // Paquete promocional para bachilleres: 5 días por 40$ (en lugar de 50$)
+  if (typeId === "bachiller" && count === 5) {
+    total = 40;
+    hasPromo = true;
+  }
+
   return {
     rate,
     count,
-    total: rate * count,
+    total,
+    hasPromo,
     exonerated: !!type && type.rate === 0,
   };
 }

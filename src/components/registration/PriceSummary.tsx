@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Receipt, Sparkles } from "lucide-react";
 import { PARTICIPANT_BY_ID, calcTotal, usd, type ParticipantTypeId } from "@/data/pricing";
@@ -11,7 +11,7 @@ interface Props {
 
 export function PriceSummary({ tipo, jornadas }: Props) {
   const rateBcv = useBcvRate();
-  const { rate, count, total, exonerated } = calcTotal(tipo, jornadas);
+  const { rate, count, total, hasPromo, exonerated } = calcTotal(tipo, jornadas);
   const label = tipo ? PARTICIPANT_BY_ID[tipo].label : null;
 
   return (
@@ -38,7 +38,8 @@ export function PriceSummary({ tipo, jornadas }: Props) {
       ) : (
         <>
           <p className="mt-2 text-sm text-ink-soft">
-            {label} · {usd(rate)} × {count} {count === 1 ? "jornada" : "jornadas"}
+            {label} · {hasPromo ? <span className="font-semibold text-clinic-600 line-through mr-1">{usd(rate * count)}</span> : null}
+            {hasPromo ? "Paquete 5 días" : `${usd(rate)} × ${count} ${count === 1 ? "día" : "días"}`}
           </p>
           <p className="mt-1 text-3xl font-extrabold tracking-tight text-ink">
             {usd(total)}
