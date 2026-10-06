@@ -1,4 +1,6 @@
 import { SectionHeading } from "@/components/ui/SectionHeading";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
   title: "Política de Privacidad | Congreso Pineda",
@@ -7,7 +9,13 @@ export const metadata = {
 export default function PrivacidadPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-24 sm:px-6">
-      <div className="glass rounded-3xl p-8 sm:p-12">
+      <div className="glass rounded-3xl p-8 sm:p-12 relative">
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:text-brand-800 transition mb-6"
+        >
+          <ArrowLeft className="size-4" /> Volver a la página principal
+        </Link>
         <SectionHeading 
           eyebrow="Congreso Pineda"
           title="Política de Privacidad" 
