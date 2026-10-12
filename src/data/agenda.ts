@@ -71,16 +71,21 @@ const INAUGURAL: Session = {
 const MED_INTERNA: Session = {
   specialtyId: "medicina-interna",
   title: "Medicina Interna",
-  note: "Horarios de las ponencias por confirmar.",
+  hours: "8:30 a. m. – 12:40 p. m. · Salón Principal",
   talks: [
-    t(undefined, "Historia clínica como método diagnóstico eficaz", "Dra. Isbel González"),
-    t(undefined, "Anticoagulación en casos especiales", "Dra. Yedalith Pernalete"),
-    t(undefined, "Neuroinfecciones y encefalitis autoinmune: del LCR al tratamiento empírico", "Dr. José Mejías"),
-    t(undefined, "Síndromes paraneoplásicos: la pista sistémica del cáncer oculto", "Dra. María Estefanía Fernández"),
-    t(undefined, "El eje cardiorrenometabólico: prescripción orientada al riesgo organocéntrico", "Dra. Indira Acosta"),
-    t(undefined, "Obesidad sarcopénica y fenotipificación de la composición corporal", "Dr. Ludwig Rivero"),
-    t(undefined, "Preeclampsia: una misma tensión arterial, 2 fenotipos", "Dr. Ángel Echenique"),
-    t(undefined, "Vasculitis sistémicas: del síndrome a la interpretación serológica", "Dra. Gabriela Caldera"),
+    cer("8:30 – 8:50 a. m.", "Apertura del Bloque de Medicina Interna", "Servicio de Medicina Interna"),
+    t("8:50 – 9:10 a. m.", "Historia clínica como método diagnóstico eficaz", "Dra. Isbel González"),
+    t("9:10 – 9:30 a. m.", "Anticoagulación en casos especiales", "Dra. Yedalith Pernalete"),
+    t("9:30 – 9:50 a. m.", "Neuroinfecciones y encefalitis autoinmune: del LCR a tratamiento empírico", "Dr. José Mejías"),
+    t("9:50 – 10:10 a. m.", "Síndromes paraneoplásicos: La pista sistémica del cáncer oculto", "Dra. María Estefanía Fernández"),
+    t("10:10 – 10:20 a. m.", "Sesión de preguntas y respuestas", "Panel de especialistas"),
+    brk("10:20 – 10:50 a. m.", "Coffee Break · Receso"),
+    t("10:50 – 11:10 a. m.", "El eje cardiorrenometabólico: Prescripción orientada al riesgo organocéntrico", "Dra. Indira Acosta"),
+    t("11:10 – 11:30 a. m.", "Obesidad sarcopénica y fenotipificación de la composición corporal", "Dr. Ludwig Rivero"),
+    t("11:30 – 11:50 a. m.", "Preeclampsia: Una misma tensión arterial, 2 fenotipos", "Dr. Ángel Echenique"),
+    t("11:50 a. m. – 12:10 p. m.", "Vasculitis sistémicas: Del síndrome a la interpretación serológica", "Dra. Gabriela Caldera"),
+    t("12:10 – 12:20 p. m.", "Sesión de preguntas y respuestas", "Panel de especialistas"),
+    cer("12:20 – 12:40 p. m.", "Acto de clausura: Reconocimiento al Mejor Adjunto, Mejor Residente y Mejor Servicio", "Servicio de Medicina Interna"),
   ],
 };
 
@@ -105,16 +110,17 @@ const ENFERMERIA: Session = {
 const NEUROCIRUGIA: Session = {
   specialtyId: "neurocirugia",
   title: "Neurocirugía",
+  hours: "2:00 – 4:40 p. m. (14:00 - 16:40) · Salón Principal",
   talks: [
-    cer("2:00 p. m.", "Palabras de bienvenida e instalación", "Dr. Williams Arrieche, Jefe del Servicio"),
-    cer("2:15 p. m.", "Palabras de apertura", "Dr. Kenny Mejías, Jefe de Residentes"),
-    t("2:30 p. m.", "Abordaje endoscópico de columna: «Curva de aprendizaje»", "Dr. Williams Gutiérrez"),
-    t("2:50 p. m.", "Abordaje retrosigmoideo", "Dr. Daher"),
-    t("3:10 p. m.", "Nuevos conceptos en disrrafismo espinal", "Dra. Cobos"),
-    t("3:30 p. m.", "Ablación cerebral en patologías psiquiátricas (trastornos de agresividad)", "Dr. Juan Abud"),
-    t("3:50 p. m.", "Monitoreo neurológico multimodal para la predicción diagnóstica de isquemia en los clipajes de aneurismas cerebrales", "Dra. Thair Moreno"),
-    t("4:10 p. m.", "Foro de preguntas y respuestas · Panel interactivo con todos los ponentes"),
-    cer("4:40 p. m.", "Clausura"),
+    cer("2:00 – 2:15 p. m.", "Palabras de Bienvenida e Instalación de las Jornadas", "Dr. Williams Arrieche (Jefe del Servicio de Neurocirugía)"),
+    cer("2:15 – 2:30 p. m.", "Palabras de Apertura", "Dr. Kenny Mejías (Jefe de Residentes)"),
+    t("2:30 – 2:50 p. m.", "Abordaje Endoscópico de Columna: Curva de Aprendizaje", "Dr. Williams Gutiérrez"),
+    t("2:50 – 3:10 p. m.", "Abordaje Retrosigmoideo", "Dr. Daher"),
+    t("3:10 – 3:30 p. m.", "Nuevos Conceptos en Disrrafismo Espinal", "Dra. Cobos"),
+    t("3:30 – 3:50 p. m.", "Ablación Cerebral en Patologías Psiquiátricas (Trastornos de Agresividad)", "Dr. Juan Abud"),
+    t("3:50 – 4:10 p. m.", "Monitoreo Neurológico Multimodal para la Predicción Diagnóstica de Isquemia en los Clipajes de Aneurismas Cerebrales", "Dra. Thair Moreno"),
+    t("4:10 – 4:40 p. m.", "Foro de Preguntas y Respuestas", "Panel interactivo con todos los ponentes invitados"),
+    cer("4:40 p. m.", "Clausura del Evento", "Servicio de Neurocirugía"),
   ],
 };
 
@@ -231,16 +237,18 @@ const DERMATOLOGIA: Session = {
 
 const ORL: Session = {
   specialtyId: "orl",
-  title: "ORL",
+  title: "Otorrinolaringología (ORL)",
+  hours: "2:00 – 5:10 p. m. (14:00 - 17:10) · Salón Alterno",
   talks: [
-    cer("2:00 p. m.", "Palabras de bienvenida e instalación", "Dra. Elvymar Carmona, Jefe del Servicio de ORL"),
-    cer("2:30 p. m.", "Palabras de apertura", "Dra. Yaselin Soler, Coordinadora de Postgrado de ORL"),
-    t("3:00 p. m.", "Diagnóstico del vértigo agudo en la emergencia: valor clínico y aplicación del protocolo HINTS", "Dra. Alexandra Hagovian"),
+    cer("2:00 p. m.", "Palabras de Bienvenida e Instalación de las Jornadas", "Dra. Elvymar Carmona (Jefe del Servicio de Otorrinolaringología)"),
+    cer("2:30 p. m.", "Palabras de Apertura", "Dra. Yaselin Soler (Coordinadora de Postgrado de Otorrinolaringología)"),
+    t("3:00 p. m.", "Diagnóstico del vértigo agudo en la emergencia: valor clínico y aplicación del protocolo HINTS", "Dra. Alexandra Hagobian"),
     t("3:30 p. m.", "Impacto funcional de las maniobras quirúrgicas en rinoplastia", "Dra. María Jesús Rojas"),
-    brk("3:30 – 3:45 p. m.", "Coffee break"),
+    brk("3:30 – 3:45 p. m.", "Coffee Break · Receso"),
     t("3:50 p. m.", "Angina de Ludwig: hasta dónde llega el otorrinolaringólogo", "Dr. Adrián Mast"),
-    t("4:20 p. m.", "Esenciales en el manejo de la patología laríngea", "Dra. Leicy Carrasco"),
-    cer("4:40 p. m.", "Clausura"),
+    t("4:20 p. m.", "Claves para el abordaje seguro de los senos paranasales", "Dr. Hugo Cifuentes"),
+    t("4:40 p. m.", "Esenciales en el manejo de la patología laríngea", "Dra. Leicy Carrasco"),
+    cer("5:10 p. m.", "Clausura del Evento", "Servicio de Otorrinolaringología"),
   ],
 };
 
@@ -264,17 +272,18 @@ const UROLOGIA: Session = {
 const OFTALMOLOGIA: Session = {
   specialtyId: "oftalmologia",
   title: "Oftalmología",
+  hours: "8:30 a. m. – 12:30 m. · Salón Alterno",
   talks: [
-    t("8:30 a. m.", "Apertura"),
-    t("8:50 a. m.", "Revelaciones de la retina: diagnóstico temprano y salud sistémica", "Dra. Carla Rojas"),
-    t("9:15 a. m.", "Glaucoma al día: avances diagnósticos y abordajes de última generación", "Dra. Aura Álvarez"),
-    t("9:40 a. m.", "Utilidad de la campimetría automatizada en el diagnóstico de la enfermedad neurológica", "Dr. Edwin Martínez"),
-    t("10:05 a. m.", "Estrabismo infantil: ¿cuándo intervenir quirúrgicamente frente al tratamiento óptico?", "Dra. Karina Zambrano"),
-    brk("10:25 – 10:55 a. m."),
-    t("11:00 a. m.", "Avances y controversias en el manejo quirúrgico del trauma ocular y las fracturas orbitarias", "Dra. Laurent Dumont"),
-    t("11:25 a. m.", "Fronteras en la emergencia ocular: de la sospecha al quirófano", "Dra. Daniela Díaz"),
-    t("11:50 a. m.", "Situación actual de la cirugía de cataratas en el HCUAMP y perspectivas para el futuro", "Dr. Rafael Asuaje"),
-    cer("12:30 p. m.", "Premiación: Mejor Adjunto y Mejor Residente"),
+    cer("8:30 a. m.", "Apertura del Bloque de Oftalmología", "Servicio de Oftalmología"),
+    t("8:50 – 9:10 a. m.", "Revelaciones de la Retina: Diagnóstico temprano y salud sistémica", "Dra. Carla Rojas"),
+    t("9:15 – 9:35 a. m.", "Glaucoma al día: Avances diagnósticos y abordajes de última generación", "Dra. Aura Álvarez"),
+    t("9:40 – 10:00 a. m.", "Agonistas del receptor GLP-1: amigos o enemigos de la visión", "Dr. Edwin Martínez"),
+    t("10:05 – 10:25 a. m.", "Estrabismo infantil: ¿Cuándo intervenir quirúrgicamente frente al tratamiento óptico?", "Dra. Karina Zambrano"),
+    brk("10:25 – 10:55 a. m.", "Coffee Break · Receso"),
+    t("11:00 – 11:20 a. m.", "Avances y Controversias en el manejo quirúrgico del trauma ocular y las fracturas orbitarias", "Dra. Laurent Dumont"),
+    t("11:25 – 11:45 a. m.", "Fronteras en la emergencia ocular: De la sospecha al quirófano", "Dra. Daniela Díaz"),
+    t("11:50 a. m. – 12:10 p. m.", "Situación actual de la cirugía de cataratas en el HCUAMP y perspectivas para el futuro", "Dr. Rafael Asuaje"),
+    cer("12:30 p. m.", "Premiación al Mejor Adjunto y al Mejor Residente", "Servicio de Oftalmología"),
   ],
 };
 
@@ -306,12 +315,12 @@ const EMERGENCIA: Session = {
 const REHABILITACION: Session = {
   specialtyId: "rehabilitacion",
   title: "Medicina Física y Rehabilitación",
-  hours: "2:00 – 4:00 p. m. (14:00 - 16:00)",
-  note: "Horarios de las ponencias por confirmar.",
+  hours: "2:00 – 4:00 p. m. (14:00 - 16:00) · Salón Alterno",
   talks: [
-    t("2:00 p. m.", "Intervención precoz de rehabilitación en el paciente hospitalizado", undefined, true),
-    t("2:40 p. m.", "Manejo integral del dolor musculoesquelético crónico", undefined, true),
-    t("3:20 p. m.", "Rehabilitación neurofuncional post-evento cerebrovascular", undefined, true),
+    t("2:00 – 2:30 p. m.", "Estrategias en el hogar para el envejecimiento activo del adulto mayor", "Dra. María Gabriela Vásquez"),
+    t("2:30 – 3:00 p. m.", "Rehabilitación Musculoesquelética. Estrategias para una rehabilitación efectiva", "Dra. Yajaira Alzuru"),
+    t("3:00 – 3:30 p. m.", "Dolor cervical y problemas relacionados", "Dra. Yolanda Méndez"),
+    t("3:30 – 4:00 p. m.", "Abordaje fisiátrico integral del dolor cervical", "Dra. Dayana Cauro"),
   ],
 };
 
