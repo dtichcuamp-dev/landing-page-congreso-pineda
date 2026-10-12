@@ -1,57 +1,90 @@
 "use client";
 
-import { Receipt, Sparkles } from "lucide-react";
-import { PARTICIPANT_BY_ID, calcTotal, usd, type ParticipantTypeId } from "@/data/pricing";
+import { Award, Gift, Receipt, Sparkles } from "lucide-react";
+import { PARTICIPANT_BY_ID, calcTotal, usd } from "@/data/pricing";
 import { bs, useBcvRate } from "@/lib/useBcvRate";
+import type { InstitucionOrigen, ParticipantTypeId, SeleccionTurnos } from "@/types/registration";
 
 interface Props {
   tipo: ParticipantTypeId | "";
-  jornadas: string[];
+  turnos: SeleccionTurnos | string[];
+  origen?: InstitucionOrigen;
 }
 
-export function PriceSummary({ tipo, jornadas }: Props) {
+export function PriceSummary({ tipo, turnos, origen = "HCUAMP" }: Props) {
   const rateBcv = useBcvRate();
-  const { rate, count, total, hasPromo, exonerated } = calcTotal(tipo, jornadas);
-  const label = tipo ? PARTICIPANT_BY_ID[tipo].label : null;
+  const { rate, diasCount, turnosCount, total, exonerated } = calcTotal(tipo, turnos, origen);
+  const typeInfo = tipo ? PARTICIPANT_BY_ID[tipo] : null;
+  const label = typeInfo?.label ?? "";
 
   return (
     <div
       className="rounded-2xl bg-gradient-to-br from-brand-50/90 to-clinic-50/90 p-4 ring-1 ring-brand-100"
       aria-live="polite"
     >
-      <div className="flex items-center gap-2 text-sm font-semibold text-brand-800">
-        <Receipt className="size-4" aria-hidden />
-        Resumen de tu inscripción
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-semibold text-brand-800">
+          <Receipt className="size-4" aria-hidden />
+          Resumen de tu inscripción
+        </div>
+        {diasCount > 0 && (
+          <span className="text-xs font-semibold text-slate-600 bg-white/80 px-2 py-0.5 rounded-full ring-1 ring-black/5">
+            {diasCount} {diasCount === 1 ? "día" : "días"} ({turnosCount} {turnosCount === 1 ? "turno" : "turnos"})
+          </span>
+        )}
       </div>
 
-      {!tipo || count === 0 ? (
+      {!tipo || diasCount === 0 ? (
         <p className="mt-2 text-sm text-ink-soft">
-          Elige tu tipo de participante y las jornadas para calcular el monto.
+          Selecciona tu categoría de participante y al menos un día/turno para ver el detalle de inscripción.
         </p>
       ) : exonerated ? (
-        <div className="mt-2 flex items-center gap-2">
-          <Sparkles className="size-5 text-clinic-600" aria-hidden />
-          <p className="text-base font-bold text-clinic-700">
-            Exonerado <span className="font-medium text-ink-soft">· {label}</span>
-          </p>
+        <div className="mt-2.5 space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex size-6 items-center justify-center rounded-full bg-clinic-100 text-clinic-700">
+              <Sparkles className="size-4" aria-hidden />
+            </span>
+            <div>
+              <p className="text-base font-extrabold text-clinic-700">
+                100% Exonerado <span className="font-normal text-xs text-ink-soft">· Personal HCUAMP</span>
+              </p>
+              <p className="text-xs text-ink-soft">Categoría: <b className="text-ink">{label}</b></p>
+            </div>
+          </div>
         </div>
       ) : (
-        <>
-          <p className="mt-2 text-sm text-ink-soft">
-            {label} · {hasPromo ? <span className="font-semibold text-clinic-600 line-through mr-1">{usd(rate * count)}</span> : null}
-            {hasPromo ? "Paquete 5 días" : `${usd(rate)} × ${count} ${count === 1 ? "día" : "días"}`}
+        <div className="mt-2.5 space-y-1">
+          <p className="text-xs font-medium text-ink-soft">
+            <b className="text-ink">{label}</b> · {usd(rate)} por día
           </p>
-          <p className="mt-1 text-3xl font-extrabold tracking-tight text-ink">
-            {usd(total)}
-            <span className="ml-1.5 text-sm font-semibold text-ink-mute">USD</span>
-          </p>
+          <div className="flex items-baseline gap-2">
+            <p className="text-3xl font-extrabold tracking-tight text-ink">
+              {usd(total)}
+              <span className="ml-1 text-sm font-semibold text-ink-mute">USD</span>
+            </p>
+            <span className="text-xs text-ink-soft">
+              ({usd(rate)} × {diasCount} {diasCount === 1 ? "día" : "días"})
+            </span>
+          </div>
           {rateBcv && (
-            <p className="mt-0.5 text-xs text-ink-mute">
-              ≈ {bs(total * rateBcv)} a tasa BCV de {rateBcv.toFixed(2)} Bs/USD (referencial)
+            <p className="text-xs text-ink-mute">
+              ≈ {bs(total * rateBcv)} a tasa oficial BCV de {rateBcv.toFixed(2)} Bs/USD
             </p>
           )}
-        </>
+        </div>
       )}
+
+      {/* Beneficios incluidos para todos */}
+      <div className="mt-3.5 pt-3 border-t border-brand-100/60 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-ink-soft">
+        <span className="flex items-center gap-1">
+          <Award className="size-3 text-clinic-600" />
+          Certificado digital avalado
+        </span>
+        <span className="flex items-center gap-1">
+          <Gift className="size-3 text-brand-600" />
+          Kit oficial del participante
+        </span>
+      </div>
     </div>
   );
 }

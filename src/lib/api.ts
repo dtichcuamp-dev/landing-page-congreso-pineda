@@ -1,4 +1,4 @@
-import { calcTotal } from "@/data/pricing";
+import { calcTotal, DAYS_CONGRESO } from "@/data/pricing";
 import type {
   RegistrationPayload,
   RegistrationResult,
@@ -51,6 +51,76 @@ async function buildFilePayload(file: File | null): Promise<RegistrationPayload[
   return { nombre: `${baseName}.jpg`, mimeType: "image/jpeg", base64: await blobToBase64(blob) };
 }
 
+export interface HcuampLookupResult {
+  found: boolean;
+  data?: {
+    nombres: string;
+    apellidos: string;
+    sexo: "M" | "F" | "";
+    fechaNacimiento: string;
+    telefono: string;
+  };
+  message?: string;
+}
+
+/**
+ * Consulta en la hoja "Personal HCUAMP" mediante Apps Script por número de cédula.
+ */
+export async function lookupHcuamp(cedula: string): Promise<HcuampLookupResult> {
+  const url = process.env.NEXT_PUBLIC_GAS_URL;
+  if (!url) return { found: false };
+
+  const digits = cleanCedula(cedula);
+  if (!digits || digits.length < 5) return { found: false };
+
+  try {
+    const res = await fetch(`${url}?action=lookup_hcuamp&cedula=${encodeURIComponent(digits)}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data && data.ok && data.found && data.data) {
+      return {
+        found: true,
+        data: {
+          nombres: data.data.nombres || "",
+          apellidos: data.data.apellidos || "",
+          sexo: data.data.sexo === "M" || data.data.sexo === "F" ? data.data.sexo : "",
+          fechaNacimiento: data.data.fechaNacimiento || "",
+          telefono: data.data.telefono || "",
+        },
+      };
+    }
+    return { found: false, message: data?.note };
+  } catch (err) {
+    console.warn("Error consultando nómina HCUAMP:", err);
+    return { found: false };
+  }
+}
+
+/**
+ * Consulta la disponibilidad de aforo en tiempo real.
+ */
+export async function getCapacities(): Promise<Record<string, number>> {
+  const url = process.env.NEXT_PUBLIC_GAS_URL;
+  if (!url) return {};
+
+  try {
+    const res = await fetch(`${url}?action=get_capacities`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data && data.ok && data.occupied) {
+      return data.occupied;
+    }
+    return {};
+  } catch (err) {
+    console.warn("Error consultando cupos:", err);
+    return {};
+  }
+}
+
 export async function submitRegistration(v: RegistrationValues): Promise<RegistrationResult> {
   const url = process.env.NEXT_PUBLIC_GAS_URL;
   if (!url) {
@@ -59,8 +129,27 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     );
   }
 
-  const { total } = calcTotal(v.tipoParticipante, v.jornadas);
+  const { total, diasActivos } = calcTotal(v.tipoParticipante, v.turnos, v.origenInstitucion);
+
+  // Construir resumen legible de turnos
+  const partes: string[] = [];
+  for (const diaId of diasActivos) {
+    const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
+    const labelDia = diaMeta ? diaMeta.shortLabel : diaId;
+    const t = v.turnos[diaId];
+    if (t) {
+      const sub: string[] = [];
+      if (t.manana) sub.push(`Mañana: ${t.manana === "principal" ? "Salón Principal" : "Salón Alterno"}`);
+      if (t.tarde) sub.push(`Tarde: ${t.tarde === "principal" ? "Salón Principal" : "Salón Alterno"}`);
+      if (sub.length > 0) partes.push(`${labelDia} (${sub.join(", ")})`);
+    }
+  }
+
   const payload: RegistrationPayload = {
+    origenInstitucion: v.origenInstitucion,
+    institucion: v.origenInstitucion === "HCUAMP"
+      ? "Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)"
+      : v.institucion.trim(),
     nombres: v.nombres.trim(),
     apellidos: v.apellidos.trim(),
     cedula: `${v.nacionalidad}-${cleanCedula(v.cedula)}`,
@@ -69,12 +158,15 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     telefono: normalizePhone(v.telefono),
     correo: v.correo.trim().toLowerCase(),
     tipoParticipante: v.tipoParticipante as RegistrationPayload["tipoParticipante"],
-    institucion: v.institucion.trim(),
-    pais: v.pais.trim(),
-    estado: v.estado.trim(),
-    municipio: v.municipio.trim(),
-    parroquia: v.parroquia.trim(),
-    jornadas: v.jornadas,
+    nombrePonencia: v.nombrePonencia?.trim(),
+    especialidad: v.especialidad?.trim(),
+    pais: v.pais.trim() || "Venezuela",
+    estado: v.estado.trim() || "Lara",
+    municipio: v.municipio.trim() || "Iribarren",
+    parroquia: v.parroquia.trim() || "Concepción",
+    turnos: v.turnos,
+    diasSeleccionados: diasActivos,
+    resumenTurnos: partes.join("; "),
     montoCliente: total,
     website: v.website,
     comprobante: await buildFilePayload(v.comprobante),
@@ -84,7 +176,6 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
   const timer = setTimeout(() => controller.abort(), 90_000);
 
   try {
-    // `text/plain` evita el preflight CORS (Apps Script no responde a OPTIONS).
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
