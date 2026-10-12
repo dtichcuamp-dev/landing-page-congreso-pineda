@@ -26,21 +26,36 @@ export function Speakers() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedSpeaker, setSelectedSpeaker] = useState<FeaturedSpeaker | null>(null);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
 
   const total = FEATURED_SPEAKERS.length;
 
+  // Ajuste reactivo del número de tarjetas visibles por pantalla
+  useEffect(() => {
+    const updateItems = () => {
+      if (window.innerWidth < 640) setItemsPerPage(1);
+      else if (window.innerWidth < 1024) setItemsPerPage(2);
+      else setItemsPerPage(3);
+    };
+    updateItems();
+    window.addEventListener("resize", updateItems);
+    return () => window.removeEventListener("resize", updateItems);
+  }, []);
+
+  const maxIndex = Math.max(0, total - itemsPerPage);
+
   const nextSpeaker = useCallback(() => {
-    setActiveIndex((prev) => (prev + 1) % total);
-  }, [total]);
+    setActiveIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  }, [maxIndex]);
 
   const prevSpeaker = useCallback(() => {
-    setActiveIndex((prev) => (prev - 1 + total) % total);
-  }, [total]);
+    setActiveIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
+  }, [maxIndex]);
 
-  // Avance automático cada 4.5 segundos (se pausa si el cursor está encima o el visor está abierto)
+  // Avance automático cada 4 segundos
   useEffect(() => {
     if (isPaused || selectedSpeaker !== null) return;
-    const interval = setInterval(nextSpeaker, 4500);
+    const interval = setInterval(nextSpeaker, 4000);
     return () => clearInterval(interval);
   }, [isPaused, selectedSpeaker, nextSpeaker]);
 
@@ -151,29 +166,32 @@ export function Speakers() {
           </div>
         </div>
 
-        {/* Carrusel automático interactivo */}
+        {/* Carrusel automático con deslizamiento continuo */}
         <div
-          className="relative mt-6"
+          className="relative mt-6 overflow-hidden pb-4"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          {/* Grid responsivo con foco en las tarjetas */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className="flex transition-transform duration-700 ease-out"
+            style={{
+              transform: `translateX(-${activeIndex * (100 / itemsPerPage)}%)`,
+            }}
+          >
             {FEATURED_SPEAKERS.map((speaker, index) => {
               const spec = SPECIALTY_BY_ID[speaker.specialtyId];
               const Icon = spec?.icon;
-              const isActive = index === activeIndex;
 
               return (
-                <Reveal key={speaker.id} delay={index * 80}>
+                <div
+                  key={speaker.id}
+                  className="shrink-0 px-2 sm:px-3"
+                  style={{ width: `${100 / itemsPerPage}%` }}
+                >
                   <article
-                    className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border transition-all duration-500 ${
-                      isActive
-                        ? "border-brand-300/80 bg-white shadow-xl shadow-brand-500/10 ring-2 ring-brand-400/40"
-                        : "border-white/80 bg-white/70 shadow-md hover:border-brand-200 hover:bg-white hover:shadow-lg"
-                    }`}
+                    className="group relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/80 bg-white/75 shadow-md hover:border-brand-200 hover:bg-white hover:shadow-xl transition-all duration-300"
                   >
-                    {/* Contenedor de la fotografía adaptativa */}
+                    {/* Contenedor de fotografía adaptativa */}
                     <div
                       className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-b from-slate-100 to-slate-200 cursor-pointer"
                       onClick={() => setSelectedSpeaker(speaker)}
@@ -242,10 +260,10 @@ export function Speakers() {
                     {/* Información del Ponente */}
                     <div className="flex flex-1 flex-col p-5">
                       <div className="flex-1">
-                        <h3 className="text-lg font-extrabold text-ink group-hover:text-brand-700 transition-colors">
+                        <h3 className="text-lg font-extrabold text-ink group-hover:text-brand-700 transition-colors line-clamp-1">
                           {speaker.name}
                         </h3>
-                        <p className="mt-0.5 text-xs font-semibold text-ink-soft">
+                        <p className="mt-0.5 text-xs font-semibold text-ink-soft line-clamp-1">
                           {speaker.role}
                         </p>
 
@@ -272,23 +290,23 @@ export function Speakers() {
                       </button>
                     </div>
                   </article>
-                </Reveal>
+                </div>
               );
             })}
           </div>
 
           {/* Indicadores / Puntos de navegación */}
-          <div className="mt-8 flex items-center justify-center gap-2">
-            {FEATURED_SPEAKERS.map((s, idx) => (
+          <div className="mt-6 flex items-center justify-center gap-1.5">
+            {Array.from({ length: maxIndex + 1 }).map((_, idx) => (
               <button
-                key={s.id}
+                key={idx}
                 type="button"
                 onClick={() => setActiveIndex(idx)}
-                aria-label={`Ver ponente ${idx + 1}: ${s.name}`}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
+                aria-label={`Ver grupo de ponentes ${idx + 1}`}
+                className={`h-2 rounded-full transition-all duration-300 ${
                   idx === activeIndex
-                    ? "w-8 bg-brand-600 shadow-sm shadow-brand-500/40"
-                    : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                    ? "w-7 bg-brand-600 shadow-sm shadow-brand-500/40"
+                    : "w-2 bg-slate-300 hover:bg-slate-400"
                 }`}
               />
             ))}
