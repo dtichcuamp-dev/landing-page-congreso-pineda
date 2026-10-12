@@ -44,7 +44,7 @@ export interface Highlight {
 }
 
 export const HIGHLIGHTS: Highlight[] = [
-  { icon: Mic, value: "102", label: "Ponencias científicas" },
+  { icon: Mic, value: "111", label: "Ponencias científicas" },
   { icon: Users, value: "111", label: "Ponentes destacados" },
   { icon: Building2, value: "2", label: "Salones acondicionados" },
   { icon: Presentation, value: "Pósters", label: "Casos clínicos en modalidad póster" },

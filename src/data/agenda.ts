@@ -86,16 +86,19 @@ const MED_INTERNA: Session = {
 
 const ENFERMERIA: Session = {
   specialtyId: "enfermeria",
-  title: "Enfermería",
+  title: "Departamento de Enfermería",
+  hours: "2:00 – 6:00 p. m. (14:00 - 18:00)",
+  theme: "Cuidado crítico, neumoprotección y humanización en la práctica de enfermería",
   talks: [
-    t("2:00 p. m.", "Apertura"),
-    t("2:20 p. m.", "Neumoprotección en el neonato ventilado", "Lcda. Yilbexy Rodríguez / Lcda. Fabiana Sánchez"),
-    t("2:50 p. m.", "De la cama a la bipedestación: fisioterapia, osteomuscular y estabilidad hemodinámica", "Lcdo. Alberto Pargas"),
-    brk("3:20 p. m.", "Coffee break"),
-    t("3:45 p. m.", "Ronda de preguntas y respuestas"),
-    t("4:00 p. m.", "Rol de Enfermería en la humanización de los usuarios en el área de Emergencia General", "Lcda. Maurimar Escalona"),
-    t("4:30 p. m.", "Ronda de preguntas y respuestas"),
-    t("5:00 p. m.", "Aplicación de los códigos en el área de triaje de Emergencia General", "Lcda. María Celeste Sánchez"),
+    cer("2:00 – 2:15 p. m.", "Apertura del Bloque de Enfermería", "Coordinación de Enfermería"),
+    t("2:20 – 2:40 p. m.", "Neumoprotección en el Neonato Ventilado", "Lcda. Yilbexy Rodríguez / Lcda. Fabiana Sánchez"),
+    t("2:50 – 3:10 p. m.", "De la Cama a la Bipedestación: Fisioterapia, Osteomuscular y Estabilidad Hemodinámica", "Lcdo. Alberto Pargas"),
+    brk("3:20 – 3:45 p. m.", "Coffee Break · Receso"),
+    t("3:45 – 4:00 p. m.", "Ronda de preguntas y respuestas", "Panel de ponentes"),
+    t("4:00 – 4:20 p. m.", "Rol de Enfermería en la Humanización de los usuarios en el área de Emergencia General", "Lcda. Maurimar Escalona"),
+    t("4:30 – 4:50 p. m.", "Ronda de preguntas y respuestas", "Panel de ponentes"),
+    t("5:00 – 5:20 p. m.", "Aplicación de los códigos en el área de triaje de Emergencia General", "Lcda. María Celeste Sánchez"),
+    cer("5:20 – 5:45 p. m.", "Cierre de la jornada y entrega de reconocimientos", "Departamento de Enfermería"),
   ],
 };
 
@@ -118,17 +121,18 @@ const NEUROCIRUGIA: Session = {
 const IMAGENES: Session = {
   specialtyId: "imagenes",
   title: "Diagnóstico por Imágenes",
-  theme: "Imágenes que salvan vidas: desafíos multidisciplinarios en el área de emergencia",
+  hours: "8:30 a. m. – 12:30 m. · Salón Alterno",
+  theme: "IMÁGENES QUE SALVAN VIDAS: DESAFÍOS MULTIDISCIPLINARIOS EN EL ÁREA DE EMERGENCIA",
   talks: [
-    t("8:30 a. m.", "Bienvenida y apertura"),
+    cer("8:30 a. m.", "Bienvenida y apertura", "Servicio de Diagnóstico por Imágenes"),
     t("9:00 a. m.", "Traumatismo craneoencefálico: claves radiológicas en la toma de decisión quirúrgica vs. expectante", "Dra. Maruja Hidalgo y Dr. Ygnacio Ramírez"),
     t("9:30 a. m.", "Evaluación radiológica de la pelvis traumática: signos de inestabilidad e impacto en la conducta quirúrgica", "Dr. Douglas García y Dr. Alejandro Orduz"),
     t("10:00 a. m.", "Ecografía pulmonar en emergencias: diagnóstico rápido a la cabecera del paciente", "Dra. María Gonzales y Dra. Karla Tamayo"),
     t("10:30 a. m.", "Algoritmo imagenológico en la embarazada", "Dr. Carlos Roa"),
-    brk("10:30 – 10:50 a. m."),
+    brk("10:30 – 10:50 a. m.", "Coffee Break · Receso"),
     t("10:50 a. m.", "Trauma abdominal agudo: triage imagenológico eficiente entre Eco FAST y TC", "Dra. Laura Prado y Dr. Richard Oropeza"),
     t("11:20 a. m.", "Intervencionismo y emergencia: accesos vasculares ecoguiados para un procedimiento seguro", "Dr. Nelson Garcías"),
-    t("12:00 m.", "Cierre"),
+    cer("12:00 m.", "Cierre de la jornada", "Comité Organizador"),
   ],
 };
 
@@ -153,18 +157,20 @@ const ANESTESIOLOGIA: Session = {
 
 const GINECO: Session = {
   specialtyId: "ginecobstetricia",
-  title: "Ginecoobstetricia",
+  title: "Ginecología y Obstetricia",
+  hours: "8:30 a. m. – 12:30 m. · Salón Principal",
+  theme: "Innovación y nuevos retos en la práctica clínica: el arte de cuidar cada etapa femenina",
   talks: [
-    t("8:30 a. m.", "Apertura"),
-    t("8:55 a. m.", "Utilidad de la histerosonografía como método diagnóstico de patologías endometriales en pacientes con sangrado uterino anormal", "Dra. Sofía Brito"),
-    t("9:20 a. m.", "Actualización en menopausia y climaterio", "Dra. Katiuska Ríos"),
-    t("9:45 a. m.", "Enfermedad trofoblástica gestacional", "Dra. Sunangela Escalona"),
-    t("10:10 a. m.", "Manejo de la embarazada con patología de tiroides", "Dr. Miguel Vargas"),
-    brk("10:30 a. m.", "Coffee Break · Receso"),
-    t("11:00 a. m.", "Tema por confirmar", "Dr. Héctor Quiroga", true),
-    t("11:25 a. m.", "Fenotipos hemodinámicos de preeclampsia", "Dr. Miguel Vargas"),
-    t("11:50 a. m.", "Simuladores de preeclampsia", "Dra. Alexandra Rivero"),
-    cer("12:30 p. m.", "Premiación: Mejor Adjunto y Mejor Residente"),
+    cer("8:30 a. m.", "Apertura del Bloque de Ginecología y Obstetricia", "Servicio de Ginecología y Obstetricia"),
+    t("8:55 – 9:15 a. m.", "Utilidad de la histerosonografía como método diagnóstico de patologías endometriales en pacientes con sangrado uterino anormal", "Dra. Sofía Brito"),
+    t("9:20 – 9:40 a. m.", "ABC de la terapia hormonal en la menopausia", "Dra. Katiuska Ríos"),
+    t("9:45 – 10:05 a. m.", "Enfermedad trofoblástica gestacional: del diagnóstico preciso al manejo clínico actual", "Dra. Sunangela Escalona"),
+    t("10:10 – 10:30 a. m.", "Manejo de la embarazada con patología de tiroides", "Dr. Miguel Vargas"),
+    brk("10:30 – 11:00 a. m.", "Coffee Break · Receso"),
+    t("11:00 – 11:20 a. m.", "Uso correcto del Doppler Color y espectral en Medicina fetal", "Dr. Héctor Quiroga"),
+    t("11:25 – 11:45 a. m.", "Fenotipos hemodinámicos de preeclampsia", "Dr. Miguel Vargas"),
+    t("11:50 a. m. – 12:10 p. m.", "Simuladores de preeclampsia", "Dra. Alexandra Rivero"),
+    cer("12:30 p. m.", "Clausura del bloque y entrega de reconocimientos", "Servicio de Ginecología y Obstetricia"),
   ],
 };
 
@@ -277,16 +283,23 @@ const NONE: Session = { title: "Sin actividad", kind: "none" };
 
 const EMERGENCIA: Session = {
   specialtyId: "emergencia",
-  title: "Emergencia",
-  note: "Horarios de las ponencias por confirmar.",
+  title: "Emergencia General",
+  hours: "8:00 a. m. – 12:30 m. · Salón Principal",
+  theme: "Triage: Del primer Contacto al manejo especializado",
   talks: [
-    t(undefined, "Triage avanzado y reanimación en trauma severo", undefined, true),
-    t(undefined, "Sepsis y shock séptico: protocolo de la primera hora", undefined, true),
-    t(undefined, "Manejo del síndrome coronario agudo en la emergencia", undefined, true),
-    t(undefined, "Estatus epiléptico y emergencias neurológicas agudas", undefined, true),
-    t(undefined, "Vía aérea difícil en la sala de emergencia", undefined, true),
-    t(undefined, "Cetoacidosis diabética y crisis hiperosmolar", undefined, true),
-    t(undefined, "Intoxicaciones agudas de mayor prevalencia regional", undefined, true),
+    cer("8:00 – 8:20 a. m.", "Palabras de bienvenida", "Dr. Ángel Echenique"),
+    t("8:20 – 8:40 a. m.", "Abordaje inmediato del politraumatizado y traslado prehospitalario", "Dr. José Rivas"),
+    t("8:40 – 9:00 a. m.", "Triaje ABCDE del abordaje inicial", "Dr. Roxfrancys Guevara"),
+    t("9:00 – 9:20 a. m.", "Alteración del estado de conciencia", "Dr. Axel Rodríguez"),
+    t("9:20 – 9:30 a. m.", "Sesión de preguntas y respuestas", "Panel de ponentes"),
+    brk("9:30 – 10:00 a. m.", "Coffee Break · Receso"),
+    t("10:00 – 10:20 a. m.", "Código ICTUS", "Dra. Angi Bonito"),
+    t("10:20 – 10:40 a. m.", "Arritmias graves", "Dr. Endher Castillo"),
+    t("10:40 – 11:00 a. m.", "Manejo de insuficiencia respiratoria aguda", "Dr. Luis Anzola"),
+    t("11:00 – 11:20 a. m.", "Rol crítico de enfermería en emergencia: acceso vascular y cuidado de vías centrales", "Lcdo. Roiber Figueredo"),
+    t("11:20 – 11:40 a. m.", "Atención en saldo masivo de víctimas", "Dr. José Troncoso"),
+    t("11:40 – 11:50 a. m.", "Sesión de preguntas y respuestas", "Panel de ponentes"),
+    cer("11:50 a. m. – 12:30 m.", "Cierre y entrega de reconocimientos", "Comité Organizador"),
   ],
 };
 
@@ -317,13 +330,17 @@ const SALUD_MENTAL: Session = {
 const GASTROENTEROLOGIA: Session = {
   specialtyId: "gastroenterologia",
   title: "Gastroenterología",
-  note: "Horarios de las ponencias por confirmar.",
+  hours: "8:30 a. m. – 12:30 m. · Salón Alterno",
+  theme: "Programa de Vías Digestivas",
+  moderator: "Dr. Amado Zambrano Ávila (Jefe del Servicio de Vías Digestivas HCUAMP)",
   talks: [
-    t(undefined, "Hemorragia digestiva superior: abordaje endoscópico urgente", undefined, true),
-    t(undefined, "Enfermedades inflamatorias intestinales: diagnóstico y retos terapéuticos", undefined, true),
-    t(undefined, "Enfoque actual del paciente con cirrosis y sus complicaciones", undefined, true),
-    t(undefined, "Lesiones premalignas gástricas y tamizaje de cáncer", undefined, true),
-    t(undefined, "Actualización en pancreatitis aguda biliar", undefined, true),
+    t("8:30 – 8:55 a. m.", "Síndrome de intestino irritable – microbiota. Mesa redonda", "Lic. Luis Oropeza (Nutricionista / Psicólogo) / Dr. Alejandro Bethelmy (Gastroenterólogo)"),
+    t("9:00 – 9:25 a. m.", "Ascitis: sus causas y manejo", "Dra. María Fernanda García (Gastroenterólogo UCLA)"),
+    t("9:30 – 9:55 a. m.", "Sangrado digestivo alto y bajo manejos", "Dra. Yenlimar Torrealba (R1) y Dra. Angélica Belandria (R1)"),
+    t("10:00 – 10:30 a. m.", "Hígado graso y el uso de los GLP-1", "Dr. Carlos Liriano (Gastroenterólogo UCLA)"),
+    brk("10:30 – 11:00 a. m.", "Coffee Break · Receso"),
+    t("11:00 – 11:45 a. m.", "Discusión clínica y ronda de preguntas", "Dr. Amado Zambrano Ávila y panel de especialistas"),
+    cer("11:45 a. m. – 12:15 m.", "Cierre del bloque de Vías Digestivas", "Servicio de Vías Digestivas HCUAMP"),
   ],
 };
 

@@ -79,7 +79,7 @@ export function Agenda() {
         <SectionHeading
           eyebrow="Programa científico"
           title="Agenda del 2 al 6 de noviembre"
-          description="102 ponencias y 111 ponentes en dos salones en paralelo. Despliega cada bloque para ver los detalles de ponencias y ponentes."
+          description="111 ponencias y 111 ponentes distribuidos en dos salones en paralelo. Despliega cada bloque para ver los detalles de ponencias y ponentes."
         />
 
         {/* Selector de día */}

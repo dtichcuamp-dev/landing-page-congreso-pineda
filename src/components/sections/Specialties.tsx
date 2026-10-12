@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { ArrowUpRight, Mic } from "lucide-react";
 import { SPECIALTIES, TOTAL_TALKS } from "@/data/specialties";
@@ -13,7 +13,7 @@ export function Specialties() {
       <div className="mx-auto max-w-6xl">
         <SectionHeading
           eyebrow="Especialidades"
-          title="17 áreas, un solo congreso"
+          title="18 áreas, un solo congreso"
           description={`${TOTAL_TALKS} ponencias distribuidas por especialidad. Toca una ficha para ver cuándo y dónde se presenta.`}
         />
 
