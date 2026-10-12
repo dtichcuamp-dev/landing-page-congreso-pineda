@@ -755,3 +755,16 @@ function scanQr_(body) {
     lock.releaseLock();
   }
 }
+
+/**
+ * Ejecuta UNA vez desde el editor de Apps Script (▶ Ejecutar → setup)
+ * para autorizar permisos y preparar automáticamente la hoja "Inscripciones"
+ * y la carpeta de Drive para los comprobantes.
+ */
+function setup() {
+  var sh = getSheet_();
+  var folder = getFolder_();
+  if (CONFIG.SEND_CONFIRMATION_EMAIL) MailApp.getRemainingDailyQuota();
+  Logger.log('Hoja de inscripciones lista: ' + sh.getParent().getUrl());
+  Logger.log('Carpeta de comprobantes en Drive: ' + folder.getUrl() + ' (ID: ' + folder.getId() + ')');
+}
