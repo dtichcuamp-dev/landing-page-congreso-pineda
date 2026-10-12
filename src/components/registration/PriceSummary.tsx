@@ -45,10 +45,10 @@ export function PriceSummary({ tipo, turnos, origen = "HCUAMP" }: Props) {
               <Sparkles className="size-4" aria-hidden />
             </span>
             <div>
-              <p className="text-base font-extrabold text-clinic-700">
-                100% Exonerado <span className="font-normal text-xs text-ink-soft">· Personal HCUAMP</span>
+              <p className="text-base font-bold text-clinic-700">
+                Inscripción Exonerada <span className="font-normal text-xs text-ink-soft">· HCUAMP</span>
               </p>
-              <p className="text-xs text-ink-soft">Categoría: <b className="text-ink">{label}</b></p>
+              <p className="text-xs text-ink-soft">Categoría: <b className="text-ink">{label}</b> · Monto: <b className="text-clinic-700">0$ USD</b></p>
             </div>
           </div>
         </div>

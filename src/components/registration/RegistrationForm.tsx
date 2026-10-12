@@ -287,16 +287,12 @@ export function RegistrationForm() {
                   <span className="inline-flex size-9 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
                     <Hospital className="size-5" />
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-clinic-100 px-2.5 py-0.5 text-[11px] font-bold text-clinic-700">
-                    <Sparkles className="size-3" />
-                    100% Exonerado
-                  </span>
                 </div>
                 <h4 className="mt-2.5 text-sm font-bold text-ink">
-                  Personal del HCUAMP
+                  Hospital Central Universitario Dr. Antonio María Pineda
                 </h4>
                 <p className="mt-1 text-xs text-ink-soft leading-relaxed">
-                  Hospital Central Universitario Dr. Antonio María Pineda. Búsqueda automática en nómina oficial.
+                  Personal médico, asistencial, residentes, técnicos y trabajadores del HCUAMP.
                 </p>
               </button>
 
@@ -314,15 +310,12 @@ export function RegistrationForm() {
                   <span className="inline-flex size-9 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
                     <Building2 className="size-5" />
                   </span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
-                    Tarifas por día
-                  </span>
                 </div>
                 <h4 className="mt-2.5 text-sm font-bold text-ink">
                   Otra Institución
                 </h4>
                 <p className="mt-1 text-xs text-ink-soft leading-relaxed">
-                  Profesionales y acompañantes de otras instituciones públicas o privadas del país.
+                  Participantes, profesionales de la salud y acompañantes de otras instituciones.
                 </p>
               </button>
             </div>
@@ -590,7 +583,7 @@ export function RegistrationForm() {
                 {isHcuamp
                   ? PARTICIPANT_TYPES_HCUAMP.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.label} — 100% Exonerado (HCUAMP)
+                        {p.label}
                       </option>
                     ))
                   : PARTICIPANT_TYPES_OTRA.map((p) => (

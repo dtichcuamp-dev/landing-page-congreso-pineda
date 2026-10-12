@@ -1,5 +1,13 @@
-import { Award, Gift, Hospital, Info, Sparkles, Tag, Users } from "lucide-react";
-import { PARTICIPANT_TYPES_OTRA, usd } from "@/data/pricing";
+import {
+  Award,
+  CalendarDays,
+  Gift,
+  HelpCircle,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { Reveal } from "@/components/ui/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { RegistrationForm } from "@/components/registration/RegistrationForm";
@@ -11,76 +19,82 @@ export function Registration() {
         <SectionHeading
           eyebrow="Inscripciones"
           title="Reserva tu lugar en el Congreso"
-          description="Inscripción 100% exonerada para personal del HCUAMP y tarifas oficiales por día para participantes de otras instituciones médicas y académicas."
+          description="Completa tu registro para asistir al XIV Congreso Pineda 2026. Selecciona los días y salones de tu preferencia para asegurar tu acreditación oficial."
         />
 
         <div className="mt-12 grid items-start gap-6 lg:grid-cols-5">
-          {/* Panel Lateral Informativo */}
+          {/* Panel Lateral Informativo General */}
           <Reveal className="lg:col-span-2 lg:sticky lg:top-28 space-y-4">
-            {/* Exoneración HCUAMP */}
-            <aside className="glass rounded-3xl p-6 sm:p-7 border border-clinic-200/50">
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-clinic-100 text-clinic-700">
-                  <Hospital className="size-5" />
-                </span>
-                <div>
-                  <h3 className="text-base font-bold text-ink">Personal del HCUAMP</h3>
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-clinic-700">
-                    <Sparkles className="size-3" />
-                    100% Exonerado de pago
-                  </span>
+            {/* Detalles del Evento */}
+            <aside className="glass rounded-3xl p-6 sm:p-7 border border-brand-100/60 space-y-4">
+              <h3 className="flex items-center gap-2 text-base font-bold text-ink">
+                <ShieldCheck className="size-5 text-brand-600" aria-hidden />
+                Información del Evento
+              </h3>
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-start gap-2.5 text-ink-soft">
+                  <CalendarDays className="size-4 shrink-0 text-brand-600 mt-0.5" />
+                  <div>
+                    <b className="text-ink">Fecha:</b> 02 al 06 de noviembre de 2026
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 text-ink-soft">
+                  <MapPin className="size-4 shrink-0 text-clinic-600 mt-0.5" />
+                  <div>
+                    <b className="text-ink">Sede:</b> Hotel Biotel Suites, Barquisimeto
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2.5 text-ink-soft">
+                  <Sparkles className="size-4 shrink-0 text-amber-500 mt-0.5" />
+                  <div>
+                    <b className="text-ink">Programa:</b> 18 Especialidades Médicas y más de 100 ponencias
+                  </div>
                 </div>
               </div>
-              <p className="mt-3 text-xs text-ink-soft leading-relaxed">
-                Todos los profesionales, residentes, enfermeros/as, conferencistas, técnicos y personal del Hospital Central Universitario Dr. Antonio María Pineda están totalmente exonerados previa consulta de nómina.
-              </p>
-            </aside>
 
-            {/* Tarifas Otras Instituciones */}
-            <aside className="glass rounded-3xl p-6 sm:p-7">
-              <h3 className="flex items-center gap-2 text-base font-bold text-ink">
-                <Tag className="size-4 text-brand-600" aria-hidden />
-                Tarifas por día (Otras Instituciones)
-              </h3>
-              <p className="mt-1 text-xs text-ink-mute">
-                El monto es por día e incluye los turnos de mañana y/o tarde:
-              </p>
-
-              <ul className="mt-3.5 divide-y divide-white/80">
-                {PARTICIPANT_TYPES_OTRA.map((p) => (
-                  <li key={p.id} className="flex items-center justify-between gap-3 py-2.5 text-xs sm:text-sm">
-                    <span className="font-medium text-ink">{p.label}</span>
-                    <span className="font-extrabold text-brand-700">{usd(p.rate)} <span className="text-[11px] font-normal text-ink-mute">/ día</span></span>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-4 space-y-2">
-                <div className="flex items-start gap-2 rounded-xl bg-brand-50/80 p-2.5 text-xs text-brand-900">
-                  <Info className="mt-0.5 size-3.5 shrink-0 text-brand-600" aria-hidden />
-                  <span>Pagos en bolívares a la tasa oficial del BCV al momento del registro.</span>
-                </div>
-
-                <div className="rounded-xl bg-slate-50/80 p-2.5 text-xs text-slate-700 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-ink text-[11px]">
-                    <Users className="size-3.5 text-slate-600" />
-                    Capacidades por turno:
+              {/* Beneficios de la Inscripción */}
+              <div className="pt-3 border-t border-slate-100 space-y-2.5">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  Todo registro incluye:
+                </h4>
+                <div className="space-y-2 text-xs text-ink-soft">
+                  <div className="flex items-start gap-2">
+                    <Award className="size-4 shrink-0 text-clinic-600 mt-0.5" />
+                    <span>Acceso a las ponencias académicas en los salones y turnos elegidos</span>
                   </div>
-                  <p className="text-[11px] text-ink-mute">
-                    • Salón Principal: máx. <b>240 puestos</b>.<br />
-                    • Salón Alterno: máx. <b>60 puestos</b>.
-                  </p>
-                </div>
-
-                <div className="rounded-xl bg-clinic-50/80 p-2.5 text-xs text-clinic-900 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-clinic-800 text-[11px]">
-                    <Award className="size-3.5 text-clinic-600" />
-                    Todo registro incluye:
+                  <div className="flex items-start gap-2">
+                    <Gift className="size-4 shrink-0 text-brand-600 mt-0.5" />
+                    <span>Kit oficial del participante y credencial institucional</span>
                   </div>
-                  <p className="text-[11px] text-clinic-700">
-                    Acceso a ponencias, certificado digital con aval institucional y crédito académico, y kit del participante.
-                  </p>
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="size-4 shrink-0 text-emerald-600 mt-0.5" />
+                    <span>Certificado digital con aval institucional y crédito académico</span>
+                  </div>
                 </div>
+              </div>
+
+              {/* Capacidad de Salones */}
+              <div className="rounded-2xl bg-slate-50/90 p-3.5 text-xs text-slate-700 ring-1 ring-slate-200/80 space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-ink">
+                  <Users className="size-4 text-slate-600" />
+                  Aforo por Salón y Turno:
+                </div>
+                <p className="text-[11px] text-ink-mute leading-relaxed">
+                  • <b>Salón Principal:</b> Máximo 240 puestos por turno.<br />
+                  • <b>Salón Alterno:</b> Máximo 60 puestos por turno.<br />
+                  <span className="text-brand-700 font-medium">Asignación garantizada por orden de inscripción.</span>
+                </p>
+              </div>
+
+              {/* Ayuda */}
+              <div className="flex items-start gap-2 rounded-xl bg-brand-50/70 p-3 text-xs text-brand-900 ring-1 ring-brand-100">
+                <HelpCircle className="size-4 shrink-0 text-brand-600 mt-0.5" />
+                <span>
+                  El sistema te guiará paso a paso para completar tus datos, elegir tus turnos y finalizar tu registro.
+                </span>
               </div>
             </aside>
           </Reveal>
