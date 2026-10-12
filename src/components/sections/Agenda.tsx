@@ -1,13 +1,16 @@
 "use client";
 
 import {
+  Award,
   ChevronDown,
   Clock,
   Coffee,
   Landmark,
   Moon,
+  Sparkles,
   Sun,
   User,
+  Wifi,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -230,68 +233,118 @@ function SessionCard({
             {session.title}
           </span>
           {session.theme && (
-            <span className="mt-0.5 block text-sm italic leading-snug text-ink-soft">
-              «{session.theme}»
+            <span className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-brand-50/90 px-2.5 py-1 text-xs font-medium text-brand-800 ring-1 ring-brand-200/80">
+              <Sparkles className="size-3 text-brand-600 shrink-0" aria-hidden />
+              <span>«{session.theme}»</span>
             </span>
           )}
         </span>
 
         {hasTalks && (
           <ChevronDown
-            className={`size-5 shrink-0 text-ink-mute transition-transform ${open ? "rotate-180 text-brand-600" : ""}`}
+            className={`size-5 shrink-0 text-ink-mute transition-transform duration-200 ${open ? "rotate-180 text-brand-600" : ""}`}
             aria-hidden
           />
         )}
       </button>
 
       {hasTalks && open && (
-        <div id={panelId} className="border-t border-white/80 bg-white/40 px-4 pb-4 pt-3">
+        <div id={panelId} className="border-t border-white/80 bg-white/40 px-4 pb-4 pt-3.5">
           {session.moderator && (
-            <p className="mb-2 flex items-center gap-2 text-sm text-ink-soft">
-              <User className="size-4 text-brand-500" aria-hidden />
-              <span>
-                <span className="font-semibold">Moderador:</span> {session.moderator}
-              </span>
-            </p>
+            <div className="mb-3 flex items-center gap-2 rounded-xl bg-brand-50/80 p-2.5 text-xs sm:text-sm text-brand-900 ring-1 ring-brand-200/70">
+              <User className="size-4 text-brand-600 shrink-0" aria-hidden />
+              <div>
+                <span className="font-bold">Moderación / Coordinación:</span>{" "}
+                <span className="font-semibold text-brand-800">{session.moderator}</span>
+              </div>
+            </div>
           )}
           {session.note && (
             <p className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800 ring-1 ring-amber-200">
               {session.note}
             </p>
           )}
-          <ol className="space-y-2.5">
-            {session.talks!.map((talk, i) => (
-              <li key={i} className="flex gap-3">
-                <span className="mt-0.5 flex w-[5.4rem] shrink-0 items-start gap-1 text-xs font-semibold tabular-nums text-brand-700">
-                  {talk.time ? (
-                    <>
-                      <Clock className="mt-px size-3 shrink-0 opacity-70" aria-hidden />
-                      {talk.time}
-                    </>
-                  ) : (
-                    <span aria-hidden className="ml-4">·</span>
-                  )}
-                </span>
-                <span className="min-w-0 flex-1 text-sm leading-snug">
-                  {talk.kind === "break" ? (
-                    <span className="inline-flex items-center gap-1.5 font-medium text-ink-mute">
-                      <Coffee className="size-3.5" aria-hidden />
-                      {talk.title}
-                    </span>
-                  ) : (
-                    <>
-                      <span className={talk.kind === "ceremony" ? "font-semibold text-amber-800" : "font-semibold text-ink"}>
-                        {talk.title}
-                      </span>
-                      {talk.speaker && <span className="block text-ink-soft">{talk.speaker}</span>}
-                      {talk.tbc && !talk.speaker && (
-                        <span className="block text-xs font-medium text-amber-700">Ponente por confirmar</span>
+
+          <ol className="space-y-3">
+            {session.talks!.map((talk, i) => {
+              if (talk.kind === "break") {
+                return (
+                  <li key={i} className="pt-1 pb-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-400/20 to-amber-500/15 p-3 text-amber-950 ring-1 ring-amber-300/80 shadow-xs">
+                      <div className="flex items-center gap-2.5">
+                        <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+                          <Coffee className="size-4 animate-bounce" aria-hidden />
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs sm:text-sm font-bold tracking-tight text-amber-950">
+                              Coffee Break · Receso Unificado
+                            </span>
+                            <span className="rounded-full bg-amber-200/90 px-2 py-0.5 text-[0.65rem] font-extrabold uppercase tracking-wider text-amber-900">
+                              Pausa Institucional
+                            </span>
+                          </div>
+                          <p className="text-[0.72rem] text-amber-900/80 font-medium">
+                            Café, hidratación, visita a stands comerciales y networking.
+                          </p>
+                        </div>
+                      </div>
+                      {talk.time && (
+                        <span className="rounded-lg bg-white/70 px-2.5 py-1 text-xs font-bold tabular-nums text-amber-900 ring-1 ring-amber-200/70">
+                          {talk.time}
+                        </span>
                       )}
-                    </>
-                  )}
-                </span>
-              </li>
-            ))}
+                    </div>
+                  </li>
+                );
+              }
+
+              const isOnline = talk.title.toUpperCase().includes("(ONLINE)");
+              const cleanTitle = talk.title.replace(/\s*\(ONLINE\)\s*/i, "").trim();
+
+              return (
+                <li key={i} className="flex items-start gap-3 rounded-xl p-2 transition hover:bg-white/60">
+                  <span className="mt-0.5 flex min-w-[5.8rem] sm:min-w-[6.8rem] shrink-0 items-start gap-1.5 text-xs font-bold tabular-nums text-brand-700">
+                    {talk.time ? (
+                      <>
+                        <Clock className="mt-0.5 size-3.5 shrink-0 text-brand-500" aria-hidden />
+                        <span className="leading-tight">{talk.time}</span>
+                      </>
+                    ) : (
+                      <span aria-hidden className="ml-4 font-normal text-ink-mute">·</span>
+                    )}
+                  </span>
+
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {talk.kind === "ceremony" && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[0.68rem] font-bold text-amber-800 ring-1 ring-amber-200 uppercase tracking-wide">
+                          <Award className="size-3" aria-hidden /> Protocolo
+                        </span>
+                      )}
+                      {isOnline && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-0.5 text-[0.68rem] font-bold text-blue-800 ring-1 ring-blue-200 uppercase tracking-wide">
+                          <Wifi className="size-3" aria-hidden /> En línea
+                        </span>
+                      )}
+                      <span className={`text-sm leading-snug ${talk.kind === "ceremony" ? "font-bold text-amber-950" : "font-semibold text-ink"}`}>
+                        {cleanTitle}
+                      </span>
+                    </div>
+
+                    {talk.speaker && (
+                      <div className="flex items-start gap-1.5 text-xs font-medium text-ink-soft">
+                        <User className="mt-0.5 size-3.5 text-brand-500 shrink-0" aria-hidden />
+                        <span className="text-brand-900 font-semibold">{talk.speaker}</span>
+                      </div>
+                    )}
+                    {talk.tbc && !talk.speaker && (
+                      <span className="block text-xs font-medium text-amber-700">Ponente por confirmar</span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       )}
