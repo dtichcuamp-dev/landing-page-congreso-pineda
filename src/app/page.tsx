@@ -7,6 +7,7 @@ import { Hero } from "@/components/sections/Hero";
 import { Highlights } from "@/components/sections/Highlights";
 import { Gallery } from "@/components/sections/Gallery";
 import { Registration } from "@/components/sections/Registration";
+import { Speakers } from "@/components/sections/Speakers";
 import { Specialties } from "@/components/sections/Specialties";
 import { Sponsors } from "@/components/sections/Sponsors";
 import { Venue } from "@/components/sections/Venue";
@@ -21,6 +22,7 @@ export default function Home() {
         <Highlights />
         <Gallery />
         <Specialties />
+        <Speakers />
         <Agenda />
         <Venue />
         <Registration />
