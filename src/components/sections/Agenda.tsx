@@ -21,7 +21,7 @@ import {
   type Session,
   type Turno,
 } from "@/data/agenda";
-import { SPECIALTY_BY_ID } from "@/data/specialties";
+import { SPECIALTY_BY_ID, TOTAL_TALKS } from "@/data/specialties";
 import {
   AGENDA_FOCUS_EVENT,
   type AgendaFocusDetail,
@@ -79,7 +79,7 @@ export function Agenda() {
         <SectionHeading
           eyebrow="Programa científico"
           title="Agenda del 2 al 6 de noviembre"
-          description="111 ponencias y 111 ponentes distribuidos en dos salones en paralelo. Despliega cada bloque para ver los detalles de ponencias y ponentes."
+          description={`${TOTAL_TALKS} ponencias distribuidas en dos salones en paralelo. Despliega cada bloque para ver los detalles de ponencias y ponentes.`}
         />
 
         {/* Selector de día */}

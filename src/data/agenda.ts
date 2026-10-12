@@ -255,17 +255,22 @@ const ORL: Session = {
 const UROLOGIA: Session = {
   specialtyId: "urologia",
   title: "Urología",
+  hours: "2:00 – 5:50 p. m. (14:00 - 17:50) · Salón Alterno",
   theme: "Uroinnovación: de la evidencia a la práctica",
-  moderator: "Dra. Gabriela Santiago / Dr. Víctor Contreras",
-  note: "Horarios de las ponencias por confirmar.",
   talks: [
-    cer(undefined, "Palabras de bienvenida", "Dra. Yngrid Pacheco"),
-    t(undefined, "ELUTAX-3: un dispositivo innovador para estenosis de vías urinarias", "Dr. Narciel Sáez / Dr. Joseph Sáez"),
-    t(undefined, "Urología de transición: el puente entre dos mundos", "Dr. Jesús Fernández Tang"),
-    t(undefined, "Cáncer de próstata oligometastásico", "Dr. Adelino Andrade"),
-    t(undefined, "Disfunción eréctil, ¿cómo abordarla?", "Dra. Soli Molina"),
-    t(undefined, "Nuevas tecnologías en urología", "Dr. Manuel Castro"),
-    t(undefined, "Estética masculina", "Dr. Christian Araujo"),
+    cer("2:00 – 2:10 p. m.", "Palabras de Bienvenida por Comité Organizador", "Dra. Gabriela Santiago"),
+    cer("2:10 – 2:20 p. m.", "Apertura del Evento por Jefe de Servicio", "Dra. Yngrid Pacheco"),
+    t("2:30 – 2:50 p. m.", "Elutax-3: Dispositivo innovador para estenosis de vías urinarias", "Dr. Narciel Sáez / Dr. Joseph Sáez"),
+    t("2:50 – 3:00 p. m.", "Urología de transición", "Dr. Jesús Fernández"),
+    t("3:00 – 3:20 p. m.", "Cáncer de próstata oligometastásico", "Dr. Adelino Andrade"),
+    t("3:20 – 3:30 p. m.", "Sesión de preguntas y respuestas", "Panel de especialistas"),
+    brk("3:30 – 4:00 p. m.", "Coffee Break · Receso"),
+    t("4:00 – 4:20 p. m.", "Disfunción eréctil: ¿Cómo abordarla?", "Dra. Soli Molina (R3)"),
+    t("4:20 – 4:50 p. m.", "Nuevas tecnologías en urología", "Dr. Manuel Castro (R3)"),
+    t("4:50 – 5:00 p. m.", "Estética Masculina", "Dr. Christian Araujo (R3)"),
+    t("5:00 – 5:10 p. m.", "Sesión de preguntas y respuestas", "Dr. Víctor Contreras"),
+    cer("5:10 – 5:30 p. m.", "Entrega de Reconocimientos", "Graduandos"),
+    cer("5:30 – 5:50 p. m.", "Clausura del Evento y Palabras de Cierre", "Dr. Antoun Banna y Graduandos"),
   ],
 };
 
@@ -327,12 +332,9 @@ const REHABILITACION: Session = {
 const SALUD_MENTAL: Session = {
   specialtyId: "salud-mental",
   title: "Salud Mental",
-  hours: "4:00 – 6:00 p. m. (16:00 - 18:00)",
-  note: "Horarios de las ponencias por confirmar.",
+  hours: "4:15 – 4:45 p. m. (16:15 - 16:45) · Salón Alterno",
   talks: [
-    t("4:00 p. m.", "Abordaje interdisciplinario en crisis y urgencias psiquiátricas", undefined, true),
-    t("4:40 p. m.", "Impacto neuropsiquiátrico en pacientes post-quirúrgicos y crónicos", undefined, true),
-    t("5:20 p. m.", "Salud mental del personal de salud: prevención del síndrome de burnout", undefined, true),
+    t("4:15 – 4:45 p. m.", "Comunicación sexual y su influencia en la salud mental", "Msc. Pedro Silva y Msc. Claudia Flores"),
   ],
 };
 
@@ -374,14 +376,19 @@ const CARDIOLOGIA: Session = {
 const TRAUMATOLOGIA: Session = {
   specialtyId: "traumatologia",
   title: "Traumatología",
-  hours: "2:00 – 6:00 p. m. (14:00 - 18:00)",
-  note: "Horarios de las ponencias por confirmar.",
+  hours: "2:00 – 5:50 p. m. (14:00 - 17:50) · Salón Principal",
   talks: [
-    t(undefined, "Fracturas complejas de pelvis y acetábulo: principios de fijación", undefined, true),
-    t(undefined, "Control de daños en ortopedia y politraumatismo", undefined, true),
-    t(undefined, "Infecciones periprotésicas y osteomielitis: estrategias actuales", undefined, true),
-    t(undefined, "Lesiones multiligamentarias de rodilla en el paciente joven", undefined, true),
-    t(undefined, "Artroplastia primaria vs. rescate en fracturas del adulto mayor", undefined, true),
+    cer("2:00 – 2:10 p. m.", "Palabras de Bienvenida y apertura del evento", "Comité Organizador"),
+    t("2:15 – 2:30 p. m.", "Lesión del nervio radial asociada a fracturas: guía para no depender de la suerte", "Dr. Nelson Ures"),
+    t("2:35 – 2:50 p. m.", "Rescate Articular en el Caos: Abordaje Quirúrgico y Reemplazo de Cadera en el Paciente Politraumatizado", "Dra. Iraiby Rodríguez"),
+    t("2:55 – 3:10 p. m.", "Anterolateral en reconstrucción de Ligamento Cruzado Anterior", "Dr. Miguel Herrera"),
+    t("3:15 – 3:30 p. m.", "Pilón Tibial: Expectativa Vs. Realidad", "Dr. Edgredy Guzmán"),
+    brk("3:35 – 4:05 p. m.", "Coffee Break · Receso"),
+    t("4:10 – 4:25 p. m.", "Osteotomía alrededor de la rodilla, cómo la planificamos y cómo la realizamos", "Dr. José Pulido"),
+    t("4:30 – 4:45 p. m.", "Persistencia del dolor en el trauma vial: Del evento agudo al desarrollo de dolor crónico", "Dra. Verónica Rodríguez"),
+    t("4:50 – 5:05 p. m.", "Manejo anestésico pre-trans y post quirúrgico del paciente politraumatizado", "Dr. Rafael Agüero"),
+    t("5:10 – 5:25 p. m.", "Rehabilitar en la Emergencia: abordaje precoz del Médico Fisiatra en el manejo del paciente politraumatizado", "Dra. Carlana Chapón"),
+    cer("5:30 – 5:50 p. m.", "Palabras de Cierre y Clausura del Bloque de Traumatología", "Comité Organizador"),
   ],
 };
 

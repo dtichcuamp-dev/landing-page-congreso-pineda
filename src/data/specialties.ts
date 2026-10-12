@@ -27,15 +27,15 @@ export interface Specialty {
   icon: LucideIcon;
 }
 
-/** Orden y cifras según el cronograma oficial del congreso (Total: 111 ponencias). */
+/** Orden y cifras según el cronograma oficial del congreso (Total: 104 ponencias). */
 export const SPECIALTIES: Specialty[] = [
   { id: "enfermeria", name: "Enfermería", talks: 4, icon: HeartHandshake },
-  { id: "urologia", name: "Urología", talks: 8, icon: Droplets },
+  { id: "urologia", name: "Urología", talks: 6, icon: Droplets },
   { id: "emergencia", name: "Emergencia General", talks: 8, icon: Siren },
   { id: "imagenes", name: "Diagnóstico por Imágenes", talks: 6, icon: ScanLine },
   { id: "neurocirugia", name: "Neurocirugía", talks: 5, icon: Brain },
   { id: "rehabilitacion", name: "Medicina Física y Rehabilitación", talks: 4, icon: Accessibility },
-  { id: "salud-mental", name: "Salud Mental", talks: 5, icon: SmilePlus },
+  { id: "salud-mental", name: "Salud Mental", talks: 1, icon: SmilePlus },
   { id: "ginecobstetricia", name: "Ginecología y Obstetricia", talks: 7, icon: Baby },
   { id: "gastroenterologia", name: "Gastroenterología", talks: 4, icon: Pill },
   { id: "anestesiologia", name: "Anestesiología", talks: 6, icon: Syringe },
@@ -46,7 +46,7 @@ export const SPECIALTIES: Specialty[] = [
   { id: "orl", name: "Otorrinolaringología (ORL)", talks: 5, icon: Ear },
   { id: "medicina-interna", name: "Medicina Interna", talks: 8, icon: Stethoscope },
   { id: "oftalmologia", name: "Oftalmología", talks: 7, icon: Eye },
-  { id: "traumatologia", name: "Traumatología", talks: 9, icon: Bone },
+  { id: "traumatologia", name: "Traumatología", talks: 8, icon: Bone },
 ];
 
 export const SPECIALTY_BY_ID: Record<string, Specialty> = Object.fromEntries(

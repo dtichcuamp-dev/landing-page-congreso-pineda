@@ -8,6 +8,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { TOTAL_TALKS } from "./specialties";
 
 export const EVENT = {
   shortName: "Congreso Pineda 2026",
@@ -44,8 +45,8 @@ export interface Highlight {
 }
 
 export const HIGHLIGHTS: Highlight[] = [
-  { icon: Mic, value: "111", label: "Ponencias científicas" },
-  { icon: Users, value: "111", label: "Ponentes destacados" },
+  { icon: Mic, value: String(TOTAL_TALKS), label: "Ponencias científicas" },
+  { icon: Users, value: "100+", label: "Ponentes destacados" },
   { icon: Building2, value: "2", label: "Salones acondicionados" },
   { icon: Presentation, value: "Pósters", label: "Casos clínicos en modalidad póster" },
   { icon: Store, value: "Stands", label: "Área de stands comerciales" },

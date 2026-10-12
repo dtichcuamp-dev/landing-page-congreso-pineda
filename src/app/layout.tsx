@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "XIV Congreso Pineda 2026 · HCUAMP",
     description:
-      "Evento médico del 2 al 6 de noviembre de 2026 en Barquisimeto. 111 ponencias, 111 ponentes, presentación de pósters y premiaciones. Asegura tu cupo en línea.",
+      "Evento médico del 2 al 6 de noviembre de 2026 en Barquisimeto. 104 ponencias científicas, 18 especialidades médicas, presentación de pósters y premiaciones. Asegura tu cupo en línea.",
     url: siteUrl,
     siteName: "XIV Congreso Pineda",
     type: "website",
