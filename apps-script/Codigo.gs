@@ -66,6 +66,7 @@ var RATES = {
   tecnico_radiologo: { label: 'Técnico radiólogo (HCUAMP)', rate: 0, hcuamp: true },
   optometrista: { label: 'Optometrista (HCUAMP)', rate: 0, hcuamp: true },
   especialista: { label: 'Médico especialista (HCUAMP)', rate: 0, hcuamp: true },
+  terapeutas: { label: 'Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas (HCUAMP)', rate: 0, hcuamp: true },
   conferencista: { label: 'Conferencista (HCUAMP)', rate: 0, hcuamp: true },
   residente_ultimo_anio: { label: 'Residente de último año (HCUAMP)', rate: 0, hcuamp: true },
 
@@ -73,6 +74,7 @@ var RATES = {
   medico_general_especialista: { label: 'Médico general y especialista', rate: 20, hcuamp: false },
   medico_residente: { label: 'Médico residente', rate: 15, hcuamp: false },
   enfermero_otra: { label: 'Enfermera/o', rate: 10, hcuamp: false },
+  terapeutas_otra: { label: 'Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas', rate: 15, hcuamp: false },
   otro_personal_afin: { label: 'Otro personal afín', rate: 15, hcuamp: false },
   acompanante_otra: { label: 'Acompañante', rate: 15, hcuamp: false }
 };
