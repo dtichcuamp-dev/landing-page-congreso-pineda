@@ -58,4 +58,6 @@ export const NAV_LINKS = [
   { href: "#atractivos", label: "Atractivos" },
   { href: "#especialidades", label: "Especialidades" },
   { href: "#programa", label: "Programa" },
+  { href: "#sede", label: "Sede" },
+  { href: "#inscripciones", label: "Inscripciones" },
 ] as const;

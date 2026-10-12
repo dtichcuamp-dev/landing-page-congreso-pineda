@@ -9,6 +9,7 @@ import { Gallery } from "@/components/sections/Gallery";
 import { Registration } from "@/components/sections/Registration";
 import { Specialties } from "@/components/sections/Specialties";
 import { Sponsors } from "@/components/sections/Sponsors";
+import { Venue } from "@/components/sections/Venue";
 
 export default function Home() {
   return (
@@ -21,6 +22,7 @@ export default function Home() {
         <Gallery />
         <Specialties />
         <Agenda />
+        <Venue />
         <Registration />
         <Sponsors />
       </main>

@@ -50,9 +50,14 @@ export function Hero() {
             <CalendarDays className="size-5 text-brand-500" aria-hidden />
             {EVENT.dateLabel}
           </li>
-          <li className="glass inline-flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink sm:text-base">
-            <MapPin className="size-5 text-clinic-500" aria-hidden />
-            {EVENT.venue}
+          <li>
+            <a
+              href="#sede"
+              className="glass inline-flex items-center gap-2.5 rounded-2xl px-4 py-2.5 text-sm font-semibold text-ink sm:text-base transition hover:bg-white/80 hover:text-brand-600 hover:shadow-md"
+            >
+              <MapPin className="size-5 text-clinic-500" aria-hidden />
+              {EVENT.venue}
+            </a>
           </li>
         </ul>
 
