@@ -5,6 +5,7 @@ import {
   Presentation,
   Store,
   Trophy,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -12,6 +13,7 @@ export const EVENT = {
   shortName: "Congreso Pineda 2026",
   title:
     "XIV Congreso Pineda, LIX Jornada de Egresados y LXXII Aniversario del HCUAMP",
+  slogan: "La unión del conocimiento y el compromiso como clave de la salud",
   dateLabel: "Del 2 al 6 de noviembre de 2026",
   /** Inicio del evento (hora de Venezuela, UTC-4) para la cuenta regresiva. */
   startsAtISO: "2026-11-02T08:30:00-04:00",
@@ -42,12 +44,12 @@ export interface Highlight {
 }
 
 export const HIGHLIGHTS: Highlight[] = [
-  { icon: Mic, value: "+100", label: "Ponencias" },
-  { icon: Presentation, value: "Pósters", label: "Casos clínicos en modalidad póster" },
+  { icon: Mic, value: "102", label: "Ponencias científicas" },
+  { icon: Users, value: "111", label: "Ponentes destacados" },
   { icon: Building2, value: "2", label: "Salones acondicionados" },
-  { icon: Store, value: "Stands", label: "Área de stands" },
-  { icon: CircleParking, value: "Parking", label: "Estacionamiento" },
-  { icon: Trophy, value: "Premios", label: "Premiaciones" },
+  { icon: Presentation, value: "Pósters", label: "Casos clínicos en modalidad póster" },
+  { icon: Store, value: "Stands", label: "Área de stands comerciales" },
+  { icon: Trophy, value: "Premios", label: "Premiaciones y reconocimientos" },
 ];
 
 export const NAV_LINKS = [

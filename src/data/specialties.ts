@@ -15,6 +15,7 @@ import {
   Sparkles,
   Stethoscope,
   Syringe,
+  SmilePlus,
   Droplets,
   type LucideIcon,
 } from "lucide-react";
@@ -26,25 +27,26 @@ export interface Specialty {
   icon: LucideIcon;
 }
 
-/** Orden y cifras según la ficha oficial del congreso. */
+/** Orden y cifras según el cronograma oficial del congreso (Total: 102 ponencias). */
 export const SPECIALTIES: Specialty[] = [
   { id: "enfermeria", name: "Enfermería", talks: 5, icon: HeartHandshake },
-  { id: "emergencia", name: "Emergencia", talks: 8, icon: Siren },
-  { id: "urologia", name: "Urología", talks: 7, icon: Droplets },
-  { id: "imagenes", name: "Diagnóstico por Imágenes", talks: 10, icon: ScanLine },
-  { id: "rehabilitacion", name: "Medicina Física y Rehabilitación", talks: 4, icon: Accessibility },
-  { id: "neurocirugia", name: "Neurocirugía", talks: 5, icon: Brain },
-  { id: "ginecobstetricia", name: "Ginecobstetricia", talks: 7, icon: Baby },
+  { id: "urologia", name: "Urología", talks: 6, icon: Droplets },
+  { id: "emergencia", name: "Emergencia", talks: 7, icon: Siren },
+  { id: "imagenes", name: "Diagnóstico por Imágenes", talks: 7, icon: ScanLine },
+  { id: "neurocirugia", name: "Neurocirugía", talks: 6, icon: Brain },
+  { id: "rehabilitacion", name: "Medicina Física y Rehabilitación", talks: 3, icon: Accessibility },
+  { id: "salud-mental", name: "Salud Mental", talks: 3, icon: SmilePlus },
+  { id: "ginecobstetricia", name: "Ginecoobstetricia", talks: 7, icon: Baby },
+  { id: "gastroenterologia", name: "Gastroenterología", talks: 5, icon: Pill },
   { id: "anestesiologia", name: "Anestesiología", talks: 6, icon: Syringe },
-  { id: "cardiologia", name: "Cardiología", talks: 6, icon: HeartPulse },
-  { id: "cirugia-plastica", name: "Cirugía Plástica", talks: 4, icon: Sparkles },
-  { id: "cirugia-general", name: "Cirugía General", talks: 7, icon: Scissors },
-  { id: "dermatologia", name: "Dermatología", talks: 8, icon: ScanFace },
-  { id: "orl", name: "ORL", talks: 4, icon: Ear },
-  { id: "oftalmologia", name: "Oftalmología", talks: 7, icon: Eye },
+  { id: "cardiologia", name: "Cardiología", talks: 5, icon: HeartPulse },
+  { id: "cirugia-plastica", name: "Cirugía Plástica", talks: 5, icon: Sparkles },
+  { id: "dermatologia", name: "Dermatología", talks: 7, icon: ScanFace },
+  { id: "cirugia-general", name: "Cirugía General", talks: 6, icon: Scissors },
+  { id: "orl", name: "Otorrinolaringología (ORL)", talks: 5, icon: Ear },
   { id: "medicina-interna", name: "Medicina Interna", talks: 8, icon: Stethoscope },
-  { id: "traumatologia", name: "Traumatología", talks: 8, icon: Bone },
-  { id: "gastroenterologia", name: "Gastroenterología", talks: 6, icon: Pill },
+  { id: "oftalmologia", name: "Oftalmología", talks: 6, icon: Eye },
+  { id: "traumatologia", name: "Traumatología", talks: 5, icon: Bone },
 ];
 
 export const SPECIALTY_BY_ID: Record<string, Specialty> = Object.fromEntries(

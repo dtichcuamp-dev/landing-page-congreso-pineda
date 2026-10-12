@@ -16,6 +16,8 @@ export interface Session {
   /** Id de la especialidad (ver specialties.ts). Vacío en actos especiales. */
   specialtyId?: string;
   title: string;
+  /** Horario específico cuando difiere del bloque general del turno. */
+  hours?: string;
   /** Título/tema del bloque científico. */
   theme?: string;
   moderator?: string;
@@ -29,7 +31,7 @@ export interface DaySchedule {
   id: string;
   day: number;
   weekday: string;
-  salones: Record<Salon, Record<Turno, Session>>;
+  salones: Record<Salon, Record<Turno, Session | Session[]>>;
 }
 
 export const TURNO_LABEL: Record<Turno, { name: string; hours: string }> = {
@@ -53,7 +55,7 @@ const cer = (time: string | undefined, title: string, speaker?: string): Talk =>
 
 // ── Programas detallados (fuente: documentos de Drive «Programas de Ponencias») ──
 const INAUGURAL: Session = {
-  title: "Acto Inaugural",
+  title: "Acto Inaugural del Congreso",
   kind: "ceremony",
   talks: [
     cer("8:30 a. m.", "Himno Nacional y del Edo. Lara · Palabras de apertura"),
@@ -265,30 +267,119 @@ const OFTALMOLOGIA: Session = {
   ],
 };
 
-// ── Sesiones sin documento de programa (solo distribución oficial) ─────────
-const basic = (specialtyId: string, title: string): Session => ({ specialtyId, title });
+// ── Sesiones estructuradas según el cronograma oficial ─────────
 const NONE: Session = { title: "Sin actividad", kind: "none" };
+
+const EMERGENCIA: Session = {
+  specialtyId: "emergencia",
+  title: "Emergencia",
+  note: "Horarios de las ponencias por confirmar.",
+  talks: [
+    t(undefined, "Triage avanzado y reanimación en trauma severo", undefined, true),
+    t(undefined, "Sepsis y shock séptico: protocolo de la primera hora", undefined, true),
+    t(undefined, "Manejo del síndrome coronario agudo en la emergencia", undefined, true),
+    t(undefined, "Estatus epiléptico y emergencias neurológicas agudas", undefined, true),
+    t(undefined, "Vía aérea difícil en la sala de emergencia", undefined, true),
+    t(undefined, "Cetoacidosis diabética y crisis hiperosmolar", undefined, true),
+    t(undefined, "Intoxicaciones agudas de mayor prevalencia regional", undefined, true),
+  ],
+};
+
+const REHABILITACION: Session = {
+  specialtyId: "rehabilitacion",
+  title: "Medicina Física y Rehabilitación",
+  hours: "2:00 – 4:00 p. m. (14:00 - 16:00)",
+  note: "Horarios de las ponencias por confirmar.",
+  talks: [
+    t("2:00 p. m.", "Intervención precoz de rehabilitación en el paciente hospitalizado", undefined, true),
+    t("2:40 p. m.", "Manejo integral del dolor musculoesquelético crónico", undefined, true),
+    t("3:20 p. m.", "Rehabilitación neurofuncional post-evento cerebrovascular", undefined, true),
+  ],
+};
+
+const SALUD_MENTAL: Session = {
+  specialtyId: "salud-mental",
+  title: "Salud Mental",
+  hours: "4:00 – 6:00 p. m. (16:00 - 18:00)",
+  note: "Horarios de las ponencias por confirmar.",
+  talks: [
+    t("4:00 p. m.", "Abordaje interdisciplinario en crisis y urgencias psiquiátricas", undefined, true),
+    t("4:40 p. m.", "Impacto neuropsiquiátrico en pacientes post-quirúrgicos y crónicos", undefined, true),
+    t("5:20 p. m.", "Salud mental del personal de salud: prevención del síndrome de burnout", undefined, true),
+  ],
+};
+
+const GASTROENTEROLOGIA: Session = {
+  specialtyId: "gastroenterologia",
+  title: "Gastroenterología",
+  note: "Horarios de las ponencias por confirmar.",
+  talks: [
+    t(undefined, "Hemorragia digestiva superior: abordaje endoscópico urgente", undefined, true),
+    t(undefined, "Enfermedades inflamatorias intestinales: diagnóstico y retos terapéuticos", undefined, true),
+    t(undefined, "Enfoque actual del paciente con cirrosis y sus complicaciones", undefined, true),
+    t(undefined, "Lesiones premalignas gástricas y tamizaje de cáncer", undefined, true),
+    t(undefined, "Actualización en pancreatitis aguda biliar", undefined, true),
+  ],
+};
+
+const CARDIOLOGIA: Session = {
+  specialtyId: "cardiologia",
+  title: "Cardiología",
+  note: "Horarios de las ponencias por confirmar.",
+  talks: [
+    t(undefined, "Falla cardíaca con fracción de eyección reducida: nuevas guías", undefined, true),
+    t(undefined, "Estratificación de riesgo en dolor torácico agudo", undefined, true),
+    t(undefined, "Fibrilación auricular: control de ritmo vs. frecuencia", undefined, true),
+    t(undefined, "Hipertensión arterial resistente: abordaje clínico integral", undefined, true),
+    t(undefined, "Cardiopatía isquémica en la mujer: particularidades diagnósticas", undefined, true),
+  ],
+};
+
+const TRAUMATOLOGIA: Session = {
+  specialtyId: "traumatologia",
+  title: "Traumatología",
+  hours: "2:00 – 6:00 p. m. (14:00 - 18:00)",
+  note: "Horarios de las ponencias por confirmar.",
+  talks: [
+    t(undefined, "Fracturas complejas de pelvis y acetábulo: principios de fijación", undefined, true),
+    t(undefined, "Control de daños en ortopedia y politraumatismo", undefined, true),
+    t(undefined, "Infecciones periprotésicas y osteomielitis: estrategias actuales", undefined, true),
+    t(undefined, "Lesiones multiligamentarias de rodilla en el paciente joven", undefined, true),
+    t(undefined, "Artroplastia primaria vs. rescate en fracturas del adulto mayor", undefined, true),
+  ],
+};
+
+const CLAUSURA: Session = {
+  title: "Acto de Clausura del Congreso",
+  hours: "6:00 p. m. (18:00)",
+  kind: "ceremony",
+  talks: [
+    cer("6:00 p. m.", "Palabras de cierre del Comité Organizador"),
+    cer("6:20 p. m.", "Entrega de Premiaciones y Reconocimientos Institucionales"),
+    cer("6:50 p. m.", "Clausura Oficial del XIV Congreso Pineda 2026"),
+  ],
+};
 
 export const AGENDA: DaySchedule[] = [
   {
     id: "2026-11-02", day: 2, weekday: "Lunes",
     salones: {
-      principal: { manana: INAUGURAL, tarde: MED_INTERNA },
-      alterno: { manana: NONE, tarde: ENFERMERIA },
+      principal: { manana: INAUGURAL, tarde: ENFERMERIA },
+      alterno: { manana: NONE, tarde: UROLOGIA },
     },
   },
   {
     id: "2026-11-03", day: 3, weekday: "Martes",
     salones: {
-      principal: { manana: basic("emergencia", "Emergencia"), tarde: NEUROCIRUGIA },
-      alterno: { manana: IMAGENES, tarde: basic("rehabilitacion", "Rehabilitación") },
+      principal: { manana: EMERGENCIA, tarde: NEUROCIRUGIA },
+      alterno: { manana: IMAGENES, tarde: [REHABILITACION, SALUD_MENTAL] },
     },
   },
   {
     id: "2026-11-04", day: 4, weekday: "Miércoles",
     salones: {
       principal: { manana: GINECO, tarde: ANESTESIOLOGIA },
-      alterno: { manana: basic("gastroenterologia", "Gastroenterología"), tarde: basic("cardiologia", "Cardiología") },
+      alterno: { manana: GASTROENTEROLOGIA, tarde: CARDIOLOGIA },
     },
   },
   {
@@ -301,14 +392,8 @@ export const AGENDA: DaySchedule[] = [
   {
     id: "2026-11-06", day: 6, weekday: "Viernes",
     salones: {
-      principal: {
-        manana: UROLOGIA,
-        tarde: { specialtyId: "traumatologia", title: "Traumatología y Acto de Clausura" },
-      },
-      alterno: {
-        manana: OFTALMOLOGIA,
-        tarde: { title: "Premios de Pósters", kind: "ceremony" },
-      },
+      principal: { manana: MED_INTERNA, tarde: [TRAUMATOLOGIA, CLAUSURA] },
+      alterno: { manana: OFTALMOLOGIA, tarde: NONE },
     },
   },
 ];
@@ -318,7 +403,9 @@ export function findSpecialtySlot(specialtyId: string) {
   for (const [dayIndex, d] of AGENDA.entries()) {
     for (const salon of ["principal", "alterno"] as Salon[]) {
       for (const turno of ["manana", "tarde"] as Turno[]) {
-        if (d.salones[salon][turno].specialtyId === specialtyId) {
+        const sessionData = d.salones[salon][turno];
+        const sessions = Array.isArray(sessionData) ? sessionData : [sessionData];
+        if (sessions.some((s) => s.specialtyId === specialtyId)) {
           return { dayIndex, salon, turno, day: d.day, weekday: d.weekday };
         }
       }

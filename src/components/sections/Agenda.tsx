@@ -48,9 +48,13 @@ export function Agenda() {
       const day = AGENDA[dayIndex];
       for (const salon of ["principal", "alterno"] as Salon[]) {
         for (const turno of ["manana", "tarde"] as Turno[]) {
-          if (day.salones[salon][turno].specialtyId === specialtyId) {
-            setOpenKey(`${day.id}-${salon}-${turno}`);
-          }
+          const sessionData = day.salones[salon][turno];
+          const sessions = Array.isArray(sessionData) ? sessionData : [sessionData];
+          sessions.forEach((s, sIdx) => {
+            if (s.specialtyId === specialtyId) {
+              setOpenKey(`${day.id}-${salon}-${turno}-${s.specialtyId || s.title}-${sIdx}`);
+            }
+          });
         }
       }
     };
@@ -72,7 +76,7 @@ export function Agenda() {
         <SectionHeading
           eyebrow="Programa científico"
           title="Agenda del 2 al 6 de noviembre"
-          description="Dos salones en paralelo, mañana (8:30 a. m. – 12:30 p. m.) y tarde (2:00 – 6:00 p. m.). Despliega cada bloque para ver ponencias y ponentes."
+          description="102 ponencias y 111 ponentes en dos salones en paralelo. Despliega cada bloque para ver los detalles de ponencias y ponentes."
         />
 
         {/* Selector de día */}
@@ -85,7 +89,7 @@ export function Agenda() {
             {AGENDA.map((d, i) => {
               const active = i === dayIndex;
               return (
-                <button
+                 <button
                   key={d.id}
                   role="tab"
                   type="button"
@@ -149,16 +153,20 @@ export function Agenda() {
 
               <div className="mt-4 space-y-3">
                 {(["manana", "tarde"] as Turno[]).map((turno) => {
-                  const key = `${day.id}-${salon}-${turno}`;
-                  return (
-                    <SessionCard
-                      key={key}
-                      turno={turno}
-                      session={day.salones[salon][turno]}
-                      open={openKey === key}
-                      onToggle={() => toggle(key)}
-                    />
-                  );
+                  const sessionData = day.salones[salon][turno];
+                  const sessions = Array.isArray(sessionData) ? sessionData : [sessionData];
+                  return sessions.map((session, sIdx) => {
+                    const key = `${day.id}-${salon}-${turno}-${session.specialtyId || session.title}-${sIdx}`;
+                    return (
+                      <SessionCard
+                        key={key}
+                        turno={turno}
+                        session={session}
+                        open={openKey === key}
+                        onToggle={() => toggle(key)}
+                      />
+                    );
+                  });
                 })}
               </div>
             </div>
@@ -216,7 +224,7 @@ function SessionCard({
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-mute">
             <TurnoIcon className="size-3.5" aria-hidden />
-            {TURNO_LABEL[turno].name} · {TURNO_LABEL[turno].hours}
+            {TURNO_LABEL[turno].name} · {session.hours || TURNO_LABEL[turno].hours}
           </span>
           <span className={`mt-0.5 block text-base font-bold leading-snug ${isNone ? "text-ink-mute" : "text-ink"}`}>
             {session.title}

@@ -1,4 +1,4 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import { ArrowRight, CalendarDays, ChevronDown, MapPin } from "lucide-react";
 import { EVENT } from "@/data/event";
 import { Countdown } from "./Countdown";
@@ -39,6 +39,9 @@ export function Hero() {
             LIX Jornada de Egresados y LXXII Aniversario del HCUAMP
           </span>
         </h1>
+        <p className="mt-4 max-w-2xl text-balance text-base font-semibold italic text-brand-700 sm:text-lg">
+          «{EVENT.slogan}»
+        </p>
         {/* Título completo para lectores de pantalla / SEO */}
         <p className="sr-only">{EVENT.title}</p>
 
