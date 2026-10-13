@@ -83,8 +83,8 @@ export function Registration() {
                   Aforo por Salón y Turno:
                 </div>
                 <p className="text-[11px] text-ink-mute leading-relaxed">
-                  • <b>Salón Principal:</b> Máximo 240 puestos por turno.<br />
-                  • <b>Salón Alterno:</b> Máximo 60 puestos por turno.<br />
+                  • <b>Salón Principal (1):</b> Máximo 240 puestos por turno.<br />
+                  • <b>Salón Alterno (2):</b> Máximo 60 puestos por turno.<br />
                   <span className="text-brand-700 font-medium">Asignación garantizada por orden de inscripción.</span>
                 </p>
               </div>

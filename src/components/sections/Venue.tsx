@@ -120,7 +120,7 @@ export function Venue() {
                   </li>
                   <li className="flex items-center gap-3">
                     <Building2 className="size-4.5 text-brand-600 shrink-0" aria-hidden />
-                    <span>Dos salones en paralelo (Principal y Alterno) con climatización integral.</span>
+                    <span>Dos salones en paralelo (Principal (1) y Alterno (2)) con climatización integral.</span>
                   </li>
                   <li className="flex items-center gap-3">
                     <ShieldCheck className="size-4.5 text-emerald-600 shrink-0" aria-hidden />

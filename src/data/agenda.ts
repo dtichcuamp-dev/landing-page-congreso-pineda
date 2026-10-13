@@ -40,8 +40,8 @@ export const TURNO_LABEL: Record<Turno, { name: string; hours: string }> = {
 };
 
 export const SALON_LABEL: Record<Salon, string> = {
-  principal: "Salón Principal",
-  alterno: "Salón Alterno",
+  principal: "Salón Principal (1)",
+  alterno: "Salón Alterno (2)",
 };
 
 // ── helpers de transcripción ──────────────────────────────────────────────
@@ -71,7 +71,7 @@ const INAUGURAL: Session = {
 const MED_INTERNA: Session = {
   specialtyId: "medicina-interna",
   title: "Medicina Interna",
-  hours: "8:30 a. m. – 12:40 p. m. · Salón Principal",
+  hours: "8:30 a. m. – 12:40 p. m. · Salón Principal (1)",
   talks: [
     cer("8:30 – 8:50 a. m.", "Apertura del Bloque de Medicina Interna", "Servicio de Medicina Interna"),
     t("8:50 – 9:10 a. m.", "Historia clínica como método diagnóstico eficaz", "Dra. Isbel González"),
@@ -110,7 +110,7 @@ const ENFERMERIA: Session = {
 const NEUROCIRUGIA: Session = {
   specialtyId: "neurocirugia",
   title: "Neurocirugía",
-  hours: "2:00 – 4:40 p. m. (14:00 - 16:40) · Salón Principal",
+  hours: "2:00 – 4:40 p. m. (14:00 - 16:40) · Salón Principal (1)",
   talks: [
     cer("2:00 – 2:15 p. m.", "Palabras de Bienvenida e Instalación de las Jornadas", "Dr. Williams Arrieche (Jefe del Servicio de Neurocirugía)"),
     cer("2:15 – 2:30 p. m.", "Palabras de Apertura", "Dr. Kenny Mejías (Jefe de Residentes)"),
@@ -127,7 +127,7 @@ const NEUROCIRUGIA: Session = {
 const IMAGENES: Session = {
   specialtyId: "imagenes",
   title: "Diagnóstico por Imágenes",
-  hours: "8:30 a. m. – 12:30 m. · Salón Alterno",
+  hours: "8:30 a. m. – 12:30 m. · Salón Alterno (2)",
   theme: "IMÁGENES QUE SALVAN VIDAS: DESAFÍOS MULTIDISCIPLINARIOS EN EL ÁREA DE EMERGENCIA",
   talks: [
     cer("8:30 a. m.", "Bienvenida y apertura", "Servicio de Diagnóstico por Imágenes"),
@@ -164,7 +164,7 @@ const ANESTESIOLOGIA: Session = {
 const GINECO: Session = {
   specialtyId: "ginecobstetricia",
   title: "Ginecología y Obstetricia",
-  hours: "8:30 a. m. – 12:30 m. · Salón Principal",
+  hours: "8:30 a. m. – 12:30 m. · Salón Principal (1)",
   theme: "Innovación y nuevos retos en la práctica clínica: el arte de cuidar cada etapa femenina",
   talks: [
     cer("8:30 a. m.", "Apertura del Bloque de Ginecología y Obstetricia", "Servicio de Ginecología y Obstetricia"),
@@ -219,7 +219,7 @@ const CIRUGIA_GENERAL: Session = {
 const DERMATOLOGIA: Session = {
   specialtyId: "dermatologia",
   title: "Dermatología",
-  hours: "8:30 – 11:30 a. m. · Salón Alterno",
+  hours: "8:30 – 11:30 a. m. · Salón Alterno (2)",
   theme: "Dermatitis Atópica de la «A hasta la Z»",
   talks: [
     t("8:30 a. m.", "Dermatitis atópica: generalidades", "Dra. Graciela María González Padilla"),
@@ -238,7 +238,7 @@ const DERMATOLOGIA: Session = {
 const ORL: Session = {
   specialtyId: "orl",
   title: "Otorrinolaringología (ORL)",
-  hours: "2:00 – 5:10 p. m. (14:00 - 17:10) · Salón Alterno",
+  hours: "2:00 – 5:10 p. m. (14:00 - 17:10) · Salón Alterno (2)",
   talks: [
     cer("2:00 p. m.", "Palabras de Bienvenida e Instalación de las Jornadas", "Dra. Elvymar Carmona (Jefe del Servicio de Otorrinolaringología)"),
     cer("2:30 p. m.", "Palabras de Apertura", "Dra. Yaselin Soler (Coordinadora de Postgrado de Otorrinolaringología)"),
@@ -255,7 +255,7 @@ const ORL: Session = {
 const UROLOGIA: Session = {
   specialtyId: "urologia",
   title: "Urología",
-  hours: "2:00 – 5:50 p. m. (14:00 - 17:50) · Salón Alterno",
+  hours: "2:00 – 5:50 p. m. (14:00 - 17:50) · Salón Alterno (2)",
   theme: "Uroinnovación: de la evidencia a la práctica",
   talks: [
     cer("2:00 – 2:10 p. m.", "Palabras de Bienvenida por Comité Organizador", "Dra. Gabriela Santiago"),
@@ -277,7 +277,7 @@ const UROLOGIA: Session = {
 const OFTALMOLOGIA: Session = {
   specialtyId: "oftalmologia",
   title: "Oftalmología",
-  hours: "8:30 a. m. – 12:30 m. · Salón Alterno",
+  hours: "8:30 a. m. – 12:30 m. · Salón Alterno (2)",
   talks: [
     cer("8:30 a. m.", "Apertura del Bloque de Oftalmología", "Servicio de Oftalmología"),
     t("8:50 – 9:10 a. m.", "Revelaciones de la Retina: Diagnóstico temprano y salud sistémica", "Dra. Carla Rojas"),
@@ -298,7 +298,7 @@ const NONE: Session = { title: "Sin actividad", kind: "none" };
 const EMERGENCIA: Session = {
   specialtyId: "emergencia",
   title: "Emergencia General",
-  hours: "8:00 a. m. – 12:30 m. · Salón Principal",
+  hours: "8:00 a. m. – 12:30 m. · Salón Principal (1)",
   theme: "Triage: Del primer Contacto al manejo especializado",
   talks: [
     cer("8:00 – 8:20 a. m.", "Palabras de bienvenida", "Dr. Ángel Echenique"),
@@ -320,7 +320,7 @@ const EMERGENCIA: Session = {
 const REHABILITACION: Session = {
   specialtyId: "rehabilitacion",
   title: "Medicina Física y Rehabilitación",
-  hours: "2:00 – 4:00 p. m. (14:00 - 16:00) · Salón Alterno",
+  hours: "2:00 – 4:00 p. m. (14:00 - 16:00) · Salón Alterno (2)",
   talks: [
     t("2:00 – 2:30 p. m.", "Estrategias en el hogar para el envejecimiento activo del adulto mayor", "Dra. María Gabriela Vásquez"),
     t("2:30 – 3:00 p. m.", "Rehabilitación Musculoesquelética. Estrategias para una rehabilitación efectiva", "Dra. Yajaira Alzuru"),
@@ -332,7 +332,7 @@ const REHABILITACION: Session = {
 const SALUD_MENTAL: Session = {
   specialtyId: "salud-mental",
   title: "Salud Mental",
-  hours: "4:15 – 4:45 p. m. (16:15 - 16:45) · Salón Alterno",
+  hours: "4:15 – 4:45 p. m. (16:15 - 16:45) · Salón Alterno (2)",
   talks: [
     t("4:15 – 4:45 p. m.", "Comunicación sexual y su influencia en la salud mental", "Msc. Pedro Silva y Msc. Claudia Flores"),
   ],
@@ -341,7 +341,7 @@ const SALUD_MENTAL: Session = {
 const GASTROENTEROLOGIA: Session = {
   specialtyId: "gastroenterologia",
   title: "Gastroenterología",
-  hours: "8:30 a. m. – 12:30 m. · Salón Alterno",
+  hours: "8:30 a. m. – 12:30 m. · Salón Alterno (2)",
   theme: "Programa de Vías Digestivas",
   moderator: "Dr. Amado Zambrano Ávila (Jefe del Servicio de Vías Digestivas HCUAMP)",
   talks: [
@@ -358,7 +358,7 @@ const GASTROENTEROLOGIA: Session = {
 const CARDIOLOGIA: Session = {
   specialtyId: "cardiologia",
   title: "Cardiología",
-  hours: "2:00 – 5:30 p. m. (14:00 - 17:30) · Salón Alterno",
+  hours: "2:00 – 5:30 p. m. (14:00 - 17:30) · Salón Alterno (2)",
   theme: "DECISIONES CRÍTICAS EN SCA: El infarto que no espera, reconocimiento precoz desde la emergencia",
   talks: [
     cer("2:00 p. m.", "Palabras de bienvenida", "Dra. Yudith Angulo"),
@@ -376,7 +376,7 @@ const CARDIOLOGIA: Session = {
 const TRAUMATOLOGIA: Session = {
   specialtyId: "traumatologia",
   title: "Traumatología",
-  hours: "2:00 – 5:50 p. m. (14:00 - 17:50) · Salón Principal",
+  hours: "2:00 – 5:50 p. m. (14:00 - 17:50) · Salón Principal (1)",
   talks: [
     cer("2:00 – 2:10 p. m.", "Palabras de Bienvenida y apertura del evento", "Comité Organizador"),
     t("2:15 – 2:30 p. m.", "Lesión del nervio radial asociada a fracturas: guía para no depender de la suerte", "Dr. Nelson Ures"),

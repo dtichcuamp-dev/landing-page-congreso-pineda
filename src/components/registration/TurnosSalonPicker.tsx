@@ -52,13 +52,13 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
         <div className="flex items-center gap-2 rounded-xl bg-blue-50/70 p-2.5 text-blue-900 ring-1 ring-blue-100">
           <Users className="size-4 shrink-0 text-blue-600" aria-hidden />
           <span>
-            <b>Salón Principal:</b> Capacidad máxima de <b>{CAPACIDADES_SALON.principal} puestos</b> por turno.
+            <b>Salón Principal (1):</b> Capacidad máxima de <b>{CAPACIDADES_SALON.principal} puestos</b> por turno.
           </span>
         </div>
         <div className="flex items-center gap-2 rounded-xl bg-emerald-50/70 p-2.5 text-emerald-900 ring-1 ring-emerald-100">
           <Users className="size-4 shrink-0 text-emerald-600" aria-hidden />
           <span>
-            <b>Salón Alterno:</b> Capacidad máxima de <b>{CAPACIDADES_SALON.alterno} puestos</b> por turno.
+            <b>Salón Alterno (2):</b> Capacidad máxima de <b>{CAPACIDADES_SALON.alterno} puestos</b> por turno.
           </span>
         </div>
       </div>
@@ -136,7 +136,7 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
                                 : "bg-white text-ink-soft ring-1 ring-slate-200 hover:bg-slate-100 hover:text-ink"
                           }`}
                         >
-                          <span>Salón Principal</span>
+                          <span>Salón Principal (1)</span>
                           <span className={`text-[10px] ${selected ? "text-blue-100" : "text-ink-mute"}`}>
                             {full ? "Agotado" : "Cap. 240"}
                           </span>
@@ -163,7 +163,7 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
                                 : "bg-white text-ink-soft ring-1 ring-slate-200 hover:bg-slate-100 hover:text-ink"
                           }`}
                         >
-                          <span>Salón Alterno</span>
+                          <span>Salón Alterno (2)</span>
                           <span className={`text-[10px] ${selected ? "text-emerald-100" : "text-ink-mute"}`}>
                             {full ? "Agotado" : "Cap. 60"}
                           </span>
@@ -214,7 +214,7 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
                                 : "bg-white text-ink-soft ring-1 ring-slate-200 hover:bg-slate-100 hover:text-ink"
                           }`}
                         >
-                          <span>Salón Principal</span>
+                          <span>Salón Principal (1)</span>
                           <span className={`text-[10px] ${selected ? "text-blue-100" : "text-ink-mute"}`}>
                             {full ? "Agotado" : "Cap. 240"}
                           </span>
@@ -241,7 +241,7 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
                                 : "bg-white text-ink-soft ring-1 ring-slate-200 hover:bg-slate-100 hover:text-ink"
                           }`}
                         >
-                          <span>Salón Alterno</span>
+                          <span>Salón Alterno (2)</span>
                           <span className={`text-[10px] ${selected ? "text-emerald-100" : "text-ink-mute"}`}>
                             {full ? "Agotado" : "Cap. 60"}
                           </span>

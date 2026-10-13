@@ -33,8 +33,8 @@ type SalonFilter = "todos" | Salon;
 
 const FILTERS: { id: SalonFilter; label: string }[] = [
   { id: "todos", label: "Ambos salones" },
-  { id: "principal", label: "Salón Principal" },
-  { id: "alterno", label: "Salón Alterno" },
+  { id: "principal", label: "Salón Principal (1)" },
+  { id: "alterno", label: "Salón Alterno (2)" },
 ];
 
 export function Agenda() {

@@ -8,7 +8,7 @@ export default function ScannerPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [user, setUser] = useState("");
-  const [salon, setSalon] = useState("Salón Principal");
+  const [salon, setSalon] = useState("Salón Principal (1)");
   const [jornada, setJornada] = useState("2026-11-02");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
@@ -184,8 +184,8 @@ export default function ScannerPage() {
               onChange={(e) => setSalon(e.target.value)}
               className="bg-transparent text-sm font-semibold text-ink outline-none"
             >
-              <option value="Salón Principal">Salón Principal</option>
-              <option value="Salón Alterno">Salón Alterno</option>
+              <option value="Salón Principal (1)">Salón Principal (1)</option>
+              <option value="Salón Alterno (2)">Salón Alterno (2)</option>
             </select>
           </div>
           <div className="flex items-center gap-2 bg-clinic-50 rounded-lg p-2 border border-brand-100 shrink-0">

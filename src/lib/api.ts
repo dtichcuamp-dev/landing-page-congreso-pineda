@@ -139,8 +139,8 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     const t = v.turnos[diaId];
     if (t) {
       const sub: string[] = [];
-      if (t.manana) sub.push(`Mañana: ${t.manana === "principal" ? "Salón Principal" : "Salón Alterno"}`);
-      if (t.tarde) sub.push(`Tarde: ${t.tarde === "principal" ? "Salón Principal" : "Salón Alterno"}`);
+      if (t.manana) sub.push(`Mañana: ${t.manana === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)"}`);
+      if (t.tarde) sub.push(`Tarde: ${t.tarde === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)"}`);
       if (sub.length > 0) partes.push(`${labelDia} (${sub.join(", ")})`);
     }
   }

@@ -1,16 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
 import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
   Building2,
+  Calendar,
   Check,
   CheckCircle2,
   CreditCard,
+  Download,
   Hospital,
   Loader2,
+  Mail,
+  MapPin,
+  Printer,
+  QrCode,
   Search,
   Send,
   Sparkles,
@@ -18,7 +25,9 @@ import {
   UserRound,
 } from "lucide-react";
 import {
+  DAYS_CONGRESO,
   ESPECIALIDADES_CONGRESO,
+  PARTICIPANT_BY_ID,
   PARTICIPANT_TYPES_HCUAMP,
   PARTICIPANT_TYPES_OTRA,
   calcTotal,
@@ -30,6 +39,7 @@ import {
   EMPTY_VALUES,
   type FieldErrors,
   type InstitucionOrigen,
+  type ParticipantTypeId,
   type RegistrationResult,
   type RegistrationValues,
 } from "@/types/registration";
@@ -52,12 +62,41 @@ export function RegistrationForm() {
   const [capacities, setCapacities] = useState<Record<string, number>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [result, setResult] = useState<RegistrationResult | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
+  const [generatingQr, setGeneratingQr] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
   // Cargar disponibilidad de aforo al montar
   useEffect(() => {
     getCapacities().then((data) => setCapacities(data)).catch(() => {});
   }, []);
+
+  // Generar código QR cuando se confirme la inscripción
+  useEffect(() => {
+    if (result?.id) {
+      setGeneratingQr(true);
+      QRCode.toDataURL(result.id, {
+        width: 440,
+        margin: 2,
+        color: {
+          dark: "#0b2545",
+          light: "#ffffff",
+        },
+        errorCorrectionLevel: "H",
+      })
+        .then((url) => {
+          setQrCodeUrl(url);
+        })
+        .catch((err) => {
+          console.error("Error al generar código QR:", err);
+        })
+        .finally(() => {
+          setGeneratingQr(false);
+        });
+    } else {
+      setQrCodeUrl(null);
+    }
+  }, [result]);
 
   const set = <K extends keyof RegistrationValues>(key: K, value: RegistrationValues[K]) => {
     setValues((v) => ({ ...v, [key]: value }));
@@ -183,41 +222,234 @@ export function RegistrationForm() {
     setValues(EMPTY_VALUES);
     setErrors({});
     setResult(null);
+    setQrCodeUrl(null);
     setHcuampFeedback({ status: "idle" });
     setStep(0);
   };
 
   const { total, exonerated } = calcTotal(values.tipoParticipante, values.turnos, values.origenInstitucion);
 
-  /* ───────── Pantalla de confirmación ───────── */
+  /* ───────── Pantalla de confirmación con Código QR y Credencial Digital ───────── */
   if (result) {
+    const activeDays = DAYS_CONGRESO.filter(
+      (d) => values.turnos[d.id]?.manana || values.turnos[d.id]?.tarde,
+    );
+    const tipoLabel =
+      PARTICIPANT_BY_ID[values.tipoParticipante as ParticipantTypeId]?.label ||
+      values.tipoParticipante;
+
     return (
-      <div ref={topRef} className="py-6 text-center" role="status">
-        <span className="mx-auto inline-flex size-20 items-center justify-center rounded-full bg-clinic-100 text-clinic-600 shadow-md">
-          <CheckCircle2 className="size-11" aria-hidden />
-        </span>
-        <h3 className="mt-5 text-2xl font-extrabold text-ink sm:text-3xl">¡Inscripción Recibida con Éxito!</h3>
-        <p className="mt-3 text-base text-ink-soft">
-          Tu código único de participante es:
-        </p>
-        <div className="mt-2 inline-block rounded-xl bg-gradient-to-r from-brand-50 to-clinic-50 px-4 py-2 ring-1 ring-brand-200">
-          <span className="font-mono text-2xl font-extrabold tracking-wider text-brand-700">{result.id}</span>
+      <div ref={topRef} className="py-4 space-y-6 text-center" role="status">
+        {/* Encabezado de éxito */}
+        <div>
+          <span className="mx-auto inline-flex size-16 items-center justify-center rounded-full bg-clinic-100 text-clinic-600 shadow-md ring-8 ring-clinic-50">
+            <CheckCircle2 className="size-9" aria-hidden />
+          </span>
+          <h3 className="mt-4 text-2xl font-black text-ink sm:text-3xl">
+            ¡Inscripción Exitosa!
+          </h3>
+          <p className="mt-1 text-sm text-ink-soft">
+            Tu pase digital de acceso y código QR para los salones han sido generados exitosamente.
+          </p>
         </div>
-        <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-ink-soft">
-          {result.exonerated
-            ? "Tu participación como personal del HCUAMP está 100% exonerada. Hemos registrado tu asistencia a las jornadas y turnos seleccionados y te enviamos la confirmación a tu correo electrónico."
-            : `Hemos recibido tu inscripción por un monto de ${usd(result.total)}. Verificaremos tu comprobante bancario y te confirmaremos la activación de tu pase al correo registrado.`}
-        </p>
-        <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-xs text-ink-mute max-w-md mx-auto ring-1 ring-slate-200">
-          Guarda o anota tu código <b>{result.id}</b> para presentarlo en la mesa de acreditación del evento en el Hotel Biotel Suites.
-        </div>
-        <button
-          type="button"
-          onClick={reset}
-          className="mt-6 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-md shadow-brand-500/20 transition hover:bg-brand-700"
+
+        {/* ──────── CREDENCIAL DIGITAL DE ACCESO ──────── */}
+        <div
+          id="credencial-pase"
+          className="mx-auto max-w-lg overflow-hidden rounded-3xl border-2 border-brand-200/90 bg-white shadow-xl ring-1 ring-slate-100 text-left"
         >
-          Registrar a otra persona
-        </button>
+          {/* Header de la Credencial */}
+          <div className="bg-gradient-to-r from-brand-900 via-brand-800 to-clinic-800 p-5 text-white">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-clinic-300">
+                  Pase Oficial de Acceso
+                </span>
+                <h4 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
+                  XIV CONGRESO PINEDA 2026
+                </h4>
+                <p className="text-[11px] text-white/80">
+                  Hospital Central Universitario Dr. Antonio María Pineda
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <span
+                  className={`inline-block rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${
+                    result.exonerated
+                      ? "bg-clinic-400 text-brand-950"
+                      : "bg-amber-300 text-amber-950"
+                  }`}
+                >
+                  {result.exonerated ? "Exonerado 100%" : "Participante"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cuerpo de la Credencial */}
+          <div className="p-5 sm:p-6 space-y-5">
+            {/* Datos del Participante */}
+            <div className="grid gap-3 sm:grid-cols-2 border-b border-slate-100 pb-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-mute">
+                  Participante
+                </span>
+                <p className="text-base font-bold text-ink leading-tight">
+                  {values.nombres} {values.apellidos}
+                </p>
+                <p className="text-xs font-mono font-medium text-ink-soft">
+                  C.I.: {values.nacionalidad}-{values.cedula}
+                </p>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-mute">
+                  Institución & Categoría
+                </span>
+                <p className="text-xs font-bold text-ink leading-tight line-clamp-2">
+                  {values.institucion || (values.origenInstitucion === "HCUAMP" ? "HCUAMP" : "Otra Institución")}
+                </p>
+                <span className="inline-block mt-0.5 text-[11px] font-semibold text-brand-700">
+                  {tipoLabel}
+                </span>
+              </div>
+              {values.nombrePonencia && (
+                <div className="sm:col-span-2 rounded-xl bg-brand-50/70 p-2.5 text-xs text-brand-950 ring-1 ring-brand-200">
+                  <span className="font-bold">Ponencia:</span> {values.nombrePonencia}
+                </div>
+              )}
+              {values.especialidad && (
+                <div className="sm:col-span-2 rounded-xl bg-clinic-50/70 p-2.5 text-xs text-clinic-950 ring-1 ring-clinic-200">
+                  <span className="font-bold">Especialidad:</span> {values.especialidad}
+                </div>
+              )}
+            </div>
+
+            {/* Código QR Central para Control de Acceso */}
+            <div className="flex flex-col items-center justify-center text-center py-1">
+              <div className="relative rounded-2xl bg-white p-3 shadow-md ring-2 ring-brand-500/20">
+                {qrCodeUrl ? (
+                  <img
+                    src={qrCodeUrl}
+                    alt={`Código QR de acceso para ${values.nombres} ${values.apellidos} (${result.id})`}
+                    className="size-48 sm:size-56 object-contain mx-auto"
+                  />
+                ) : (
+                  <div className="flex size-48 sm:size-56 items-center justify-center">
+                    <Loader2 className="size-8 animate-spin text-brand-600" />
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-3">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-ink-mute">
+                  Código de Identificación
+                </span>
+                <div className="font-mono text-2xl sm:text-3xl font-black tracking-widest text-brand-700">
+                  {result.id}
+                </div>
+              </div>
+
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-clinic-50 px-3 py-1 text-xs font-bold text-clinic-700 ring-1 ring-clinic-200">
+                <Check className="size-3.5" strokeWidth={3} />
+                Acceso a Salón Principal (1) y Salón Alterno (2)
+              </div>
+            </div>
+
+            {/* Turnos y Salones asignados */}
+            <div className="rounded-2xl bg-slate-50/90 p-3.5 ring-1 ring-slate-200/80">
+              <h5 className="flex items-center gap-1.5 text-[11px] font-bold text-ink uppercase tracking-wider mb-2">
+                <Calendar className="size-3.5 text-brand-600" /> Días y Salones Programados
+              </h5>
+              <div className="space-y-1.5">
+                {activeDays.length > 0 ? (
+                  activeDays.map((d) => {
+                    const t = values.turnos[d.id];
+                    return (
+                      <div
+                        key={d.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs py-1 border-b border-slate-200/50 last:border-none"
+                      >
+                        <span className="font-bold text-ink">{d.dateLabel}</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {t?.manana && (
+                            <span className="inline-flex items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-medium text-brand-800 ring-1 ring-brand-200">
+                              Mañana: {t.manana === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)"}
+                            </span>
+                          )}
+                          {t?.tarde && (
+                            <span className="inline-flex items-center rounded-md bg-white px-2 py-0.5 text-[11px] font-medium text-clinic-800 ring-1 ring-clinic-200">
+                              Tarde: {t.tarde === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-xs text-ink-muted">Sin turnos registrados.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Sede del evento */}
+            <div className="flex items-center justify-center gap-1.5 text-center text-xs text-ink-soft pt-1">
+              <MapPin className="size-3.5 text-brand-600 shrink-0" />
+              <span>Hotel Biotel Suites · Barquisimeto, Estado Lara</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ──────── NOTIFICACIÓN DE ENVÍO POR CORREO ──────── */}
+        <div className="mx-auto max-w-lg rounded-2xl bg-brand-50/80 p-4 text-left ring-1 ring-brand-200">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
+              <Mail className="size-5" />
+            </span>
+            <div className="space-y-1">
+              <h5 className="text-xs font-bold text-brand-950 uppercase tracking-wide">
+                Remitido a tu correo electrónico
+              </h5>
+              <p className="text-xs text-brand-900 leading-relaxed">
+                Hemos enviado automáticamente tu constancia de inscripción oficial y este <b>Código QR de acceso</b> a{" "}
+                <span className="font-bold underline">{values.correo}</span>.
+              </p>
+              <p className="text-[11px] text-brand-800">
+                {result.exonerated
+                  ? "Como personal del HCUAMP, tu participación está 100% exonerada."
+                  : `Inscripción por un monto de ${usd(result.total)}. Conserva el correo con tu código QR para el control de acceso en la sede.`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ──────── BOTONES DE ACCIÓN ──────── */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          {qrCodeUrl && (
+            <a
+              href={qrCodeUrl}
+              download={`Pase_Acceso_Congreso_${result.id}_${values.cedula}.png`}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-clinic-600 px-5 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-brand-500/25 transition hover:brightness-110"
+            >
+              <Download className="size-4" /> Descargar Código QR (PNG)
+            </a>
+          )}
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs sm:text-sm font-semibold text-ink-soft shadow-sm hover:bg-slate-50 transition"
+          >
+            <Printer className="size-4" /> Imprimir Credencial
+          </button>
+
+          <button
+            type="button"
+            onClick={reset}
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-5 py-2.5 text-xs sm:text-sm font-semibold text-ink-soft transition hover:bg-slate-200"
+          >
+            Registrar a otra persona
+          </button>
+        </div>
       </div>
     );
   }

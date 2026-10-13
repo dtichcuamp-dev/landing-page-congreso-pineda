@@ -448,10 +448,10 @@ function validate_(b) {
         var keyM = diaId + '_manana_' + tDia.manana;
         var maxM = CAPACITIES[tDia.manana];
         if ((occupied[keyM] || 0) + 1 > maxM) {
-          var salonNom = tDia.manana === 'principal' ? 'Salón Principal' : 'Salón Alterno';
+          var salonNom = tDia.manana === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)';
           throw new UserError_('El ' + salonNom + ' para el turno de la Mañana del ' + diaLabel + ' ha alcanzado el aforo máximo permitido (' + maxM + ' puestos).');
         }
-        partesDia.push('Mañana: ' + (tDia.manana === 'principal' ? 'Salón Principal' : 'Salón Alterno'));
+        partesDia.push('Mañana: ' + (tDia.manana === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)'));
       }
 
       if (tDia.tarde) {
@@ -461,10 +461,10 @@ function validate_(b) {
         var keyT = diaId + '_tarde_' + tDia.tarde;
         var maxT = CAPACITIES[tDia.tarde];
         if ((occupied[keyT] || 0) + 1 > maxT) {
-          var salonNomT = tDia.tarde === 'principal' ? 'Salón Principal' : 'Salón Alterno';
+          var salonNomT = tDia.tarde === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)';
           throw new UserError_('El ' + salonNomT + ' para el turno de la Tarde del ' + diaLabel + ' ha alcanzado el aforo máximo permitido (' + maxT + ' puestos).');
         }
-        partesDia.push('Tarde: ' + (tDia.tarde === 'principal' ? 'Salón Principal' : 'Salón Alterno'));
+        partesDia.push('Tarde: ' + (tDia.tarde === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)'));
       }
 
       if (partesDia.length > 0) {
@@ -639,11 +639,25 @@ function appendRow_(d, receiptFile) {
 function sendEmail_(d, id) {
   try {
     var monto = d.total === 0 ? 'Exonerado (100%)' : 'USD ' + d.total + ' (al cambio oficial BCV)';
+    var qrUrl = 'https://quickchart.io/qr?size=300&text=' + encodeURIComponent(id);
+
     var html =
       '<div style="font-family:Arial,sans-serif;max-width:540px;margin:auto;color:#0b2545">' +
-      '<h2 style="color:#1d63d8;margin-bottom:8px">Comprobante de Inscripción</h2>' +
-      '<p style="font-size:15px">Hola <b>' + esc_(d.nombres) + '</b>, hemos recibido tu inscripción al <b>XIV Congreso Pineda 2026</b> ' +
-      '(2 al 6 de noviembre · Biotel Suites, Barquisimeto).</p>' +
+      '<div style="text-align:center;padding:12px 0 20px 0;border-bottom:2px solid #1d63d8">' +
+      '<span style="font-size:12px;font-weight:bold;letter-spacing:1.5px;color:#1d63d8;text-transform:uppercase">XIV Congreso Pineda 2026</span>' +
+      '<h2 style="color:#0b2545;margin:6px 0 0 0;font-size:22px">Pase de Acceso Oficial</h2>' +
+      '</div>' +
+      '<p style="font-size:15px;margin-top:20px">Hola <b>' + esc_(d.nombres) + '</b>, hemos recibido y registrado tu inscripción al <b>XIV Congreso Pineda 2026</b> ' +
+      '(2 al 6 de noviembre · Hotel Biotel Suites, Barquisimeto).</p>' +
+      
+      // Bloque Destacado del Código QR
+      '<div style="background:#f4f8fb;padding:24px;border-radius:14px;text-align:center;margin:22px 0;border:1px solid #dbeafe">' +
+      '<p style="margin-top:0;font-size:15px;color:#0b2545;font-weight:bold">Tu Código QR de Acceso</p>' +
+      '<p style="font-size:12px;color:#64748b;margin:4px 0 14px 0">Presenta este código en tu teléfono o impreso para el control de acceso al Salón Principal (1) y Salón Alterno (2)</p>' +
+      '<img src="' + qrUrl + '" alt="Código QR de Acceso" width="220" height="220" style="background:#ffffff;padding:12px;border-radius:12px;border:1px solid #cbd5e1;display:inline-block;box-shadow:0 2px 8px rgba(0,0,0,0.06)"/>' +
+      '<p style="font-family:Courier New,monospace;font-size:22px;font-weight:bold;color:#1d63d8;margin:12px 0 0 0;letter-spacing:2px">' + id + '</p>' +
+      '</div>' +
+
       '<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0">' +
       row_('Código de Registro', id) +
       row_('Institución', esc_(d.institucion)) +
@@ -655,8 +669,8 @@ function sendEmail_(d, id) {
       '</table>' +
       '<div style="background:#f4f8fb;padding:16px;border-radius:10px;font-size:13px;color:#475569;margin-top:16px">' +
       (d.total === 0
-        ? '<b>Inscripción exonerada:</b> Tu registro ha sido procesado automáticamente. Incluye acceso a las ponencias académicas, certificado digital y kit del participante.'
-        : '<b>Pago en verificación:</b> Nuestro equipo validará el comprobante bancario emitido y recibirás la confirmación final por este medio.') +
+        ? '<b>Inscripción exonerada:</b> Tu registro ha sido procesado automáticamente. Conserva este correo con tu código QR para el control de acceso en cada jornada.'
+        : '<b>Pago recibido en verificación:</b> Nuestro equipo validará el comprobante bancario. Conserva este correo y tu código QR de acceso.') +
       '</div>' +
       '<p style="color:#7a8aa3;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px">' +
       'Hospital Central Universitario «Dr. Antonio María Pineda» · Barquisimeto, Estado Lara.' +
@@ -664,7 +678,7 @@ function sendEmail_(d, id) {
 
     MailApp.sendEmail({
       to: d.correo,
-      subject: 'Inscripción Recibida · XIV Congreso Pineda 2026 · ' + id,
+      subject: 'Pase de Acceso y Código QR · XIV Congreso Pineda 2026 · ' + id,
       htmlBody: html,
       name: CONFIG.EMAIL_SENDER_NAME
     });
@@ -752,6 +766,22 @@ function scanQr_(body) {
       if (data[i][0] === id) { found = data[i]; break; }
     }
     if (!found) throw new UserError_('Registro no encontrado.');
+
+    // Registrar asistencia en hoja 'Asistencias'
+    var shAsist = ss.getSheetByName('Asistencias');
+    if (!shAsist) {
+      shAsist = ss.insertSheet('Asistencias');
+      shAsist.getRange(1, 1, 1, 8).setValues([['ID', 'Nombres', 'Apellidos', 'Tipo', 'Salón', 'Jornada', 'Validador', 'Hora de escaneo']])
+        .setFontWeight('bold').setBackground('#059669').setFontColor('#ffffff');
+      shAsist.setFrozenRows(1);
+    }
+    var timestamp = new Date();
+    shAsist.appendRow([
+      found[0], found[4], found[5], found[11], salon, jornada, validador, timestamp
+    ]);
+    var lastRow = shAsist.getLastRow();
+    shAsist.getRange(lastRow, 8).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+
     return { success: true, nombres: found[4] + ' ' + found[5], tipo: found[11] };
   } finally {
     lock.releaseLock();
