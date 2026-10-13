@@ -61,5 +61,6 @@ export const NAV_LINKS = [
   { href: "#ponentes", label: "Ponentes" },
   { href: "#programa", label: "Programa" },
   { href: "#sede", label: "Sede" },
+  { href: "#aliados", label: "Aliados" },
   { href: "#inscripciones", label: "Inscripciones" },
 ] as const;
