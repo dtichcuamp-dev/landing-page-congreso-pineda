@@ -3,6 +3,7 @@ import { FloatingBrochure } from "@/components/layout/FloatingBrochure";
 import { FloatingCTA } from "@/components/layout/FloatingCTA";
 import { Navbar } from "@/components/layout/Navbar";
 import { About } from "@/components/sections/About";
+import { Honoree } from "@/components/sections/Honoree";
 import { Agenda } from "@/components/sections/Agenda";
 import { Hero } from "@/components/sections/Hero";
 import { Highlights } from "@/components/sections/Highlights";
@@ -20,6 +21,7 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <About />
+        <Honoree />
         <Highlights />
         <Gallery />
         <Specialties />
