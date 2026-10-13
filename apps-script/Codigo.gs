@@ -165,9 +165,13 @@ function doPost(e) {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
       return json_({ ok: true, data: resendBulkEmails_(body) });
     }
-    if (body.action === 'scan_qr') {
+    if (body.action === 'get_occupancy') {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
-      return json_({ ok: true, data: scanQr_(body) });
+      return json_({ ok: true, data: getOccupancy_(body.jornada, body.turno, body.salon) });
+    }
+    if (body.action === 'validate_access' || body.action === 'scan_qr') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: validateAccess_(body) });
     }
 
     // Honeypot anti-spam
@@ -947,44 +951,349 @@ function approvePayment_(id) {
   }
 }
 
-function scanQr_(body) {
-  var id = body.id;
-  var salon = body.salon;
-  var jornada = body.jornada;
-  var validador = body.user || 'Desconocido';
-  if (!id) throw new UserError_('Código inválido.');
+var ASISTENCIAS_HEADERS = [
+  'ID',
+  'Cédula',
+  'Nombres y Apellidos',
+  'Tipo Participante',
+  'Salón Key',
+  'Salón Nombre',
+  'Jornada',
+  'Turno Key',
+  'Turno Horario',
+  'Validador',
+  'Fecha y Hora'
+];
+
+function getAsistenciasSheet_(ss) {
+  var sh = ss.getSheetByName('Asistencias');
+  if (!sh) {
+    sh = ss.insertSheet('Asistencias');
+    sh.getRange(1, 1, 1, ASISTENCIAS_HEADERS.length).setValues([ASISTENCIAS_HEADERS])
+      .setFontWeight('bold').setBackground('#0b2545').setFontColor('#ffffff');
+    sh.setFrozenRows(1);
+    sh.getRange('B:B').setNumberFormat('@'); // Cédula como texto
+  }
+  return sh;
+}
+
+function parseSalonKey_(salon) {
+  var str = String(salon || '').toLowerCase();
+  if (str.indexOf('alterno') !== -1 || str.indexOf('2') !== -1) {
+    return { key: 'alterno', name: 'Salón Alterno (2)', capacity: 60 };
+  }
+  return { key: 'principal', name: 'Salón Principal (1)', capacity: 240 };
+}
+
+function parseTurnoKey_(turno) {
+  var str = String(turno || '').toLowerCase();
+  if (str.indexOf('tarde') !== -1 || str.indexOf('13') !== -1 || str.indexOf('18') !== -1) {
+    return { key: 'tarde', name: 'Tarde', horario: '13:00 a 18:00', fullLabel: 'Tarde (13:00 a 18:00)' };
+  }
+  return { key: 'manana', name: 'Mañana', horario: '08:00 a 12:45', fullLabel: 'Mañana (08:00 a 12:45)' };
+}
+
+function computeAlert_(salonKey, occupancy, remaining) {
+  if (salonKey === 'principal') {
+    if (occupancy >= 240) {
+      return { level: 'max', threshold: 240, text: 'Aforo Máximo Completado (240 puestos). Salón lleno.' };
+    }
+    if (occupancy >= 220) {
+      return { level: 'danger', threshold: 220, text: 'Alerta Crítica: 220 puestos completados. Solo quedan ' + remaining + ' puestos disponibles en Salón Principal (1).' };
+    }
+    if (occupancy >= 200) {
+      return { level: 'warning', threshold: 200, text: 'Alerta de Aforo: 200 puestos completados en Salón Principal (1). Quedan ' + remaining + ' puestos disponibles.' };
+    }
+    if (occupancy >= 180) {
+      return { level: 'warning', threshold: 180, text: 'Alerta de Aforo: 180 puestos completados en Salón Principal (1). Quedan ' + remaining + ' puestos disponibles.' };
+    }
+    if (occupancy >= 160) {
+      return { level: 'info', threshold: 160, text: 'Alerta de Aforo: 160 puestos completados en Salón Principal (1). Quedan ' + remaining + ' puestos disponibles.' };
+    }
+  } else {
+    if (occupancy >= 60) {
+      return { level: 'max', threshold: 60, text: 'Aforo Máximo Completado (60 puestos). Salón lleno.' };
+    }
+    if (occupancy >= 50) {
+      return { level: 'danger', threshold: 50, text: 'Alerta Crítica: 50 puestos completados. Solo quedan ' + remaining + ' puestos disponibles en Salón Alterno (2).' };
+    }
+    if (occupancy >= 45) {
+      return { level: 'warning', threshold: 45, text: 'Alerta de Aforo: 45 puestos completados en Salón Alterno (2). Quedan ' + remaining + ' puestos disponibles.' };
+    }
+    if (occupancy >= 40) {
+      return { level: 'warning', threshold: 40, text: 'Alerta de Aforo: 40 puestos completados en Salón Alterno (2). Quedan ' + remaining + ' puestos disponibles.' };
+    }
+    if (occupancy >= 35) {
+      return { level: 'info', threshold: 35, text: 'Alerta de Aforo: 35 puestos completados en Salón Alterno (2). Quedan ' + remaining + ' puestos disponibles.' };
+    }
+  }
+  return null;
+}
+
+function getOccupancy_(jornada, turno, salon) {
+  var salonMeta = parseSalonKey_(salon);
+  var turnoMeta = parseTurnoKey_(turno);
+  var targetJornada = String(jornada || '2026-11-02').trim();
+
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var shAsist = getAsistenciasSheet_(ss);
+  var data = shAsist.getDataRange().getValues();
+
+  var count = 0;
+  for (var i = 1; i < data.length; i++) {
+    var r = data[i];
+    var rSalon = String(arSalonVal_(r)).toLowerCase();
+    var rJornada = String(r[6] || r[5] || '').trim();
+    var rTurno = String(r[7] || '').toLowerCase();
+    if (rJornada === targetJornada && rTurno === turnoMeta.key && rSalon === salonMeta.key) {
+      count++;
+    }
+  }
+
+  var remaining = Math.max(0, salonMeta.capacity - count);
+  var alert = computeAlert_(salonMeta.key, count, remaining);
+
+  return {
+    salonKey: salonMeta.key,
+    salonName: salonMeta.name,
+    capacity: salonMeta.capacity,
+    turnoKey: turnoMeta.key,
+    turnoLabel: turnoMeta.fullLabel,
+    jornada: targetJornada,
+    occupancy: count,
+    remaining: remaining,
+    alert: alert
+  };
+}
+
+function arSalonVal_(r) {
+  return r[4] ? r[4] : (r[4] === 0 ? 'principal' : (String(r[5] || '').indexOf('2') !== -1 ? 'alterno' : 'principal'));
+}
+
+function validateAccess_(body) {
+  var query = String(body.query || body.id || body.cedula || '').trim();
+  if (!query) throw new UserError_('Por favor ingresa un número de cédula o escanea el código QR.');
+
+  var salonMeta = parseSalonKey_(body.salon);
+  var turnoMeta = parseTurnoKey_(body.turno);
+  var targetJornada = String(body.jornada || '2026-11-02').trim();
+  var validador = String(body.user || 'Validador').trim();
+  var force = !!body.force;
+
+  var cleanQueryDigits = query.replace(/\D/g, '');
 
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     var shInsc = ss.getSheetByName(CONFIG.SHEET_NAME);
-    var data = shInsc.getDataRange().getValues();
-    var found = null;
-    for (var i = 1; i < data.length; i++) {
-      if (data[i][0] === id) { found = data[i]; break; }
-    }
-    if (!found) throw new UserError_('Registro no encontrado.');
+    var inscData = shInsc.getDataRange().getValues();
 
-    // Registrar asistencia en hoja 'Asistencias'
-    var shAsist = ss.getSheetByName('Asistencias');
-    if (!shAsist) {
-      shAsist = ss.insertSheet('Asistencias');
-      shAsist.getRange(1, 1, 1, 8).setValues([['ID', 'Nombres', 'Apellidos', 'Tipo', 'Salón', 'Jornada', 'Validador', 'Hora de escaneo']])
-        .setFontWeight('bold').setBackground('#059669').setFontColor('#ffffff');
-      shAsist.setFrozenRows(1);
+    var found = null;
+    var cleanFoundCed = '';
+
+    for (var i = 1; i < inscData.length; i++) {
+      var r = inscData[i];
+      var rId = String(r[0] || '').trim().toUpperCase();
+      var rCedRaw = String(r[6] || '').trim();
+      var rCedDigits = rCedRaw.replace(/\D/g, '');
+
+      // Buscar por ID exacto (ej. CP26-0001) o por Cédula (con o sin V/E/puntos)
+      if (rId === query.toUpperCase() || (cleanQueryDigits.length >= 5 && rCedDigits === cleanQueryDigits)) {
+        found = r;
+        cleanFoundCed = rCedRaw;
+        break;
+      }
     }
-    var timestamp = new Date();
+
+    if (!found) {
+      throw new UserError_('No se encontró ningún participante con la cédula o código "' + query + '".');
+    }
+
+    var participantId = String(found[0]).trim();
+    var nombres = String(found[4] || '').trim();
+    var apellidos = String(found[5] || '').trim();
+    var tipoLabel = String(found[11] || '').trim();
+    var institucion = String(found[3] || '').trim();
+    var estadoPago = String(found[24] || '').trim();
+    var turnosJsonStr = String(found[20] || '{}');
+
+    var turnosJson = {};
+    try { turnosJson = JSON.parse(turnosJsonStr); } catch (e) {}
+
+    // 1. Verificar si ya fue escaneado/ingresado en este mismo turno y salón
+    var shAsist = getAsistenciasSheet_(ss);
+    var asistData = shAsist.getDataRange().getValues();
+    var alreadyCheckedIn = null;
+    var currentOccupancy = 0;
+
+    for (var a = 1; a < asistData.length; a++) {
+      var ar = asistData[a];
+      var aId = String(ar[0] || '').trim();
+      var aSalon = String(arSalonVal_(ar)).toLowerCase();
+      var aJornada = String(ar[6] || ar[5] || '').trim();
+      var aTurno = String(ar[7] || '').toLowerCase();
+
+      // Contar aforo
+      if (aJornada === targetJornada && aTurno === turnoMeta.key && aSalon === salonMeta.key) {
+        currentOccupancy++;
+      }
+
+      // Comprobar si ya ingresó
+      if (aId === participantId && aJornada === targetJornada && aTurno === turnoMeta.key && aSalon === salonMeta.key) {
+        var horaVal = ar[10] || ar[7];
+        alreadyCheckedIn = {
+          hora: horaVal instanceof Date
+            ? Utilities.formatDate(horaVal, 'America/Caracas', 'HH:mm:ss')
+            : String(horaVal || ''),
+          validador: String(ar[9] || ar[6] || 'Validador')
+        };
+      }
+    }
+
+    // Si ya ingresó y no se está forzando
+    if (alreadyCheckedIn && !force) {
+      var remainingNow = Math.max(0, salonMeta.capacity - currentOccupancy);
+      return {
+        success: false,
+        warning: true,
+        alreadyScanned: true,
+        message: '¡Atención! Este participante ya registró su ingreso a las ' + alreadyCheckedIn.hora + ' con ' + alreadyCheckedIn.validador + '.',
+        id: participantId,
+        cedula: cleanFoundCed,
+        nombres: nombres + ' ' + apellidos,
+        tipo: tipoLabel,
+        institucion: institucion,
+        salon: salonMeta.name,
+        jornada: targetJornada,
+        turno: turnoMeta.fullLabel,
+        occupancy: currentOccupancy,
+        capacity: salonMeta.capacity,
+        remaining: remainingNow,
+        alert: computeAlert_(salonMeta.key, currentOccupancy, remainingNow)
+      };
+    }
+
+    // 2. Verificar programación del participante para este día y turno
+    var turnosDia = turnosJson[targetJornada] || null;
+    var assignedSalonForTurno = turnosDia ? turnosDia[turnoMeta.key] : null;
+
+    if (!force) {
+      if (!turnosDia) {
+        return {
+          success: false,
+          warning: true,
+          mismatch: true,
+          message: 'El participante no tiene programada asistencia para la fecha ' + targetJornada + '.',
+          id: participantId,
+          cedula: cleanFoundCed,
+          nombres: nombres + ' ' + apellidos,
+          tipo: tipoLabel,
+          institucion: institucion,
+          programacion: String(found[19] || 'Sin turnos registrados'),
+          salon: salonMeta.name,
+          jornada: targetJornada,
+          turno: turnoMeta.fullLabel
+        };
+      }
+
+      if (assignedSalonForTurno !== salonMeta.key) {
+        var nombreAsignado = assignedSalonForTurno === 'principal'
+          ? 'Salón Principal (1)'
+          : assignedSalonForTurno === 'alterno'
+            ? 'Salón Alterno (2)'
+            : 'Ningún salón programado en este turno';
+
+        return {
+          success: false,
+          warning: true,
+          mismatch: true,
+          message: 'El participante tiene asignado "' + nombreAsignado + '" en este turno (' + turnoMeta.name + '), no el ' + salonMeta.name + '.',
+          id: participantId,
+          cedula: cleanFoundCed,
+          nombres: nombres + ' ' + apellidos,
+          tipo: tipoLabel,
+          institucion: institucion,
+          assignedSalon: nombreAsignado,
+          currentSalon: salonMeta.name,
+          programacion: String(found[19] || ''),
+          salon: salonMeta.name,
+          jornada: targetJornada,
+          turno: turnoMeta.fullLabel
+        };
+      }
+
+      // Comprobar estado de pago si no es exonerado
+      if (estadoPago === 'Pendiente de verificación') {
+        return {
+          success: false,
+          warning: true,
+          paymentPending: true,
+          message: 'El pago del participante está "Pendiente de verificación". Por favor verifica su comprobante bancario antes de autorizar.',
+          id: participantId,
+          cedula: cleanFoundCed,
+          nombres: nombres + ' ' + apellidos,
+          tipo: tipoLabel,
+          institucion: institucion,
+          salon: salonMeta.name,
+          jornada: targetJornada,
+          turno: turnoMeta.fullLabel
+        };
+      }
+    }
+
+    // 3. Comprobar aforo máximo antes de admitir
+    if (currentOccupancy >= salonMeta.capacity && !force) {
+      throw new UserError_('El ' + salonMeta.name + ' ha alcanzado su aforo máximo (' + salonMeta.capacity + ' personas). No se pueden admitir más ingresos.');
+    }
+
+    // 4. Registrar asistencia en la hoja 'Asistencias'
+    var now = new Date();
     shAsist.appendRow([
-      found[0], found[4], found[5], found[11], salon, jornada, validador, timestamp
+      participantId,
+      cleanFoundCed,
+      nombres + ' ' + apellidos,
+      tipoLabel,
+      salonMeta.key,
+      salonMeta.name,
+      targetJornada,
+      turnoMeta.key,
+      turnoMeta.horario,
+      validador,
+      now
     ]);
     var lastRow = shAsist.getLastRow();
-    shAsist.getRange(lastRow, 8).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+    shAsist.getRange(lastRow, 11).setNumberFormat('dd/MM/yyyy HH:mm:ss');
+    shAsist.getRange(lastRow, 2).setNumberFormat('@');
 
-    return { success: true, nombres: found[4] + ' ' + found[5], tipo: found[11] };
+    var newOccupancy = currentOccupancy + 1;
+    var newRemaining = Math.max(0, salonMeta.capacity - newOccupancy);
+    var alertObj = computeAlert_(salonMeta.key, newOccupancy, newRemaining);
+
+    return {
+      success: true,
+      id: participantId,
+      cedula: cleanFoundCed,
+      nombres: nombres + ' ' + apellidos,
+      tipo: tipoLabel,
+      institucion: institucion,
+      salon: salonMeta.name,
+      jornada: targetJornada,
+      turno: turnoMeta.fullLabel,
+      occupancy: newOccupancy,
+      capacity: salonMeta.capacity,
+      remaining: newRemaining,
+      alert: alertObj,
+      horaValidacion: Utilities.formatDate(now, 'America/Caracas', 'HH:mm:ss')
+    };
   } finally {
     lock.releaseLock();
   }
+}
+
+// Alias para retrocompatibilidad
+function scanQr_(body) {
+  return validateAccess_(body);
 }
 
 /**

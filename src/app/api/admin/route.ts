@@ -8,8 +8,9 @@ export async function POST(req: Request) {
     const correctPassword = process.env.ADMIN_PASSWORD || "congreso2026admin";
     const scannerPassword = process.env.SCANNER_PASSWORD || correctPassword;
     
-    if (action === "scan_qr") {
-      if (!scannerPassword || password !== scannerPassword) {
+    const isScannerAction = action === "scan_qr" || action === "validate_access" || action === "get_occupancy";
+    if (isScannerAction) {
+      if (!scannerPassword || (password !== scannerPassword && password !== correctPassword)) {
         return NextResponse.json({ ok: false, error: "Contraseña incorrecta." }, { status: 401 });
       }
     } else {
@@ -33,8 +34,26 @@ export async function POST(req: Request) {
       payload = { action: "resend_email", token: adminToken, id: body.id };
     } else if (action === "resend_bulk_emails") {
       payload = { action: "resend_bulk_emails", token: adminToken, ids: body.ids, filter: body.filter };
-    } else if (action === "scan_qr") {
-      payload = { action: "scan_qr", token: adminToken, id: body.id, salon: body.salon, jornada: body.jornada, user: body.user };
+    } else if (action === "validate_access" || action === "scan_qr") {
+      payload = {
+        action: "validate_access",
+        token: adminToken,
+        query: body.query || body.id || body.cedula,
+        id: body.id,
+        salon: body.salon,
+        jornada: body.jornada,
+        turno: body.turno,
+        user: body.user,
+        force: body.force,
+      };
+    } else if (action === "get_occupancy") {
+      payload = {
+        action: "get_occupancy",
+        token: adminToken,
+        salon: body.salon,
+        jornada: body.jornada,
+        turno: body.turno,
+      };
     } else {
       payload = { action: "get_dashboard", token: adminToken };
     }

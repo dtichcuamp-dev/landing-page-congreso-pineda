@@ -101,6 +101,86 @@ export const CAPACIDADES_SALON = {
   alterno: 60,
 } as const;
 
+export const TURNOS_HORARIOS = {
+  manana: {
+    key: "manana" as const,
+    label: "Mañana (08:00 a 12:45)",
+    shortLabel: "Mañana",
+    horario: "08:00 a 12:45",
+  },
+  tarde: {
+    key: "tarde" as const,
+    label: "Tarde (13:00 a 18:00)",
+    shortLabel: "Tarde",
+    horario: "13:00 a 18:00",
+  },
+} as const;
+
+export const SALONES_INFO = {
+  principal: {
+    key: "principal" as const,
+    name: "Salón Principal (1)",
+    shortName: "Salón (1)",
+    capacity: 240,
+    alertThresholds: [160, 180, 200, 220] as const,
+  },
+  alterno: {
+    key: "alterno" as const,
+    name: "Salón Alterno (2)",
+    shortName: "Salón (2)",
+    capacity: 60,
+    alertThresholds: [35, 40, 45, 50] as const,
+  },
+} as const;
+
+export type SalonKey = keyof typeof SALONES_INFO;
+export type TurnoKey = keyof typeof TURNOS_HORARIOS;
+
+export interface AforoAlert {
+  level: "info" | "warning" | "danger" | "max";
+  threshold: number;
+  text: string;
+}
+
+export function computeAforoAlert(salonKey: SalonKey, occupancy: number): AforoAlert | null {
+  const cap = SALONES_INFO[salonKey]?.capacity || (salonKey === "alterno" ? 60 : 240);
+  const remaining = Math.max(0, cap - occupancy);
+  if (salonKey === "principal") {
+    if (occupancy >= 240) {
+      return { level: "max", threshold: 240, text: "Aforo Máximo Completado (240 puestos). Salón lleno." };
+    }
+    if (occupancy >= 220) {
+      return { level: "danger", threshold: 220, text: `Alerta Crítica: 220 puestos completados. Solo quedan ${remaining} puestos disponibles en Salón Principal (1).` };
+    }
+    if (occupancy >= 200) {
+      return { level: "warning", threshold: 200, text: `Alerta de Aforo: 200 puestos completados en Salón Principal (1). Quedan ${remaining} puestos disponibles.` };
+    }
+    if (occupancy >= 180) {
+      return { level: "warning", threshold: 180, text: `Alerta de Aforo: 180 puestos completados en Salón Principal (1). Quedan ${remaining} puestos disponibles.` };
+    }
+    if (occupancy >= 160) {
+      return { level: "info", threshold: 160, text: `Alerta de Aforo: 160 puestos completados en Salón Principal (1). Quedan ${remaining} puestos disponibles.` };
+    }
+  } else {
+    if (occupancy >= 60) {
+      return { level: "max", threshold: 60, text: "Aforo Máximo Completado (60 puestos). Salón lleno." };
+    }
+    if (occupancy >= 50) {
+      return { level: "danger", threshold: 50, text: `Alerta Crítica: 50 puestos completados. Solo quedan ${remaining} puestos disponibles en Salón Alterno (2).` };
+    }
+    if (occupancy >= 45) {
+      return { level: "warning", threshold: 45, text: `Alerta de Aforo: 45 puestos completados en Salón Alterno (2). Quedan ${remaining} puestos disponibles.` };
+    }
+    if (occupancy >= 40) {
+      return { level: "warning", threshold: 40, text: `Alerta de Aforo: 40 puestos completados en Salón Alterno (2). Quedan ${remaining} puestos disponibles.` };
+    }
+    if (occupancy >= 35) {
+      return { level: "info", threshold: 35, text: `Alerta de Aforo: 35 puestos completados en Salón Alterno (2). Quedan ${remaining} puestos disponibles.` };
+    }
+  }
+  return null;
+}
+
 /**
  * Calcula los días seleccionados y el total a pagar.
  * El pago es POR DÍA (cubriendo 1 o 2 turnos de ese día).
