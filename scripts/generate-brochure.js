@@ -94,14 +94,14 @@ async function buildBrochure() {
   function drawInnerHeader(page, title, subtitle) {
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 64,
+      y: PAGE_HEIGHT - 66,
       width: PAGE_WIDTH,
-      height: 64,
+      height: 66,
       color: NAVY
     });
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 67,
+      y: PAGE_HEIGHT - 69,
       width: PAGE_WIDTH,
       height: 3,
       color: CLINIC
@@ -109,34 +109,44 @@ async function buildBrochure() {
 
     page.drawImage(isoImg, {
       x: 36,
-      y: PAGE_HEIGHT - 56,
-      width: 42,
-      height: 44
+      y: PAGE_HEIGHT - 58,
+      width: 44,
+      height: 46
     });
 
     page.drawText('XIV CONGRESO PINEDA 2026', {
-      x: 88,
-      y: PAGE_HEIGHT - 30,
-      size: 9.5,
+      x: 90,
+      y: PAGE_HEIGHT - 28,
+      size: 11,
       font: fontBold,
       color: CLINIC
     });
     page.drawText(title, {
-      x: 88,
-      y: PAGE_HEIGHT - 46,
-      size: 13,
+      x: 90,
+      y: PAGE_HEIGHT - 44,
+      size: 12.5,
       font: fontBold,
       color: WHITE
     });
     if (subtitle) {
       page.drawText(subtitle, {
-        x: 88,
+        x: 90,
         y: PAGE_HEIGHT - 58,
-        size: 7.5,
+        size: 7.2,
         font: fontRegular,
         color: rgb(203 / 255, 213 / 255, 225 / 255)
       });
     }
+
+    const hospStr = 'Hospital Central Dr. Antonio María Pineda';
+    const hospW = fontRegular.widthOfTextAtSize(hospStr, 6.8);
+    page.drawText(hospStr, {
+      x: PAGE_WIDTH - 36 - hospW,
+      y: PAGE_HEIGHT - 28,
+      size: 6.8,
+      font: fontRegular,
+      color: rgb(186 / 255, 230 / 255, 253 / 255)
+    });
   }
 
   // Helper para pie de página
@@ -149,10 +159,10 @@ async function buildBrochure() {
       color: BORDER
     });
 
-    page.drawText(`Hospital Central Universitario «Dr. Antonio María Pineda» · RIF: ${RIF_HCUAMP} · Barquisimeto, Estado Lara`, {
+    page.drawText(`XIV CONGRESO PINEDA 2026 · Guía Oficial · Hospital Central Universitario «Dr. Antonio María Pineda» (RIF: ${RIF_HCUAMP})`, {
       x: 36,
       y: 26,
-      size: 7.5,
+      size: 7.2,
       font: fontRegular,
       color: SLATE_MUTED
     });
@@ -174,50 +184,65 @@ async function buildBrochure() {
   {
     const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
 
-    // Banda superior principal
+    // Banda superior principal destacando el XIV CONGRESO PINEDA 2026
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 88,
+      y: PAGE_HEIGHT - 90,
       width: PAGE_WIDTH,
-      height: 88,
+      height: 90,
+      color: WHITE
+    });
+    page.drawRectangle({
+      x: 0,
+      y: PAGE_HEIGHT - 3,
+      width: PAGE_WIDTH,
+      height: 3,
       color: NAVY
     });
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 91,
+      y: PAGE_HEIGHT - 93,
       width: PAGE_WIDTH,
       height: 3,
       color: CLINIC
     });
 
-    // Logo e Isotipo en portada
-    page.drawImage(isoImg, {
+    // Logotipo oficial completo del Congreso Pineda (CP + CONGRESO PINEDA)
+    page.drawImage(logoImg, {
       x: 36,
-      y: PAGE_HEIGHT - 76,
-      width: 54,
-      height: 58
+      y: PAGE_HEIGHT - 82,
+      width: 172,
+      height: 72
     });
 
-    page.drawText('HOSPITAL CENTRAL UNIVERSITARIO «DR. ANTONIO MARÍA PINEDA»', {
-      x: 100,
+    // Textos de cabecera con máxima jerarquía para el Congreso
+    page.drawText('XIV CONGRESO PINEDA 2026', {
+      x: 220,
       y: PAGE_HEIGHT - 34,
-      size: 10.5,
+      size: 15,
       font: fontBold,
-      color: WHITE
+      color: NAVY
     });
-    page.drawText(`RIF: ${RIF_HCUAMP} · Barquisimeto, Estado Lara, Venezuela`, {
-      x: 100,
+    page.drawText('LIX Jornada de Egresados · LXXII Aniversario', {
+      x: 220,
       y: PAGE_HEIGHT - 48,
-      size: 8.5,
-      font: fontRegular,
-      color: rgb(186 / 255, 230 / 255, 253 / 255)
-    });
-    page.drawText('COMITÉ ORGANIZADOR Y CIENTÍFICO · GUÍA OFICIAL DEL PARTICIPANTE', {
-      x: 100,
-      y: PAGE_HEIGHT - 62,
-      size: 8,
+      size: 9,
       font: fontBold,
-      color: CLINIC
+      color: BRAND
+    });
+    page.drawText('GUÍA OFICIAL DEL PARTICIPANTE · FOLLETO DEL EVENTO', {
+      x: 220,
+      y: PAGE_HEIGHT - 61,
+      size: 7.8,
+      font: fontBold,
+      color: CLINIC_TEAL
+    });
+    page.drawText(`Hospital Central Universitario «Dr. Antonio María Pineda» · RIF: ${RIF_HCUAMP} · Barquisimeto`, {
+      x: 220,
+      y: PAGE_HEIGHT - 74,
+      size: 7,
+      font: fontRegular,
+      color: SLATE_MUTED
     });
 
     // BLOQUE HERO CENTRAL (y = 555 a 685, height 130)
@@ -336,7 +361,7 @@ async function buildBrochure() {
       font: fontBold,
       color: NAVY
     });
-    page.drawText('Capacidad: 240 puestos por turno', {
+    page.drawText('Sesiones Plenarias y Simposios', {
       x: 194,
       y: 502,
       size: 8,
@@ -345,7 +370,7 @@ async function buildBrochure() {
     });
     drawWrappedText(
       page,
-      'Acondicionado para sesiones plenarias, simposios magistrales y actos protocolares con transmisión simultánea.',
+      'Acondicionado para conferencias magistrales, actos protocolares y simposios de alta especialidad con transmisión simultánea.',
       { x: 194, y: 488, font: fontRegular, size: 7.2, color: SLATE_TEXT, maxWidth: 172, lineHeight: 9.5 }
     );
 
@@ -373,7 +398,7 @@ async function buildBrochure() {
       font: fontBold,
       color: rgb(6 / 255, 95 / 255, 70 / 255)
     });
-    page.drawText('Capacidad: 60 puestos por turno', {
+    page.drawText('Especialidades y Discusión Focalizada', {
       x: 392,
       y: 502,
       size: 8,
@@ -426,7 +451,7 @@ async function buildBrochure() {
       {
         badge: '2',
         title: 'Salones Acondicionados',
-        desc: 'Salón Principal (1) [240 puestos] y Salón Alterno (2) [60 puestos] con tecnología audiovisual.'
+        desc: 'Salón Principal (1) y Salón Alterno (2) climatizados con tecnología audiovisual y transmisión.'
       },
       {
         badge: 'POSTER',
@@ -506,17 +531,17 @@ async function buildBrochure() {
       borderWidth: 1
     });
 
-    page.drawText('BIENVENIDA DEL COMITÉ ORGANIZADOR Y DIRECCIÓN GENERAL', {
+    page.drawText('BIENVENIDA AL XIV CONGRESO PINEDA 2026', {
       x: 50,
       y: 206,
-      size: 9.5,
+      size: 10,
       font: fontBold,
       color: NAVY
     });
 
     const introText =
-      'El Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP), máxima institución asistencial y docente del centroccidente de Venezuela, se complace en convocar a la comunidad médica, asistencial y científica al XIV Congreso Pineda 2026. ' +
-      'En el marco del LXXII Aniversario del HCUAMP y la LIX Jornada de Egresados, este magno evento constituye un espacio de convergencia científica para compartir avances diagnósticos y terapéuticos de vanguardia, debatir sobre casos clínicos de alta complejidad y fomentar la excelencia en la atención hospitalaria. ' +
+      'El Comité Organizador y Científico del XIV Congreso Pineda 2026 se complace en convocar a la comunidad médica, asistencial y científica al magno encuentro académico del año. ' +
+      'En el marco de la LIX Jornada de Egresados y el LXXII Aniversario del Hospital Central Universitario «Dr. Antonio María Pineda», este evento constituye un espacio de convergencia científica para compartir avances diagnósticos y terapéuticos de vanguardia, debatir sobre casos clínicos de alta complejidad y fomentar la excelencia clínica asistencial. ' +
       'Invitamos a médicos especialistas, residentes, profesionales de enfermería, terapeutas y estudiantes de ciencias de la salud a protagonizar una semana de intensa formación académica y fraternidad profesional.';
 
     drawWrappedText(page, introText, {
@@ -529,7 +554,7 @@ async function buildBrochure() {
       lineHeight: 12
     });
 
-    page.drawText('Hospital Central Universitario «Dr. Antonio María Pineda» · Barquisimeto, Estado Lara', {
+    page.drawText('XIV Congreso Pineda 2026 · Hospital Central Universitario «Dr. Antonio María Pineda» (HCUAMP)', {
       x: 50,
       y: 72,
       size: 7.8,
@@ -924,7 +949,7 @@ async function buildBrochure() {
       lineHeight: 7.2
     });
 
-    page.drawText('• Control de acceso mediante Código QR en Salón Principal (1) [240 puestos] y Salón Alterno (2) [60 puestos].', {
+    page.drawText('• Control de acceso mediante Código QR en Salón Principal (1) y Salón Alterno (2).', {
       x: 154,
       y: 64,
       size: 6.2,
@@ -943,15 +968,15 @@ async function buildBrochure() {
     drawInnerHeader(
       page,
       'CRONOGRAMA GENERAL DE ACTIVIDADES',
-      'Distribución de jornadas en Salón Principal (1) [240 puestos] y Salón Alterno (2) [60 puestos]'
+      'Distribución oficial de jornadas académicas en Salón Principal (1) y Salón Alterno (2)'
     );
 
     // Franja de Horarios Oficiales
     page.drawRectangle({
       x: 36,
-      y: PAGE_HEIGHT - 98,
+      y: PAGE_HEIGHT - 96,
       width: PAGE_WIDTH - 72,
-      height: 26,
+      height: 24,
       color: CARD_BG,
       borderColor: BORDER,
       borderWidth: 1
@@ -959,98 +984,160 @@ async function buildBrochure() {
 
     page.drawText('HORARIOS OFICIALES:', {
       x: 48,
-      y: PAGE_HEIGHT - 89,
-      size: 8,
+      y: PAGE_HEIGHT - 88,
+      size: 7.8,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('Turno Mañana: 8:00 a. m. – 12:30 m.', {
+    page.drawText('Turno Mañana: 8:00 / 8:30 a. m. – 12:30 m.', {
       x: 155,
-      y: PAGE_HEIGHT - 89,
-      size: 8,
+      y: PAGE_HEIGHT - 88,
+      size: 7.6,
       font: fontBold,
       color: BRAND
     });
     page.drawText('· Receso / Almuerzo: 12:30 m. – 2:00 p. m. ·', {
-      x: 300,
-      y: PAGE_HEIGHT - 89,
-      size: 7.5,
+      x: 315,
+      y: PAGE_HEIGHT - 88,
+      size: 7.2,
       font: fontRegular,
       color: SLATE_MUTED
     });
-    page.drawText('Turno Tarde: 2:00 p. m. – 5:50 p. m.', {
-      x: 450,
-      y: PAGE_HEIGHT - 89,
-      size: 8,
+    page.drawText('Turno Tarde: 2:00 p. m. – 6:00 p. m.', {
+      x: 455,
+      y: PAGE_HEIGHT - 88,
+      size: 7.6,
       font: fontBold,
       color: CLINIC_TEAL
     });
 
-    // 5 Tarjetas para los 5 días de Congreso
+    // 5 Tarjetas para los 5 días de Congreso con información real de agenda.ts
     const daysData = [
       {
         day: 'LUNES 02 DE NOVIEMBRE DE 2026',
-        theme: 'Inauguración Oficial · Medicina Interna · Neurocirugía · Imágenes',
+        theme: 'Acto Inaugural · Departamento de Enfermería · Jornada de Urología',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Acto Protocolar de Apertura Institucional (8:00 a. m.) & Jornada de Medicina Interna (8 ponencias): sepsis, patología vascular y soporte clínico.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Acto Inaugural del Congreso (8:30 a. m.): Himnos, apertura de autoridades, Reseña histórica del Dr. Antonio María Pineda (Dr. Felipe Pineda Barrios), Semblanza del Dr. Juan Alberto Olivares (Dr. Ramón Aguilar) y Clase Magistral.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Sin actividad en turno matutino (Sesión inaugural solemne unificada en Salón Principal).'
+          }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Neurocirugía (5 ponencias): microcirugía craneal, neurotrauma severo e hipertensión endocraneana.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Diagnóstico por Imágenes (6 ponencias): ultrasonido Doppler intervencionista y resonancia magnética.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Departamento de Enfermería (2:00 – 5:45 p. m.): Neumoprotección en neonato ventilado, de la cama a la bipedestación y estabilidad hemodinámica, humanización en emergencia y códigos de triaje.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Jornada de Urología (2:00 – 5:50 p. m.): Dispositivo Elutax-3 (Dr. N. Sáez / Dr. J. Sáez), urología transicional (Dr. J. Fernández), cáncer de próstata (Dr. A. Andrade), disfunción eréctil, nuevas tecnologías y estética masculina.'
+          }
         ]
       },
       {
         day: 'MARTES 03 DE NOVIEMBRE DE 2026',
-        theme: 'Ginecología y Obstetricia · Dermatología · Otorrinolaringología · Urología',
+        theme: 'Emergencia General · Diagnóstico por Imágenes · Neurocirugía · Fisiatría y Salud Mental',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Ginecología y Obstetricia (7 ponencias): medicina materno-fetal, hemorragia postparto y piso pélvico.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Dermatología (8 ponencias): dermatoscopia en lesiones de difícil diagnóstico y dermatología oncológica.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Simposio de Emergencia General (8:00 a. m. – 12:30 m.): Triaje ABCDE del politraumatizado, alteración de conciencia, Código ICTUS, arritmias graves, insuficiencia respiratoria aguda y saldo masivo de víctimas.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Diagnóstico por Imágenes (8:30 a. m. – 12:30 m.): TCE (conducta quirúrgica vs. expectante), pelvis traumática, ecografía pulmonar bedside, algoritmo en embarazo, Eco FAST vs. TC y accesos vasculares ecoguiados.'
+          }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Otorrinolaringología (5 ponencias): cirugía nasosinusal guiada y patología de cuerdas vocales.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Urología (6 ponencias): técnicas endourológicas en litiasis compleja y abordaje de masas renales.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Simposio de Neurocirugía (2:00 – 4:40 p. m.): Abordaje endoscópico de columna, abordaje retrosigmoideo, disrrafismo espinal, ablación cerebral en patología psiquiátrica y monitoreo en clipajes de aneurismas.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Medicina Física y Rehab. (2:00 – 4:00 p. m. · Envejecimiento activo, fisiatría musculoesquelética, dolor cervical) & Salud Mental (4:15 – 4:45 p. m. · Comunicación sexual y salud mental).'
+          }
         ]
       },
       {
         day: 'MIÉRCOLES 04 DE NOVIEMBRE DE 2026',
-        theme: 'Oftalmología · Emergencia General · Medicina Física y Rehab. · Salud Mental',
+        theme: 'Ginecología y Obstetricia · Gastroenterología · Anestesiología · Cardiología',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Oftalmología (7 ponencias): facoemulsificación moderna, glaucoma y patología vítreo-retiniana.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Simposio de Emergencia General (8 ponencias): soporte vital avanzado, reanimación y estabilización en trauma.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Jornada de Ginecología y Obstetricia (8:30 a. m. – 12:30 m.): Histerosonografía diagnóstica, terapia hormonal en menopausia, enfermedad trofoblástica, tiroides en embarazo, Doppler fetal y fenotipos de preeclampsia.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Simposio de Gastroenterología (8:30 a. m. – 12:30 m.): Vías digestivas, síndrome de intestino irritable y microbiota, manejo de ascitis, sangrado digestivo alto y bajo, e hígado graso con análogos GLP-1.'
+          }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Medicina Física y Rehabilitación (4 ponencias): neurorrehabilitación y terapia musculoesquelética.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Salud Mental y Psiquiatría (1 ponencia): abordaje biopsicosocial y manejo del estrés clínico hospitalario.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Jornada de Anestesiología (2:00 – 6:00 p. m.): Mutaciones mitocondriales, dilemas con análogos GLP-1 (Ozempic), monitoreo hemodinámico avanzado, dolor oncológico, eventos catastróficos e hipertermia maligna.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Jornada de Cardiología (2:00 – 5:30 p. m.): Decisiones críticas en SCA, dolor torácico en urgencias, 5ta definición de infarto, manejo de SCACEST/SCASEST, trombosis intraventricular y nutrición cardiorrenal.'
+          }
         ]
       },
       {
         day: 'JUEVES 05 DE NOVIEMBRE DE 2026',
-        theme: 'Gastroenterología · Anestesiología · Cardiología · Cirugía Plástica',
+        theme: 'Cirugía Plástica · Dermatología · Cirugía General · Otorrinolaringología (ORL)',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Gastroenterología (4 ponencias): endoscopia digestiva terapéutica y hepatología clínica.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Anestesiología (6 ponencias): manejo avanzado de la vía aérea y anestesia regional.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Cirugía Plástica y Reconstructiva (8:30 a. m. – 1:00 p. m.): Reconstrucción en cáncer de mama, evaluación mastológica previa, opciones de confort, colgajos, reconstrucción de complejo aréola-pezón y quemados.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Jornada de Dermatología (8:30 – 11:30 a. m.): Dermatitis atópica de la A a la Z, microbiota cutánea e infecciones, cuidado en adultos, queratosis pilaris, nutrición, psicología y ecografía cutánea.'
+          }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Cardiología (6 ponencias): síndromes coronarios agudos, falla cardíaca y hemodinámica.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Simposio de Cirugía Plástica (5 ponencias): cirugía reconstructiva compleja y paciente quemado.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Jornada de Cirugía General (2:00 – 5:30 p. m.): El bisturí digital, RM rectal y margen CRM, ecografía de cuello, volumetría en pared abdominal, tumores torácicos, vía biliar y fístulas postoperatorias.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Simposio de Otorrinolaringología (2:00 – 5:10 p. m.): Diagnóstico de vértigo y protocolo HINTS, rinoplastia funcional (Dra. M. Rojas), angina de Ludwig, abordaje de senos paranasales (Dr. H. Cifuentes) y laringe.'
+          }
         ]
       },
       {
         day: 'VIERNES 06 DE NOVIEMBRE DE 2026',
-        theme: 'Traumatología · Cirugía General · Enfermería · Plenaria y Clausura',
+        theme: 'Medicina Interna · Oftalmología · Traumatología y Ortopedia · Clausura y Premiaciones',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Traumatología y Ortopedia (8 ponencias): osteosíntesis biológica y reemplazos articulares complejos.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Cirugía General (6 ponencias) y Enfermería (4 ponencias): cuidados críticos y protocolos quirúrgicos.' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Jornada de Medicina Interna (8:30 a. m. – 12:40 p. m.): Historia clínica (Dra. I. González), anticoagulación, neuroinfecciones, paraneoplásicos, eje cardiorrenometabólico, preeclampsia (Dr. Á. Echenique) y vasculitis.'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Jornada de Oftalmología (8:30 a. m. – 12:30 m.): Revelaciones de retina, glaucoma avanzado, análogos GLP-1 y visión, estrabismo infantil, trauma ocular, emergencias oculares y facoemulsificación en cataratas.'
+          }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Sesión Plenaria de Cierre, Presentación de Trabajos Libres Ganadores, Entrega de Premiaciones y Acto de Clausura (5:30 p. m.).' }
+          {
+            salon: 'Salón Principal (1):',
+            text: 'Traumatología y Ortopedia (2:00 – 5:50 p. m. · Nervio radial, cadera en politrauma, LCA, pilón tibial, osteotomía, dolor crónico, fisiatría) & Solemne Clausura del Congreso (6:00 – 7:00 p. m. · Premiación científica).'
+          },
+          {
+            salon: 'Salón Alterno (2):',
+            text: 'Sin actividad en turno vespertino (Concentración plenaria en Salón Principal para sesiones de cierre y acto protocolar).'
+          }
         ]
       }
     ];
 
-    let dayY = PAGE_HEIGHT - 110;
+    let dayY = PAGE_HEIGHT - 104;
     daysData.forEach((d, dIdx) => {
-      const cardHeight = d.morning.length + d.afternoon.length > 2 ? 96 : 84;
+      const cardHeight = 104;
 
       page.drawRectangle({
         x: 36,
@@ -1065,70 +1152,101 @@ async function buildBrochure() {
       // Cabecera del día
       page.drawRectangle({
         x: 36,
-        y: dayY - 20,
+        y: dayY - 18,
         width: PAGE_WIDTH - 72,
-        height: 20,
+        height: 18,
         color: dIdx % 2 === 0 ? NAVY : BRAND
       });
 
       page.drawText(d.day, {
-        x: 46,
-        y: dayY - 14,
-        size: 8.5,
+        x: 44,
+        y: dayY - 13,
+        size: 7.8,
         font: fontBold,
         color: WHITE
       });
       page.drawText(`·   ${d.theme}`, {
-        x: 235,
-        y: dayY - 14,
-        size: 7,
+        x: 216,
+        y: dayY - 13,
+        size: 6.5,
         font: fontRegular,
         color: rgb(224 / 255, 242 / 255, 254 / 255)
       });
 
-      let subY = dayY - 33;
+      // BLOQUE MAÑANA
+      page.drawText('MAÑANA', { x: 44, y: dayY - 29, size: 6.5, font: fontBold, color: BRAND });
+      page.drawText('8:30-12:30', { x: 44, y: dayY - 37, size: 5.2, font: fontRegular, color: SLATE_MUTED });
 
-      // Mañana
-      d.morning.forEach((m) => {
-        page.drawText('MAÑANA:', { x: 46, y: subY, size: 7.2, font: fontBold, color: BRAND });
-        page.drawText(m.salon, { x: 92, y: subY, size: 7.2, font: fontBold, color: NAVY });
-        drawWrappedText(page, m.text, {
-          x: 235,
-          y: subY,
-          font: fontRegular,
-          size: 6.8,
-          color: SLATE_TEXT,
-          maxWidth: 325,
-          lineHeight: 8.5
-        });
-        subY -= 15;
+      // Salón Principal mañana
+      page.drawText(d.morning[0].salon, { x: 92, y: dayY - 29, size: 6.2, font: fontBold, color: BRAND });
+      drawWrappedText(page, d.morning[0].text, {
+        x: 172,
+        y: dayY - 29,
+        font: fontRegular,
+        size: 5.8,
+        color: SLATE_TEXT,
+        maxWidth: 396,
+        lineHeight: 7.2
       });
 
-      // Tarde
-      d.afternoon.forEach((a) => {
-        page.drawText('TARDE:', { x: 46, y: subY, size: 7.2, font: fontBold, color: CLINIC_TEAL });
-        page.drawText(a.salon, { x: 92, y: subY, size: 7.2, font: fontBold, color: NAVY });
-        drawWrappedText(page, a.text, {
-          x: 235,
-          y: subY,
-          font: fontRegular,
-          size: 6.8,
-          color: SLATE_TEXT,
-          maxWidth: 325,
-          lineHeight: 8.5
-        });
-        subY -= 15;
+      // Salón Alterno mañana
+      page.drawText(d.morning[1].salon, { x: 92, y: dayY - 45, size: 6.2, font: fontBold, color: CLINIC_TEAL });
+      drawWrappedText(page, d.morning[1].text, {
+        x: 172,
+        y: dayY - 45,
+        font: fontRegular,
+        size: 5.8,
+        color: SLATE_TEXT,
+        maxWidth: 396,
+        lineHeight: 7.2
+      });
+
+      // Línea divisoria
+      page.drawRectangle({
+        x: 44,
+        y: dayY - 59,
+        width: PAGE_WIDTH - 88,
+        height: 0.8,
+        color: rgb(241 / 255, 245 / 255, 249 / 255)
+      });
+
+      // BLOQUE TARDE
+      page.drawText('TARDE', { x: 44, y: dayY - 72, size: 6.5, font: fontBold, color: CLINIC_TEAL });
+      page.drawText('2:00-6:00', { x: 44, y: dayY - 80, size: 5.2, font: fontRegular, color: SLATE_MUTED });
+
+      // Salón Principal tarde
+      page.drawText(d.afternoon[0].salon, { x: 92, y: dayY - 72, size: 6.2, font: fontBold, color: BRAND });
+      drawWrappedText(page, d.afternoon[0].text, {
+        x: 172,
+        y: dayY - 72,
+        font: fontRegular,
+        size: 5.8,
+        color: SLATE_TEXT,
+        maxWidth: 396,
+        lineHeight: 7.2
+      });
+
+      // Salón Alterno tarde
+      page.drawText(d.afternoon[1].salon, { x: 92, y: dayY - 88, size: 6.2, font: fontBold, color: CLINIC_TEAL });
+      drawWrappedText(page, d.afternoon[1].text, {
+        x: 172,
+        y: dayY - 88,
+        font: fontRegular,
+        size: 5.8,
+        color: SLATE_TEXT,
+        maxWidth: 396,
+        lineHeight: 7.2
       });
 
       dayY -= (cardHeight + 7);
     });
 
-    // PANEL INFERIOR CON FOTO DE KEYNOTE Y ÁREAS COMPLEMENTARIAS (y = 54 a 140, height 86)
+    // PANEL INFERIOR CON FOTO DE KEYNOTE Y ÁREAS COMPLEMENTARIAS (y = 54 a 134, height 80)
     page.drawRectangle({
       x: 36,
       y: 54,
       width: PAGE_WIDTH - 72,
-      height: 86,
+      height: 80,
       color: CARD_BG,
       borderColor: BORDER,
       borderWidth: 1.1
@@ -1137,41 +1255,41 @@ async function buildBrochure() {
     // Foto keynote
     page.drawImage(keynoteImg, {
       x: 44,
-      y: 60,
-      width: 120,
-      height: 74
+      y: 58,
+      width: 114,
+      height: 72
     });
     page.drawRectangle({
       x: 44,
-      y: 60,
-      width: 120,
-      height: 74,
+      y: 58,
+      width: 114,
+      height: 72,
       borderColor: BORDER,
       borderWidth: 1
     });
 
     page.drawText('EXPOSICIÓN DE PÓSTERS, STANDS COMERCIALES Y PREMIACIONES', {
-      x: 174,
-      y: 122,
+      x: 168,
+      y: 118,
       size: 8.5,
       font: fontBold,
       color: NAVY
     });
 
     const infoExtra =
-      '• Modalidad Póster: Exposición continua de investigaciones científicas en los pasillos principales del hotel.\n' +
-      '• Stands Comerciales: Muestra de equipamiento médico y productos farmacéuticos de empresas patrocinadoras.\n' +
-      '• Premiaciones: Reconocimiento formal al mejor trabajo científico de investigación y menciones honoríficas.\n' +
-      '• Control de acceso: Escaneo obligatorio de Código QR al ingreso a las sesiones en ambos salones.';
+      '• Modalidad Póster: Exposición interactiva continua de investigaciones científicas en los pasillos principales del hotel.\n' +
+      '• Stands Comerciales: Espacio de networking, muestra de equipamiento médico y productos de empresas patrocinadoras.\n' +
+      '• Premiaciones Académicas: Reconocimiento formal al mejor trabajo científico de investigación en la Clausura Oficial.\n' +
+      '• Control de Acceso: Escaneo obligatorio de Código QR al ingreso a las sesiones en Salón Principal (1) y Salón Alterno (2).';
 
     drawWrappedText(page, infoExtra, {
-      x: 174,
-      y: 108,
+      x: 168,
+      y: 106,
       font: fontRegular,
-      size: 7,
+      size: 6.8,
       color: SLATE_TEXT,
-      maxWidth: 350,
-      lineHeight: 11
+      maxWidth: 396,
+      lineHeight: 10
     });
 
     drawFooter(page, 3);
@@ -1445,14 +1563,14 @@ async function buildBrochure() {
       lineHeight: 9.5
     });
 
-    page.drawText(`CONTACTO: congreso@hcuamp.gob.ve · Hospital Central Dr. Antonio María Pineda (RIF: ${RIF_HCUAMP})`, {
+    page.drawText(`CONTACTO: congreso@hcuamp.gob.ve · XIV Congreso Pineda 2026 · HCUAMP (RIF: ${RIF_HCUAMP})`, {
       x: 205,
       y: 88,
       size: 7.2,
       font: fontBold,
       color: CLINIC_TEAL
     });
-    page.drawText('Comité Organizador · Dirección General · Barquisimeto, Estado Lara', {
+    page.drawText('Comité Organizador y Científico · Dirección General · Barquisimeto, Estado Lara', {
       x: 205,
       y: 76,
       size: 7.2,
