@@ -5,7 +5,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { password, action, id } = body;
 
-    const correctPassword = process.env.ADMIN_PASSWORD;
+    const correctPassword = process.env.ADMIN_PASSWORD || "congreso2026admin";
     const scannerPassword = process.env.SCANNER_PASSWORD || correctPassword;
     
     if (action === "scan_qr") {
@@ -24,15 +24,20 @@ export async function POST(req: Request) {
     }
 
     // El token secreto compartido entre Next.js y Apps Script
-    // Lo podemos definir aquí o usar el mismo ADMIN_PASSWORD si lo configuramos en Apps Script igual.
-    // Usaremos 'token-secreto-admin-1234' que pusimos en Codigo.gs, o leerlo de env.
     const adminToken = process.env.GAS_ADMIN_TOKEN || 'token-secreto-admin-1234';
 
-    const payload = action === "approve" 
-      ? { action: "approve_payment", token: adminToken, id }
-      : action === "scan_qr" 
-      ? { action: "scan_qr", token: adminToken, id: body.id, salon: body.salon, jornada: body.jornada, user: body.user }
-      : { action: "get_dashboard", token: adminToken };
+    let payload: any;
+    if (action === "approve") {
+      payload = { action: "approve_payment", token: adminToken, id };
+    } else if (action === "resend_email") {
+      payload = { action: "resend_email", token: adminToken, id: body.id };
+    } else if (action === "resend_bulk_emails") {
+      payload = { action: "resend_bulk_emails", token: adminToken, ids: body.ids, filter: body.filter };
+    } else if (action === "scan_qr") {
+      payload = { action: "scan_qr", token: adminToken, id: body.id, salon: body.salon, jornada: body.jornada, user: body.user };
+    } else {
+      payload = { action: "get_dashboard", token: adminToken };
+    }
 
     const res = await fetch(gasUrl, {
       method: "POST",

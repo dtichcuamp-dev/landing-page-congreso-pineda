@@ -157,6 +157,14 @@ function doPost(e) {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
       return json_({ ok: true, data: approvePayment_(body.id) });
     }
+    if (body.action === 'resend_email') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: resendEmailById_(body.id) });
+    }
+    if (body.action === 'resend_bulk_emails') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: resendBulkEmails_(body) });
+    }
     if (body.action === 'scan_qr') {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
       return json_({ ok: true, data: scanQr_(body) });
@@ -660,53 +668,214 @@ function appendRow_(d, receiptFile) {
 
 function sendEmail_(d, id) {
   try {
-    var monto = d.total === 0 ? 'Exonerado (100%)' : 'USD ' + d.total + ' (al cambio oficial BCV)';
-    var qrUrl = 'https://quickchart.io/qr?size=300&text=' + encodeURIComponent(id);
+    var monto = d.total === 0 ? 'Exonerado 100% (0$)' : 'USD ' + d.total + ' (al cambio oficial BCV)';
+    var qrUrl = 'https://quickchart.io/qr?size=320&text=' + encodeURIComponent(id);
+
+    // Intentamos incrustar el código QR como imagen inline (cid:qrCode)
+    var inlineImages = {};
+    var qrImgSrc = qrUrl;
+    try {
+      var qrResp = UrlFetchApp.fetch(qrUrl, { muteHttpExceptions: true });
+      if (qrResp && qrResp.getResponseCode() === 200) {
+        var qrBlob = qrResp.getBlob().setName('qr_' + id + '.png');
+        inlineImages['qrCode'] = qrBlob;
+        qrImgSrc = 'cid:qrCode';
+      }
+    } catch (imgErr) {
+      console.warn('Fallback a URL directa de QR:', imgErr);
+      qrImgSrc = qrUrl;
+    }
 
     var html =
-      '<div style="font-family:Arial,sans-serif;max-width:540px;margin:auto;color:#0b2545">' +
-      '<div style="text-align:center;padding:12px 0 20px 0;border-bottom:2px solid #1d63d8">' +
-      '<span style="font-size:12px;font-weight:bold;letter-spacing:1.5px;color:#1d63d8;text-transform:uppercase">XIV Congreso Pineda 2026</span>' +
-      '<h2 style="color:#0b2545;margin:6px 0 0 0;font-size:22px">Pase de Acceso Oficial</h2>' +
-      '</div>' +
-      '<p style="font-size:15px;margin-top:20px">Hola <b>' + esc_(d.nombres) + '</b>, hemos recibido y registrado tu inscripción al <b>XIV Congreso Pineda 2026</b> ' +
-      '(2 al 6 de noviembre · Hotel Biotel Suites, Barquisimeto).</p>' +
-      
-      // Bloque Destacado del Código QR
-      '<div style="background:#f4f8fb;padding:24px;border-radius:14px;text-align:center;margin:22px 0;border:1px solid #dbeafe">' +
-      '<p style="margin-top:0;font-size:15px;color:#0b2545;font-weight:bold">Tu Código QR de Acceso</p>' +
-      '<p style="font-size:12px;color:#64748b;margin:4px 0 14px 0">Presenta este código en tu teléfono o impreso para el control de acceso al Salón Principal (1) y Salón Alterno (2)</p>' +
-      '<img src="' + qrUrl + '" alt="Código QR de Acceso" width="220" height="220" style="background:#ffffff;padding:12px;border-radius:12px;border:1px solid #cbd5e1;display:inline-block;box-shadow:0 2px 8px rgba(0,0,0,0.06)"/>' +
-      '<p style="font-family:Courier New,monospace;font-size:22px;font-weight:bold;color:#1d63d8;margin:12px 0 0 0;letter-spacing:2px">' + id + '</p>' +
+      '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:auto;color:#0b2545;line-height:1.5;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden">' +
+      '<div style="text-align:center;padding:24px 20px 20px 20px;background:#0b2545;color:#ffffff">' +
+      '<span style="font-size:11px;font-weight:bold;letter-spacing:2px;color:#93c5fd;text-transform:uppercase">XIV CONGRESO PINEDA 2026</span>' +
+      '<h2 style="color:#ffffff;margin:8px 0 4px 0;font-size:22px;font-weight:900">Pase Oficial de Acceso y Comprobante</h2>' +
+      '<p style="font-size:12px;color:#dbeafe;margin:0">Hospital Central Universitario «Dr. Antonio María Pineda»</p>' +
       '</div>' +
 
-      '<table style="border-collapse:collapse;width:100%;font-size:14px;margin:20px 0">' +
+      '<div style="padding:24px 20px">' +
+      '<p style="font-size:15px;margin-top:0">Hola <b>' + esc_(d.nombres) + ' ' + esc_(d.apellidos || '') + '</b>,</p>' +
+      '<p style="font-size:14px;color:#334155;margin-bottom:20px">Confirmamos la recepción y el registro exitoso de tu inscripción para el <b>XIV Congreso Pineda 2026</b>, a celebrarse del <b>2 al 6 de noviembre de 2026</b> en el Hotel Biotel Suites, Barquisimeto.</p>' +
+
+      // Bloque Destacado del Código QR
+      '<div style="background:#f8fafc;padding:20px;border-radius:14px;text-align:center;margin:20px 0;border:1.5px solid #cbd5e1">' +
+      '<span style="font-size:11px;font-weight:bold;color:#1d63d8;text-transform:uppercase;letter-spacing:1px">Credencial Digital Oficial</span>' +
+      '<p style="font-size:15px;color:#0b2545;font-weight:bold;margin:4px 0 8px 0">Tu Código QR de Acceso</p>' +
+      '<p style="font-size:12px;color:#64748b;margin:0 0 14px 0">Presenta este código en tu teléfono o impreso para el control de entrada a <b>Salón Principal (1)</b> y <b>Salón Alterno (2)</b></p>' +
+      '<div style="display:inline-block;padding:12px;background:#ffffff;border-radius:12px;border:1px solid #cbd5e1;box-shadow:0 4px 12px rgba(0,0,0,0.06)">' +
+      '<img src="' + qrImgSrc + '" alt="Código QR de Acceso ' + id + '" width="220" height="220" style="display:block;margin:auto"/>' +
+      '</div>' +
+      '<p style="font-family:Courier New,monospace;font-size:24px;font-weight:900;color:#1d63d8;margin:12px 0 4px 0;letter-spacing:3px">' + id + '</p>' +
+      '<p style="font-size:11px;color:#64748b;margin:0"><a href="' + qrUrl + '" style="color:#1d63d8;font-weight:bold;text-decoration:underline" target="_blank">Haz clic aquí para descargar una copia del Código QR (PNG)</a></p>' +
+      '</div>' +
+
+      // Tabla de Datos
+      '<table style="border-collapse:collapse;width:100%;font-size:13px;margin:20px 0;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0">' +
       row_('Código de Registro', id) +
-      row_('Institución', esc_(d.institucion)) +
-      row_('Participante', esc_(d.tipoLabel)) +
-      (d.detalleExtra ? row_('Detalle', esc_(d.detalleExtra)) : '') +
-      row_('Días seleccionados', esc_(d.diasLabel)) +
-      row_('Turnos y Salones', esc_(d.resumenTurnos)) +
+      row_('Participante', esc_(d.nombres) + ' ' + esc_(d.apellidos || '')) +
+      (d.cedula ? row_('Cédula de Identidad', esc_(d.cedula)) : '') +
+      row_('Institución', esc_(d.institucion || 'HCUAMP')) +
+      row_('Categoría', esc_(d.tipoLabel || 'Participante')) +
+      (d.detalleExtra ? row_('Detalle Académico', esc_(d.detalleExtra)) : '') +
+      row_('Días Asignados', esc_(d.diasLabel || 'Según programación')) +
+      row_('Turnos y Salones', esc_(d.resumenTurnos || 'Asignados en plataforma')) +
       row_('Monto', monto) +
       '</table>' +
-      '<div style="background:#f4f8fb;padding:16px;border-radius:10px;font-size:13px;color:#475569;margin-top:16px">' +
-      (d.total === 0
-        ? '<b>Inscripción exonerada:</b> Tu registro ha sido procesado automáticamente. Conserva este correo con tu código QR para el control de acceso en cada jornada.'
-        : '<b>Pago recibido en verificación:</b> Nuestro equipo validará el comprobante bancario. Conserva este correo y tu código QR de acceso.') +
-      '</div>' +
-      '<p style="color:#7a8aa3;font-size:12px;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px">' +
-      'Hospital Central Universitario «Dr. Antonio María Pineda» · Barquisimeto, Estado Lara.' +
-      '</p></div>';
 
-    MailApp.sendEmail({
+      // Mensaje según tipo
+      '<div style="background:#f0fdf4;padding:14px;border-radius:10px;font-size:12.5px;color:#166534;margin-top:16px;border-left:4px solid #16a34a">' +
+      (d.total === 0
+        ? '<b>Inscripción 100% Exonerada:</b> Tu participación ha sido validada. Conserva este correo con tu código QR como tu credencial oficial para el acceso a las salas de conferencias.'
+        : '<b>Comprobante de Inscripción:</b> Tu comprobante y registro están procesados. Presenta este correo y tu código QR al momento de ingresar a las salas y retirar tu kit.') +
+      '</div>' +
+
+      // Sede
+      '<div style="background:#f8fafc;padding:12px;border-radius:10px;font-size:12px;color:#475569;margin-top:12px;text-align:center;border:1px solid #e2e8f0">' +
+      '<b>Sede:</b> Hotel Biotel Suites · Barquisimeto, Estado Lara<br>' +
+      'Final de la Av. Libertador con inicio de la Av. Florencio Jiménez, frente al monumento El Obelisco.' +
+      '</div>' +
+
+      // Pie
+      '<p style="color:#94a3b8;font-size:11px;margin-top:20px;border-top:1px solid #e2e8f0;padding-top:12px;text-align:center">' +
+      'Comité Organizador · XIV Congreso Pineda 2026<br>' +
+      'Hospital Central Universitario «Dr. Antonio María Pineda»' +
+      '</p></div></div>';
+
+    var mailOptions = {
       to: d.correo,
-      subject: 'Pase de Acceso y Código QR · XIV Congreso Pineda 2026 · ' + id,
+      subject: 'Pase de Acceso Oficial y Código QR · XIV Congreso Pineda 2026 · ' + id,
       htmlBody: html,
       name: CONFIG.EMAIL_SENDER_NAME
-    });
+    };
+
+    if (Object.keys(inlineImages).length > 0) {
+      mailOptions.inlineImages = inlineImages;
+    }
+
+    MailApp.sendEmail(mailOptions);
+    return { success: true };
   } catch (err) {
-    console.warn('No se pudo enviar el correo: ' + err);
+    console.warn('No se pudo enviar el correo a ' + d.correo + ': ' + err);
+    return { success: false, error: err.message || String(err) };
   }
+}
+
+function resendEmailById_(id) {
+  if (!id) throw new UserError_('ID de registro no especificado.');
+  var sh = getSheet_();
+  var data = sh.getDataRange().getValues();
+  var row = null;
+  var rowIndex = -1;
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(id).trim()) {
+      row = data[i];
+      rowIndex = i + 1;
+      break;
+    }
+  }
+  if (!row) throw new UserError_('No se encontró el registro con ID ' + id);
+
+  var d = {
+    origenInstitucion: row[2],
+    institucion: row[3],
+    nombres: row[4],
+    apellidos: row[5],
+    cedula: row[6],
+    correo: String(row[10] || '').trim(),
+    tipoLabel: row[11],
+    detalleExtra: row[12],
+    diasLabel: row[17],
+    resumenTurnos: row[19],
+    total: Number(row[22]) || 0
+  };
+
+  if (!d.correo || d.correo.indexOf('@') === -1) {
+    throw new UserError_('El registro ' + id + ' no posee un correo electrónico válido (' + d.correo + ').');
+  }
+
+  var res = sendEmail_(d, id);
+  if (!res.success) {
+    throw new UserError_('Error al enviar correo a ' + d.correo + ': ' + (res.error || 'Error desconocido'));
+  }
+
+  // Registrar fecha de reenvío en Observaciones
+  var currentObs = String(row[25] || '');
+  var stamp = Utilities.formatDate(new Date(), 'America/Caracas', 'dd/MM/yyyy HH:mm:ss');
+  var newObs = currentObs ? currentObs + ' | Reenviado ' + stamp : 'Reenviado ' + stamp;
+  sh.getRange(rowIndex, 26).setValue(newObs);
+
+  return { success: true, id: id, correo: d.correo };
+}
+
+function resendBulkEmails_(body) {
+  var ids = body.ids; // Array de IDs específicos o nulo para todos
+  var filter = body.filter || 'all'; // 'all', 'approved_only', 'pending_only'
+
+  var sh = getSheet_();
+  var data = sh.getDataRange().getValues();
+  if (data.length < 2) return { success: true, sentCount: 0, totalCount: 0, failed: [] };
+
+  var idsMap = null;
+  if (ids && Array.isArray(ids) && ids.length > 0) {
+    idsMap = {};
+    for (var k = 0; k < ids.length; k++) {
+      idsMap[String(ids[k]).trim()] = true;
+    }
+  }
+
+  var sentCount = 0;
+  var failed = [];
+  var stamp = Utilities.formatDate(new Date(), 'America/Caracas', 'dd/MM/yyyy HH:mm:ss');
+
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    var currentId = String(row[0]).trim();
+    var estado = String(row[24] || '').trim();
+    var correo = String(row[10] || '').trim();
+
+    // Filtros
+    if (idsMap && !idsMap[currentId]) continue;
+    if (filter === 'approved_only' && estado !== 'Aprobado' && estado !== 'Exonerado') continue;
+    if (filter === 'pending_only' && estado !== 'Pendiente de verificación') continue;
+
+    if (!correo || correo.indexOf('@') === -1) {
+      failed.push({ id: currentId, error: 'Correo inválido o ausente' });
+      continue;
+    }
+
+    var d = {
+      origenInstitucion: row[2],
+      institucion: row[3],
+      nombres: row[4],
+      apellidos: row[5],
+      cedula: row[6],
+      correo: correo,
+      tipoLabel: row[11],
+      detalleExtra: row[12],
+      diasLabel: row[17],
+      resumenTurnos: row[19],
+      total: Number(row[22]) || 0
+    };
+
+    try {
+      var res = sendEmail_(d, currentId);
+      if (res.success) {
+        sentCount++;
+      } else {
+        failed.push({ id: currentId, correo: correo, error: res.error });
+      }
+    } catch (err) {
+      failed.push({ id: currentId, correo: correo, error: err.message || String(err) });
+    }
+  }
+
+  return {
+    success: true,
+    sentCount: sentCount,
+    totalCount: data.length - 1,
+    failed: failed
+  };
 }
 
 function row_(k, v) {
@@ -764,6 +933,14 @@ function approvePayment_(id) {
     }
     if (rowIndex === -1) throw new UserError_('Registro no encontrado.');
     sh.getRange(rowIndex, 25).setValue('Aprobado');
+
+    // Al aprobar el pago, reenviamos de inmediato el correo oficial con su código QR
+    try {
+      resendEmailById_(id);
+    } catch (mailErr) {
+      console.warn('Error al enviar correo de aprobación:', mailErr);
+    }
+
     return { success: true, id: id };
   } finally {
     lock.releaseLock();
