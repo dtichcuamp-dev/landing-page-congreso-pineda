@@ -29,6 +29,7 @@ const WAZE_URL = `https://waze.com/ul?ll=${VENUE_COORDS.lat},${VENUE_COORDS.lng}
 
 const WHATSAPP_SHARE_TEXT = `📍 *Ubicación del XIV Congreso Pineda 2026*
 🏨 *Sede:* Biotel Suites, Barquisimeto
+📫 *Dirección:* Final de la Av. Libertador con inicio de la Av. Florencio Jiménez, frente al monumento El Obelisco, Barquisimeto (300), estado Lara, Venezuela.
 📌 *Coordenadas:* ${VENUE_COORDS.label}
 🗺️ *Cómo llegar (Google Maps):* ${VENUE_MAPS_URL}
 🚗 *Cómo llegar en Waze:* ${WAZE_URL}
@@ -83,7 +84,7 @@ export function Venue() {
                 </div>
 
                 <p className="mt-5 text-sm leading-relaxed text-ink-soft sm:text-base">
-                  Av. Florencio Jiménez con Av. Los Horcones, frente al C.C. Metrópolis, Barquisimeto 3001, Estado Lara, Venezuela.
+                  Final de la Av. Libertador con inicio de la Av. Florencio Jiménez, frente al monumento El Obelisco, Barquisimeto (300), estado Lara, Venezuela.
                 </p>
 
                 {/* Coordenadas */}
