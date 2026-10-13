@@ -70,19 +70,19 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
       }
     }
 
-    const { diasCount } = calcTotal(v.tipoParticipante, v.turnos, v.origenInstitucion);
+    const { diasCount, exonerated } = calcTotal(v.tipoParticipante, v.turnos, v.origenInstitucion);
     if (diasCount === 0) {
       // Usamos un mensaje descriptivo en turnos
       (e as Record<string, string>).turnos = "Debes seleccionar al menos un día y turno (mañana y/o tarde) de asistencia.";
     }
 
-    // Para HCUAMP, el paso 2 es el paso final de inscripción y requiere aceptación de términos
-    if (v.origenInstitucion === "HCUAMP" && !v.aceptaTerminos) {
+    // Para participantes exonerados (HCUAMP o Bachiller/Estudiante de pregrado), el paso 2 es el final y requiere aceptación de términos
+    if (exonerated && !v.aceptaTerminos) {
       e.aceptaTerminos = "Debes aceptar los términos y condiciones para enviar tu inscripción.";
     }
   }
 
-  // ───── Paso 3: Pago (solo para Otra Institución) ─────
+  // ───── Paso 3: Pago (solo para Otra Institución cuando el total > 0) ─────
   if (step === 2) {
     const { total } = calcTotal(v.tipoParticipante, v.turnos, v.origenInstitucion);
     const f = v.comprobante;
@@ -101,7 +101,7 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
       }
     }
 
-    if (!v.aceptaTerminosPago) {
+    if (total > 0 && !v.aceptaTerminosPago) {
       e.aceptaTerminosPago = "Debes aceptar los términos y certificar que los datos son veraces y no reembolsables.";
     }
   }

@@ -46,9 +46,9 @@ export function PriceSummary({ tipo, turnos, origen = "HCUAMP" }: Props) {
             </span>
             <div>
               <p className="text-base font-bold text-clinic-700">
-                Inscripción Exonerada <span className="font-normal text-xs text-ink-soft">· HCUAMP</span>
+                Inscripción 100% Exonerada <span className="font-normal text-xs text-ink-soft">· {origen === "HCUAMP" ? "HCUAMP" : "Bachiller / Estudiante de pregrado"}</span>
               </p>
-              <p className="text-xs text-ink-soft">Categoría: <b className="text-ink">{label}</b> · Monto: <b className="text-clinic-700">0$ USD</b></p>
+              <p className="text-xs text-ink-soft">Categoría: <b className="text-ink">{label}</b> · Monto: <b className="text-clinic-700">0$ USD (Exonerado 100%)</b></p>
             </div>
           </div>
         </div>

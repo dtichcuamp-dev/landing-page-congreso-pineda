@@ -1380,9 +1380,9 @@ async function buildBrochure() {
     // TARJETA 2: OTRAS INSTITUCIONES (Tarifas por día)
     page.drawRectangle({
       x: 36,
-      y: PAGE_HEIGHT - 380,
+      y: PAGE_HEIGHT - 395,
       width: PAGE_WIDTH - 72,
-      height: 155,
+      height: 170,
       color: WHITE,
       borderColor: BORDER,
       borderWidth: 1.5
@@ -1415,36 +1415,45 @@ async function buildBrochure() {
       { cat: 'Médico Residente de Postgrado', price: '15 USD / día' },
       { cat: 'Licenciados(as) y Técnicos(as) en Enfermería', price: '10 USD / día' },
       { cat: 'Fisioterapeuta / Terapeuta Ocupacional', price: '15 USD / día' },
-      { cat: 'Otro Personal Afín a las Ciencias de la Salud', price: '15 USD / día' },
-      { cat: 'Acompañante de Participante', price: '15 USD / día' }
+      { cat: 'Otro Personal Afín a la Salud', price: '15 USD / día' },
+      { cat: 'Acompañante de Participante', price: '15 USD / día' },
+      { cat: 'Bachiller / Estudiante de pregrado', price: '0 USD (Exonerado 100%)', exonerated: true }
     ];
 
     rates.forEach((r, idx) => {
       const rx = 50 + (idx % 2) * 260;
-      const ry = PAGE_HEIGHT - 285 - Math.floor(idx / 2) * 20;
+      const ry = PAGE_HEIGHT - 284 - Math.floor(idx / 2) * 19;
 
       page.drawRectangle({
         x: rx - 5,
         y: ry - 4,
         width: 250,
-        height: 17,
-        color: idx % 2 === 0 ? rgb(248 / 255, 250 / 255, 252 / 255) : rgb(241 / 255, 245 / 255, 249 / 255)
+        height: 16,
+        color: r.exonerated
+          ? rgb(236 / 255, 253 / 255, 245 / 255)
+          : (idx % 2 === 0 ? rgb(248 / 255, 250 / 255, 252 / 255) : rgb(241 / 255, 245 / 255, 249 / 255))
       });
-      const catSize = r.cat.length > 38 ? 6.5 : 7.1;
-      page.drawText(r.cat, { x: rx, y: ry, size: catSize, font: fontRegular, color: SLATE_DARK });
-      page.drawText(r.price, { x: rx + 182, y: ry, size: 7.5, font: fontBold, color: BRAND });
+      const catSize = r.cat.length > 36 ? 6.5 : 7.1;
+      page.drawText(r.cat, { x: rx, y: ry, size: catSize, font: r.exonerated ? fontBold : fontRegular, color: SLATE_DARK });
+      page.drawText(r.price, {
+        x: rx + (r.exonerated ? 142 : 182),
+        y: ry,
+        size: 7.2,
+        font: fontBold,
+        color: r.exonerated ? GREEN_TEXT : BRAND
+      });
     });
 
     page.drawText('• Pagos en Bolívares mediante Pago Móvil o Transferencia bancaria a la tasa oficial BCV del momento del registro.', {
       x: 50,
-      y: PAGE_HEIGHT - 355,
+      y: PAGE_HEIGHT - 367,
       size: 7.5,
       font: fontBold,
       color: NAVY
     });
     page.drawText('• El comprobante bancario es validado por el comité administrativo para la confirmación de la credencial oficial.', {
       x: 50,
-      y: PAGE_HEIGHT - 368,
+      y: PAGE_HEIGHT - 380,
       size: 7.2,
       font: fontRegular,
       color: SLATE_MUTED

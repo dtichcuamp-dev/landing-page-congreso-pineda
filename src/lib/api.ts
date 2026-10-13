@@ -147,9 +147,14 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
   }
 
   const isTerapeuta = v.tipoParticipante === "terapeutas" || v.tipoParticipante === "terapeutas_otra";
+  const isPregradoOtra = v.tipoParticipante === "estudiante_pregrado_otra";
   const tipoLabel =
     PARTICIPANT_BY_ID[v.tipoParticipante as ParticipantTypeId]?.label ||
-    (isTerapeuta ? "Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas" : v.tipoParticipante);
+    (isTerapeuta
+      ? "Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas"
+      : isPregradoOtra
+        ? "Bachiller / Estudiante de pregrado"
+        : v.tipoParticipante);
 
   const payload: RegistrationPayload = {
     origenInstitucion: v.origenInstitucion,
@@ -163,12 +168,15 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     fechaNacimiento: v.fechaNacimiento,
     telefono: normalizePhone(v.telefono),
     correo: v.correo.trim().toLowerCase(),
-    // Para garantizar compatibilidad inmediata con la versión actualmente desplegada en Google Apps Script
-    // que reconoce 'otro_personal_afin' (15$ para otras instituciones, 0$ para HCUAMP),
-    // enviamos 'otro_personal_afin' como identificador técnico en el backend y adjuntamos 'tipoLabel' con el nombre exacto.
+    // Para garantizar compatibilidad inmediata con la versión actualmente desplegada en Google Apps Script:
+    // - Para terapeutas: 'otro_personal_afin' (15$ para otras instituciones, 0$ para HCUAMP)
+    // - Para pregrado: 'bachiller' (0$ exonerado total)
+    // En ambos casos adjuntamos 'tipoLabel' con el nombre exacto para la hoja, correos y pases.
     tipoParticipante: isTerapeuta
       ? ("otro_personal_afin" as RegistrationPayload["tipoParticipante"])
-      : (v.tipoParticipante as RegistrationPayload["tipoParticipante"]),
+      : isPregradoOtra
+        ? ("bachiller" as RegistrationPayload["tipoParticipante"])
+        : (v.tipoParticipante as RegistrationPayload["tipoParticipante"]),
     tipoLabel: tipoLabel,
     nombrePonencia: v.nombrePonencia?.trim(),
     especialidad: v.especialidad?.trim(),

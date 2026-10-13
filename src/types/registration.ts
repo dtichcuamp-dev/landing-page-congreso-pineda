@@ -14,6 +14,7 @@ export type ParticipantTypeHCUAMP =
   | "residente_ultimo_anio";
 
 export type ParticipantTypeOtra =
+  | "estudiante_pregrado_otra"
   | "medico_general_especialista"
   | "medico_residente"
   | "enfermero_otra"

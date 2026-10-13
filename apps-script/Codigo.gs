@@ -71,6 +71,7 @@ var RATES = {
   residente_ultimo_anio: { label: 'Residente de último año (HCUAMP)', rate: 0, hcuamp: true },
 
   // Otra Institución (Tarifas USD por día)
+  estudiante_pregrado_otra: { label: 'Bachiller / Estudiante de pregrado', rate: 0, hcuamp: false },
   medico_general_especialista: { label: 'Médico general y especialista', rate: 20, hcuamp: false },
   medico_residente: { label: 'Médico residente', rate: 15, hcuamp: false },
   enfermero_otra: { label: 'Enfermera/o', rate: 10, hcuamp: false },
@@ -417,6 +418,8 @@ function validate_(b) {
   var tipoId = b.tipoParticipante;
   if (tipoId === 'terapeutas' || tipoId === 'terapeutas_otra' || tipoId === 'fisioterapeuta' || tipoId === 'terapeuta') {
     tipoId = origenInstitucion === 'HCUAMP' ? 'terapeutas' : 'terapeutas_otra';
+  } else if (tipoId === 'estudiante_pregrado_otra' || tipoId === 'bachiller_otra' || tipoId === 'bachiller_pregrado_otra') {
+    tipoId = origenInstitucion === 'HCUAMP' ? 'bachiller' : 'estudiante_pregrado_otra';
   }
   var tipo = RATES[tipoId];
   if (!tipo) {
@@ -424,6 +427,12 @@ function validate_(b) {
       tipo = {
         label: b.tipoLabel || 'Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas',
         rate: origenInstitucion === 'HCUAMP' ? 0 : 15,
+        hcuamp: origenInstitucion === 'HCUAMP'
+      };
+    } else if (String(b.tipoLabel || '').toLowerCase().indexOf('estudiante') !== -1 || String(b.tipoLabel || '').toLowerCase().indexOf('bachiller') !== -1) {
+      tipo = {
+        label: b.tipoLabel || 'Bachiller / Estudiante de pregrado',
+        rate: 0,
         hcuamp: origenInstitucion === 'HCUAMP'
       };
     } else {

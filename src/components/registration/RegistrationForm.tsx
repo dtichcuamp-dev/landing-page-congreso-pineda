@@ -160,9 +160,11 @@ export function RegistrationForm() {
   };
 
   const isHcuamp = values.origenInstitucion === "HCUAMP";
-  const maxSteps = isHcuamp ? 2 : 3;
+  const selectedTypeInfo = values.tipoParticipante ? PARTICIPANT_BY_ID[values.tipoParticipante] : null;
+  const isExoneratedType = isHcuamp || (selectedTypeInfo ? selectedTypeInfo.rate === 0 : false);
+  const maxSteps = isExoneratedType ? 2 : 3;
 
-  const stepsList = isHcuamp
+  const stepsList = isExoneratedType
     ? [
         { title: "Tus datos", icon: UserRound },
         { title: "Participación y Registro", icon: Stethoscope },
@@ -415,7 +417,9 @@ export function RegistrationForm() {
               </p>
               <p className="text-[11px] text-brand-800">
                 {result.exonerated
-                  ? "Como personal del HCUAMP, tu participación está 100% exonerada."
+                  ? values.origenInstitucion === "HCUAMP"
+                    ? "Como personal del HCUAMP, tu participación está 100% exonerada."
+                    : "Como bachiller / estudiante de pregrado, tu participación está 100% exonerada (0$)."
                   : `Inscripción por un monto de ${usd(result.total)}. Conserva el correo con tu código QR para el control de acceso en la sede.`}
               </p>
             </div>
@@ -820,7 +824,7 @@ export function RegistrationForm() {
                     ))
                   : PARTICIPANT_TYPES_OTRA.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.label} — {usd(p.rate)} por día
+                        {p.label} — {p.rate === 0 ? "Exonerado 100% (0$)" : `${usd(p.rate)} por día`}
                       </option>
                     ))}
               </select>
@@ -888,18 +892,18 @@ export function RegistrationForm() {
             origen={values.origenInstitucion}
           />
 
-          {/* Si es HCUAMP, el paso 2 incluye la aceptación de términos y finaliza */}
-          {isHcuamp ? (
+          {/* Si es exonerado (HCUAMP o Bachiller/Pregrado), el paso 2 incluye la aceptación de términos y finaliza */}
+          {isExoneratedType ? (
             <div className="space-y-3 pt-2">
               <div className="flex items-start gap-3 rounded-2xl bg-slate-50/80 p-4 ring-1 ring-slate-200">
                 <input
                   type="checkbox"
-                  id="terminos_hcuamp"
+                  id="terminos_exonerado"
                   className="mt-1 h-4 w-4 rounded border-brand-300 text-brand-600 focus:ring-brand-500"
                   checked={values.aceptaTerminos}
                   onChange={(e) => set("aceptaTerminos", e.target.checked)}
                 />
-                <label htmlFor="terminos_hcuamp" className="text-xs text-ink-soft leading-relaxed select-none">
+                <label htmlFor="terminos_exonerado" className="text-xs text-ink-soft leading-relaxed select-none">
                   He leído y acepto los{" "}
                   <a href="/terminos" target="_blank" className="font-bold text-brand-600 hover:underline">
                     Términos de Uso
@@ -916,7 +920,7 @@ export function RegistrationForm() {
               )}
             </div>
           ) : (
-            /* Para Otra Institución, nota informativa y avanza al paso 3 */
+            /* Para participantes con pago, nota informativa y avanza al paso 3 */
             <div className="rounded-xl bg-blue-50/70 p-3.5 text-xs text-blue-900 ring-1 ring-blue-200 leading-relaxed">
               <b>Nota:</b> La inscripción incluye acceso a las ponencias académicas de los salones elegidos, certificado digital con aval institucional (y de crédito académico) y kit del participante.
             </div>
@@ -931,8 +935,8 @@ export function RegistrationForm() {
         </div>
       )}
 
-      {/* ─────────────────── PASO 3: PAGO (SOLO OTRA INSTITUCIÓN) ─────────────────── */}
-      {step === 2 && !isHcuamp && (
+      {/* ─────────────────── PASO 3: PAGO (SOLO OTRA INSTITUCIÓN CON MONTO > 0) ─────────────────── */}
+      {step === 2 && !isExoneratedType && (
         <div className="space-y-6">
           <PriceSummary
             tipo={values.tipoParticipante}

@@ -31,6 +31,7 @@ export const PARTICIPANT_TYPES_HCUAMP: ParticipantTypeInfo[] = [
 
 /** Tipos de participantes para Otras Instituciones (Tarifas por día). */
 export const PARTICIPANT_TYPES_OTRA: ParticipantTypeInfo[] = [
+  { id: "estudiante_pregrado_otra", label: "Bachiller / Estudiante de pregrado", rate: 0 },
   { id: "medico_general_especialista", label: "Médico general y especialista", rate: 20 },
   { id: "medico_residente", label: "Médico residente", rate: 15 },
   { id: "enfermero_otra", label: "Enfermera/o", rate: 10 },
