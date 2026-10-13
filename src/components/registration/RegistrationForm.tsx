@@ -109,7 +109,7 @@ export function RegistrationForm() {
       origenInstitucion: origen,
       institucion:
         origen === "HCUAMP"
-          ? "Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)"
+          ? "HOSPITAL CENTRAL UNIVERSITARIO DR. ANTONIO MARÍA PINEDA (HCUAMP)"
           : "",
       tipoParticipante: "",
       nombrePonencia: "",
@@ -133,8 +133,8 @@ export function RegistrationForm() {
       if (res.found && res.data) {
         setValues((v) => ({
           ...v,
-          nombres: res.data?.nombres || v.nombres,
-          apellidos: res.data?.apellidos || v.apellidos,
+          nombres: (res.data?.nombres || v.nombres).toUpperCase(),
+          apellidos: (res.data?.apellidos || v.apellidos).toUpperCase(),
           sexo: (res.data?.sexo as "M" | "F") || v.sexo,
           fechaNacimiento: res.data?.fechaNacimiento || v.fechaNacimiento,
           telefono: res.data?.telefono || v.telefono,
@@ -210,7 +210,24 @@ export function RegistrationForm() {
     setSubmitting(true);
     setServerError(null);
     try {
-      const res = await submitRegistration(values);
+      const upperValues: RegistrationValues = {
+        ...values,
+        institucion: (
+          values.origenInstitucion === "HCUAMP"
+            ? "HOSPITAL CENTRAL UNIVERSITARIO DR. ANTONIO MARÍA PINEDA (HCUAMP)"
+            : values.institucion.trim()
+        ).toUpperCase(),
+        nombres: values.nombres.trim().toUpperCase(),
+        apellidos: values.apellidos.trim().toUpperCase(),
+        pais: (values.pais.trim() || "VENEZUELA").toUpperCase(),
+        estado: (values.estado.trim() || "LARA").toUpperCase(),
+        municipio: (values.municipio.trim() || "IRIBARREN").toUpperCase(),
+        parroquia: (values.parroquia.trim() || "CONCEPCIÓN").toUpperCase(),
+        nombrePonencia: values.nombrePonencia ? values.nombrePonencia.trim().toUpperCase() : "",
+        especialidad: values.especialidad ? values.especialidad.trim().toUpperCase() : "",
+      };
+      setValues(upperValues);
+      const res = await submitRegistration(upperValues);
       setResult(res);
       requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     } catch (err) {
@@ -236,9 +253,10 @@ export function RegistrationForm() {
     const activeDays = DAYS_CONGRESO.filter(
       (d) => values.turnos[d.id]?.manana || values.turnos[d.id]?.tarde,
     );
-    const tipoLabel =
+    const tipoLabel = (
       PARTICIPANT_BY_ID[values.tipoParticipante as ParticipantTypeId]?.label ||
-      values.tipoParticipante;
+      values.tipoParticipante
+    ).toUpperCase();
 
     return (
       <div ref={topRef} className="py-4 space-y-6 text-center" role="status">
@@ -563,9 +581,9 @@ export function RegistrationForm() {
               <input
                 id="institucion"
                 placeholder="Ej.: Hospital Militar / Clínica Razetti / Universidad UCLA"
-                className={inputClass(!!errors.institucion)}
+                className={`${inputClass(!!errors.institucion)} uppercase`}
                 value={values.institucion}
-                onChange={(e) => set("institucion", e.target.value)}
+                onChange={(e) => set("institucion", e.target.value.toUpperCase())}
                 aria-invalid={!!errors.institucion}
               />
             </Field>
@@ -683,10 +701,10 @@ export function RegistrationForm() {
             <Field id="nombres" label="Nombres" error={errors.nombres} required>
               <input
                 id="nombres"
-                className={inputClass(!!errors.nombres)}
+                className={`${inputClass(!!errors.nombres)} uppercase`}
                 autoComplete="given-name"
                 value={values.nombres}
-                onChange={(e) => set("nombres", e.target.value)}
+                onChange={(e) => set("nombres", e.target.value.toUpperCase())}
                 aria-invalid={!!errors.nombres}
               />
             </Field>
@@ -694,10 +712,10 @@ export function RegistrationForm() {
             <Field id="apellidos" label="Apellidos" error={errors.apellidos} required>
               <input
                 id="apellidos"
-                className={inputClass(!!errors.apellidos)}
+                className={`${inputClass(!!errors.apellidos)} uppercase`}
                 autoComplete="family-name"
                 value={values.apellidos}
-                onChange={(e) => set("apellidos", e.target.value)}
+                onChange={(e) => set("apellidos", e.target.value.toUpperCase())}
                 aria-invalid={!!errors.apellidos}
               />
             </Field>
@@ -756,9 +774,9 @@ export function RegistrationForm() {
             <Field id="pais" label="País" error={errors.pais} required>
               <input
                 id="pais"
-                className={inputClass(!!errors.pais)}
+                className={`${inputClass(!!errors.pais)} uppercase`}
                 value={values.pais}
-                onChange={(e) => set("pais", e.target.value)}
+                onChange={(e) => set("pais", e.target.value.toUpperCase())}
                 aria-invalid={!!errors.pais}
               />
             </Field>
@@ -766,9 +784,9 @@ export function RegistrationForm() {
             <Field id="estado" label="Estado" error={errors.estado} required>
               <input
                 id="estado"
-                className={inputClass(!!errors.estado)}
+                className={`${inputClass(!!errors.estado)} uppercase`}
                 value={values.estado}
-                onChange={(e) => set("estado", e.target.value)}
+                onChange={(e) => set("estado", e.target.value.toUpperCase())}
                 aria-invalid={!!errors.estado}
               />
             </Field>
@@ -776,9 +794,9 @@ export function RegistrationForm() {
             <Field id="municipio" label="Municipio" error={errors.municipio} required>
               <input
                 id="municipio"
-                className={inputClass(!!errors.municipio)}
+                className={`${inputClass(!!errors.municipio)} uppercase`}
                 value={values.municipio}
-                onChange={(e) => set("municipio", e.target.value)}
+                onChange={(e) => set("municipio", e.target.value.toUpperCase())}
                 aria-invalid={!!errors.municipio}
               />
             </Field>
@@ -786,9 +804,9 @@ export function RegistrationForm() {
             <Field id="parroquia" label="Parroquia" error={errors.parroquia} required>
               <input
                 id="parroquia"
-                className={inputClass(!!errors.parroquia)}
+                className={`${inputClass(!!errors.parroquia)} uppercase`}
                 value={values.parroquia}
-                onChange={(e) => set("parroquia", e.target.value)}
+                onChange={(e) => set("parroquia", e.target.value.toUpperCase())}
                 aria-invalid={!!errors.parroquia}
               />
             </Field>
@@ -842,9 +860,9 @@ export function RegistrationForm() {
                 <input
                   id="nombrePonencia"
                   placeholder="Título completo de su ponencia académica"
-                  className={inputClass(!!errors.nombrePonencia)}
+                  className={`${inputClass(!!errors.nombrePonencia)} uppercase`}
                   value={values.nombrePonencia || ""}
-                  onChange={(e) => set("nombrePonencia", e.target.value)}
+                  onChange={(e) => set("nombrePonencia", e.target.value.toUpperCase())}
                   aria-invalid={!!errors.nombrePonencia}
                 />
               </Field>
@@ -861,15 +879,15 @@ export function RegistrationForm() {
               >
                 <select
                   id="especialidad"
-                  className={inputClass(!!errors.especialidad)}
+                  className={`${inputClass(!!errors.especialidad)} uppercase`}
                   value={values.especialidad || ""}
-                  onChange={(e) => set("especialidad", e.target.value)}
+                  onChange={(e) => set("especialidad", e.target.value.toUpperCase())}
                   aria-invalid={!!errors.especialidad}
                 >
-                  <option value="">Selecciona la especialidad médica...</option>
+                  <option value="">SELECCIONA LA ESPECIALIDAD MÉDICA...</option>
                   {ESPECIALIDADES_CONGRESO.map((esp) => (
-                    <option key={esp} value={esp}>
-                      {esp}
+                    <option key={esp} value={esp.toUpperCase()}>
+                      {esp.toUpperCase()}
                     </option>
                   ))}
                 </select>

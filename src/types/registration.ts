@@ -74,7 +74,7 @@ export type FieldErrors = Partial<Record<keyof RegistrationValues, string>>;
 
 export const EMPTY_VALUES: RegistrationValues = {
   origenInstitucion: "HCUAMP",
-  institucion: "Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)",
+  institucion: "HOSPITAL CENTRAL UNIVERSITARIO DR. ANTONIO MARÍA PINEDA (HCUAMP)",
   nombres: "",
   apellidos: "",
   nacionalidad: "V",
@@ -83,10 +83,10 @@ export const EMPTY_VALUES: RegistrationValues = {
   fechaNacimiento: "",
   telefono: "",
   correo: "",
-  pais: "Venezuela",
-  estado: "Lara",
-  municipio: "Iribarren",
-  parroquia: "Concepción",
+  pais: "VENEZUELA",
+  estado: "LARA",
+  municipio: "IRIBARREN",
+  parroquia: "CONCEPCIÓN",
   tipoParticipante: "",
   nombrePonencia: "",
   especialidad: "",

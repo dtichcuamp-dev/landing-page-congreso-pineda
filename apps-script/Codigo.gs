@@ -314,8 +314,8 @@ function lookupHcuamp_(rawCedula) {
         ok: true,
         found: true,
         data: {
-          nombres: nombres,
-          apellidos: apellidos,
+          nombres: nombres.toUpperCase(),
+          apellidos: apellidos.toUpperCase(),
           sexo: sexo,
           fechaNacimiento: fechaNac,
           telefono: telefono
@@ -391,20 +391,22 @@ function validate_(b) {
   var nameRe = /^[A-Za-zÀ-ÿ\u00f1\u00d1][A-Za-zÀ-ÿ\u00f1\u00d1\s'.\-]{1,59}$/;
   var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-  // 1. Institución de origen
+  // 1. Institución de origen (ALMACENAR EN MAYÚSCULAS)
   var origenInstitucion = b.origenInstitucion === 'HCUAMP' ? 'HCUAMP' : 'OTRA';
   var institucion = origenInstitucion === 'HCUAMP'
-    ? 'Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)'
-    : str_(b.institucion, 120);
+    ? 'HOSPITAL CENTRAL UNIVERSITARIO DR. ANTONIO MARÍA PINEDA (HCUAMP)'
+    : str_(b.institucion, 120).toUpperCase();
 
   if (origenInstitucion === 'OTRA' && institucion.length < 2) {
     throw new UserError_('Por favor ingresa el nombre de la institución de origen.');
   }
 
-  // 2. Datos personales
-  var nombres = str_(b.nombres, 60), apellidos = str_(b.apellidos, 60);
-  if (!nameRe.test(nombres)) throw new UserError_('Nombres inválidos (solo letras).');
-  if (!nameRe.test(apellidos)) throw new UserError_('Apellidos inválidos (solo letras).');
+  // 2. Datos personales (Nombres y Apellidos en MAYÚSCULAS)
+  var rawNombres = str_(b.nombres, 60), rawApellidos = str_(b.apellidos, 60);
+  if (!nameRe.test(rawNombres)) throw new UserError_('Nombres inválidos (solo letras).');
+  if (!nameRe.test(rawApellidos)) throw new UserError_('Apellidos inválidos (solo letras).');
+  var nombres = rawNombres.toUpperCase();
+  var apellidos = rawApellidos.toUpperCase();
 
   var cedula = str_(b.cedula, 15).toUpperCase();
   if (!/^[VE]-\d{5,9}$/.test(cedula)) throw new UserError_('Cédula de identidad inválida (5 a 9 dígitos).');
@@ -421,12 +423,13 @@ function validate_(b) {
   var correo = str_(b.correo, 120).toLowerCase();
   if (!emailRe.test(correo)) throw new UserError_('Correo electrónico inválido.');
 
-  var pais = str_(b.pais, 120) || 'Venezuela';
-  var estado = str_(b.estado, 120) || 'Lara';
-  var municipio = str_(b.municipio, 120) || 'Iribarren';
-  var parroquia = str_(b.parroquia, 120) || 'Concepción';
+  // País, Estado, Municipio, Parroquia (ALMACENAR EN MAYÚSCULAS)
+  var pais = (str_(b.pais, 120) || 'VENEZUELA').toUpperCase();
+  var estado = (str_(b.estado, 120) || 'LARA').toUpperCase();
+  var municipio = (str_(b.municipio, 120) || 'IRIBARREN').toUpperCase();
+  var parroquia = (str_(b.parroquia, 120) || 'CONCEPCIÓN').toUpperCase();
 
-  // 3. Tipo de participante y tarifa
+  // 3. Tipo de participante y tarifa (ALMACENAR EN MAYÚSCULAS)
   var tipoId = b.tipoParticipante;
   if (tipoId === 'terapeutas' || tipoId === 'terapeutas_otra' || tipoId === 'fisioterapeuta' || tipoId === 'terapeuta') {
     tipoId = origenInstitucion === 'HCUAMP' ? 'terapeutas' : 'terapeutas_otra';
@@ -452,14 +455,21 @@ function validate_(b) {
     }
   }
 
+  var tipoLabel = str_(b.tipoLabel || tipo.label, 120).toUpperCase();
+
+  // Detalle Ponencia / Especialidad (ALMACENAR EN MAYÚSCULAS)
   var detalleExtra = '';
   if (origenInstitucion === 'HCUAMP') {
     if (tipoId === 'conferencista') {
-      detalleExtra = str_(b.nombrePonencia, 200);
+      detalleExtra = str_(b.nombrePonencia || b.detalleExtra, 200).toUpperCase();
       if (!detalleExtra) throw new UserError_('Los conferencistas deben indicar el nombre de su ponencia.');
     } else if (tipoId === 'residente_ultimo_anio') {
-      detalleExtra = str_(b.especialidad, 100);
+      detalleExtra = str_(b.especialidad || b.detalleExtra, 100).toUpperCase();
       if (!detalleExtra) throw new UserError_('Los residentes de último año deben seleccionar su especialidad.');
+    }
+  } else {
+    if (b.detalleExtra || b.nombrePonencia || b.especialidad) {
+      detalleExtra = str_(b.detalleExtra || b.nombrePonencia || b.especialidad, 200).toUpperCase();
     }
   }
 
@@ -525,21 +535,21 @@ function validate_(b) {
 
   return {
     origenInstitucion: origenInstitucion,
-    institucion: institucion,
-    nombres: nombres,
-    apellidos: apellidos,
+    institucion: institucion.toUpperCase(),
+    nombres: nombres.toUpperCase(),
+    apellidos: apellidos.toUpperCase(),
     cedula: cedula,
     sexo: sexo,
     fechaNacimiento: fechaNacimiento,
     telefono: telefono,
     correo: correo,
     tipoId: tipoId,
-    tipoLabel: b.tipoLabel || tipo.label,
-    detalleExtra: detalleExtra,
-    pais: pais,
-    estado: estado,
-    municipio: municipio,
-    parroquia: parroquia,
+    tipoLabel: tipoLabel.toUpperCase(),
+    detalleExtra: detalleExtra.toUpperCase(),
+    pais: pais.toUpperCase(),
+    estado: estado.toUpperCase(),
+    municipio: municipio.toUpperCase(),
+    parroquia: parroquia.toUpperCase(),
     turnos: turnos,
     diasActivos: diasActivos,
     diasLabel: diasActivos.map(function (d) { return DIAS_CONGRESO[d]; }).join(', '),
@@ -636,20 +646,20 @@ function appendRow_(d, receiptFile) {
       id,
       new Date(),
       d.origenInstitucion,
-      safe_(d.institucion),
-      safe_(d.nombres),
-      safe_(d.apellidos),
+      safe_(String(d.institucion || '').toUpperCase()),
+      safe_(String(d.nombres || '').toUpperCase()),
+      safe_(String(d.apellidos || '').toUpperCase()),
       d.cedula,
       d.sexo,
       d.fechaNacimiento,
       d.telefono,
       safe_(d.correo),
-      d.tipoLabel,
-      safe_(d.detalleExtra),
-      safe_(d.pais),
-      safe_(d.estado),
-      safe_(d.municipio),
-      safe_(d.parroquia),
+      String(d.tipoLabel || '').toUpperCase(),
+      safe_(String(d.detalleExtra || '').toUpperCase()),
+      safe_(String(d.pais || '').toUpperCase()),
+      safe_(String(d.estado || '').toUpperCase()),
+      safe_(String(d.municipio || '').toUpperCase()),
+      safe_(String(d.parroquia || '').toUpperCase()),
       d.diasLabel,
       d.diasActivos.length,
       safe_(d.resumenTurnos),
@@ -782,13 +792,13 @@ function resendEmailById_(id) {
 
   var d = {
     origenInstitucion: row[2],
-    institucion: row[3],
-    nombres: row[4],
-    apellidos: row[5],
+    institucion: String(row[3] || '').toUpperCase(),
+    nombres: String(row[4] || '').toUpperCase(),
+    apellidos: String(row[5] || '').toUpperCase(),
     cedula: row[6],
     correo: String(row[10] || '').trim(),
-    tipoLabel: row[11],
-    detalleExtra: row[12],
+    tipoLabel: String(row[11] || '').toUpperCase(),
+    detalleExtra: String(row[12] || '').toUpperCase(),
     diasLabel: row[17],
     resumenTurnos: row[19],
     total: Number(row[22]) || 0
@@ -850,13 +860,13 @@ function resendBulkEmails_(body) {
 
     var d = {
       origenInstitucion: row[2],
-      institucion: row[3],
-      nombres: row[4],
-      apellidos: row[5],
+      institucion: String(row[3] || '').toUpperCase(),
+      nombres: String(row[4] || '').toUpperCase(),
+      apellidos: String(row[5] || '').toUpperCase(),
       cedula: row[6],
       correo: correo,
-      tipoLabel: row[11],
-      detalleExtra: row[12],
+      tipoLabel: String(row[11] || '').toUpperCase(),
+      detalleExtra: String(row[12] || '').toUpperCase(),
       diasLabel: row[17],
       resumenTurnos: row[19],
       total: Number(row[22]) || 0

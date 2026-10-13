@@ -156,13 +156,17 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
         ? "Bachiller / Estudiante de pregrado"
         : v.tipoParticipante);
 
+  const institucionUpper = (
+    v.origenInstitucion === "HCUAMP"
+      ? "HOSPITAL CENTRAL UNIVERSITARIO DR. ANTONIO MARÍA PINEDA (HCUAMP)"
+      : v.institucion.trim()
+  ).toUpperCase();
+
   const payload: RegistrationPayload = {
     origenInstitucion: v.origenInstitucion,
-    institucion: v.origenInstitucion === "HCUAMP"
-      ? "Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)"
-      : v.institucion.trim(),
-    nombres: v.nombres.trim(),
-    apellidos: v.apellidos.trim(),
+    institucion: institucionUpper,
+    nombres: v.nombres.trim().toUpperCase(),
+    apellidos: v.apellidos.trim().toUpperCase(),
     cedula: `${v.nacionalidad}-${cleanCedula(v.cedula)}`,
     sexo: v.sexo,
     fechaNacimiento: v.fechaNacimiento,
@@ -177,13 +181,13 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
       : isPregradoOtra
         ? ("bachiller" as RegistrationPayload["tipoParticipante"])
         : (v.tipoParticipante as RegistrationPayload["tipoParticipante"]),
-    tipoLabel: tipoLabel,
-    nombrePonencia: v.nombrePonencia?.trim(),
-    especialidad: v.especialidad?.trim(),
-    pais: v.pais.trim() || "Venezuela",
-    estado: v.estado.trim() || "Lara",
-    municipio: v.municipio.trim() || "Iribarren",
-    parroquia: v.parroquia.trim() || "Concepción",
+    tipoLabel: tipoLabel.toUpperCase(),
+    nombrePonencia: v.nombrePonencia ? v.nombrePonencia.trim().toUpperCase() : undefined,
+    especialidad: v.especialidad ? v.especialidad.trim().toUpperCase() : undefined,
+    pais: (v.pais.trim() || "VENEZUELA").toUpperCase(),
+    estado: (v.estado.trim() || "LARA").toUpperCase(),
+    municipio: (v.municipio.trim() || "IRIBARREN").toUpperCase(),
+    parroquia: (v.parroquia.trim() || "CONCEPCIÓN").toUpperCase(),
     turnos: v.turnos,
     diasSeleccionados: diasActivos,
     resumenTurnos: partes.join("; "),
