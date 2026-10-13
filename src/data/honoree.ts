@@ -31,7 +31,7 @@ export interface HonoreeSociety {
 export const HONOREE = {
   name: "Dr. Samir Saba Kahwati",
   prefix: "Homenajeado de Honor",
-  eyebrow: "En honor a...",
+  eyebrow: "Homenaje",
   tagline: "Maestro de la Ginecología y Obstetricia, Formador de Generaciones y Cirujano Insigne del HCUAMP",
   birthDate: "20 de mayo de 1952",
   birthPlace: "Aleppo, Siria",

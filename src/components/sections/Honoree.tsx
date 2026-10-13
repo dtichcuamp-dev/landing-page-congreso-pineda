@@ -42,7 +42,7 @@ export function Honoree() {
 
       <div className="mx-auto max-w-6xl relative">
         <SectionHeading
-          eyebrow="En honor a..."
+          eyebrow="Homenaje"
           title="Dr. Samir Saba Kahwati"
           description="Homenajeado oficial del XIV Congreso Pineda, en reconocimiento a más de cuatro décadas de excelencia quirúrgica, liderazgo hospitalario y devoción en la formación médica."
         />

@@ -56,7 +56,7 @@ export const HIGHLIGHTS: Highlight[] = [
 export const NAV_LINKS = [
   { href: "#inicio", label: "Inicio" },
   { href: "#nosotros", label: "Nosotros" },
-  { href: "#homenaje", label: "En honor a..." },
+  { href: "#homenaje", label: "Homenaje" },
   { href: "#atractivos", label: "Atractivos" },
   { href: "#especialidades", label: "Especialidades" },
   { href: "#ponentes", label: "Ponentes" },
