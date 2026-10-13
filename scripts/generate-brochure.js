@@ -13,30 +13,69 @@ async function buildBrochure() {
   const fontBoldOblique = await doc.embedFont(StandardFonts.HelveticaBoldOblique);
 
   // Paleta de colores oficial HCUAMP / Congreso
-  const NAVY = rgb(11 / 255, 37 / 255, 69 / 255);       // #0b2545
-  const NAVY_DARK = rgb(7 / 255, 23 / 255, 44 / 255);  // #07172c
-  const BRAND = rgb(29 / 255, 99 / 255, 216 / 255);     // #1d63d8
-  const BRAND_LIGHT = rgb(239 / 255, 246 / 255, 255 / 255); // #eff6ff
-  const CLINIC = rgb(14 / 255, 165 / 255, 233 / 255);   // #0ea5e9
+  const NAVY = rgb(11 / 255, 37 / 255, 69 / 255);          // #0b2545
+  const NAVY_DARK = rgb(7 / 255, 23 / 255, 44 / 255);     // #07172c
+  const BRAND = rgb(29 / 255, 99 / 255, 216 / 255);        // #1d63d8
+  const BRAND_LIGHT = rgb(239 / 255, 246 / 255, 255 / 255);// #eff6ff
+  const CLINIC = rgb(14 / 255, 165 / 255, 233 / 255);      // #0ea5e9
   const CLINIC_TEAL = rgb(13 / 255, 148 / 255, 136 / 255); // #0d9488
-  const GOLD = rgb(217 / 255, 119 / 255, 6 / 255);     // #d97706
-  const GOLD_LIGHT = rgb(254 / 255, 243 / 255, 199 / 255); // #fef3c7
+  const GOLD = rgb(217 / 255, 119 / 255, 6 / 255);        // #d97706
   const WHITE = rgb(1, 1, 1);
-  const SLATE_DARK = rgb(15 / 255, 23 / 255, 42 / 255); // #0f172a
-  const SLATE_TEXT = rgb(51 / 255, 65 / 255, 85 / 255); // #334155
-  const SLATE_MUTED = rgb(100 / 255, 116 / 255, 139 / 255); // #64748b
-  const BORDER = rgb(226 / 255, 232 / 255, 240 / 255);  // #e2e8f0
-  const CARD_BG = rgb(248 / 255, 250 / 255, 252 / 255); // #f8fafc
-  const GREEN_BG = rgb(236 / 255, 253 / 255, 245 / 255); // #ecfdf5
-  const GREEN_TEXT = rgb(4 / 255, 120 / 255, 87 / 255); // #047857
+  const SLATE_DARK = rgb(15 / 255, 23 / 255, 42 / 255);    // #0f172a
+  const SLATE_TEXT = rgb(51 / 255, 65 / 255, 85 / 255);    // #334155
+  const SLATE_MUTED = rgb(100 / 255, 116 / 255, 139 / 255);// #64748b
+  const BORDER = rgb(226 / 255, 232 / 255, 240 / 255);     // #e2e8f0
+  const CARD_BG = rgb(248 / 255, 250 / 255, 252 / 255);    // #f8fafc
+  const GREEN_BG = rgb(236 / 255, 253 / 255, 245 / 255);   // #ecfdf5
+  const GREEN_TEXT = rgb(4 / 255, 120 / 255, 87 / 255);    // #047857
+
+  // Helper de ajuste de texto para evitar desbordamiento
+  function wrapText(text, font, size, maxWidth) {
+    const words = String(text || '').trim().split(/\s+/);
+    const lines = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = font.widthOfTextAtSize(testLine, size);
+      if (testWidth <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        if (currentLine) lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  }
+
+  function drawWrappedText(page, text, { x, y, font, size, color, maxWidth, lineHeight }) {
+    const lines = wrapText(text, font, size, maxWidth);
+    let curY = y;
+    const lh = lineHeight || size * 1.25;
+    for (const line of lines) {
+      page.drawText(line, { x, y: curY, size, font, color });
+      curY -= lh;
+    }
+    return curY;
+  }
 
   // Cargar imágenes
-  const logoBytes = fs.readFileSync(path.join(__dirname, '../public/images/logo-congreso-pineda.png'));
-  const isotipoBytes = fs.readFileSync(path.join(__dirname, '../public/images/isotipo-congreso.png'));
-  const logoImg = await doc.embedPng(logoBytes);
-  const isoImg = await doc.embedPng(isotipoBytes);
+  const imgDir = path.join(__dirname, '../public/images');
+  const logoImg = await doc.embedPng(fs.readFileSync(path.join(imgDir, 'logo-congreso-pineda.png')));
+  const isoImg = await doc.embedPng(fs.readFileSync(path.join(imgDir, 'isotipo-congreso.png')));
+  const audImg = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'auditorium.jpg')));
+  const medConfImg = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'med-conference.jpg')));
+  const keynoteImg = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'medical-keynote.jpg')));
+  const teamImg = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'doctor-team.jpg')));
 
-  // Generar Código QR de registro
+  // Ponentes destacados
+  const spkEchenique = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/dr-angel-echenique.jpg')));
+  const spkAndrade = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/dr-adelino-andrade.jpg')));
+  const spkHernandez = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-3.jpg')));
+  const spkMendoza = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-4.jpg')));
+
+  // Generar Código QR de registro oficial
   const qrBuffer = await QRCode.toBuffer('https://congresopineda.vercel.app', {
     width: 360,
     margin: 1,
@@ -47,55 +86,51 @@ async function buildBrochure() {
   const PAGE_WIDTH = 612;
   const PAGE_HEIGHT = 792;
   const TOTAL_PAGES = 4;
+  const RIF_HCUAMP = 'G-20011811-3';
 
-  // Helper para dibujar barra superior en páginas interiores (2, 3, 4)
+  // Helper para cabecera en páginas interiores
   function drawInnerHeader(page, title, subtitle) {
-    // Fondo de barra superior
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 62,
+      y: PAGE_HEIGHT - 64,
       width: PAGE_WIDTH,
-      height: 62,
+      height: 64,
       color: NAVY
     });
-    // Acento turquesa
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 65,
+      y: PAGE_HEIGHT - 67,
       width: PAGE_WIDTH,
       height: 3,
       color: CLINIC
     });
 
-    // Isotipo en header
     page.drawImage(isoImg, {
       x: 36,
-      y: PAGE_HEIGHT - 54,
-      width: 40,
-      height: 42
+      y: PAGE_HEIGHT - 56,
+      width: 42,
+      height: 44
     });
 
-    page.drawText('LI CONGRESO MÉDICO HCUAMP 2026 · XIV CONGRESO PINEDA', {
-      x: 86,
-      y: PAGE_HEIGHT - 32,
-      size: 9,
+    page.drawText('XIV CONGRESO PINEDA 2026', {
+      x: 88,
+      y: PAGE_HEIGHT - 30,
+      size: 9.5,
       font: fontBold,
       color: CLINIC
     });
-
     page.drawText(title, {
-      x: 86,
-      y: PAGE_HEIGHT - 47,
+      x: 88,
+      y: PAGE_HEIGHT - 46,
       size: 13,
       font: fontBold,
       color: WHITE
     });
-
     if (subtitle) {
       page.drawText(subtitle, {
-        x: 86,
+        x: 88,
         y: PAGE_HEIGHT - 58,
-        size: 8,
+        size: 7.5,
         font: fontRegular,
         color: rgb(203 / 255, 213 / 255, 225 / 255)
       });
@@ -106,15 +141,15 @@ async function buildBrochure() {
   function drawFooter(page, pageNum) {
     page.drawRectangle({
       x: 36,
-      y: 42,
+      y: 40,
       width: PAGE_WIDTH - 72,
       height: 1,
       color: BORDER
     });
 
-    page.drawText('Hospital Central Universitario «Dr. Antonio María Pineda» · Barquisimeto, Estado Lara · RIF: G-20000146-0', {
+    page.drawText(`Hospital Central Universitario «Dr. Antonio María Pineda» · RIF: ${RIF_HCUAMP} · Barquisimeto, Estado Lara`, {
       x: 36,
-      y: 28,
+      y: 26,
       size: 7.5,
       font: fontRegular,
       color: SLATE_MUTED
@@ -124,7 +159,7 @@ async function buildBrochure() {
     const pageStrWidth = fontBold.widthOfTextAtSize(pageStr, 8);
     page.drawText(pageStr, {
       x: PAGE_WIDTH - 36 - pageStrWidth,
-      y: 28,
+      y: 26,
       size: 8,
       font: fontBold,
       color: BRAND
@@ -140,339 +175,363 @@ async function buildBrochure() {
     // Banda superior principal
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 95,
+      y: PAGE_HEIGHT - 88,
       width: PAGE_WIDTH,
-      height: 95,
+      height: 88,
       color: NAVY
     });
-    // Línea de acento
     page.drawRectangle({
       x: 0,
-      y: PAGE_HEIGHT - 99,
+      y: PAGE_HEIGHT - 91,
       width: PAGE_WIDTH,
-      height: 4,
+      height: 3,
       color: CLINIC
     });
 
     // Logo e Isotipo en portada
     page.drawImage(isoImg, {
       x: 36,
-      y: PAGE_HEIGHT - 82,
-      width: 58,
-      height: 62
+      y: PAGE_HEIGHT - 76,
+      width: 54,
+      height: 58
     });
 
     page.drawText('HOSPITAL CENTRAL UNIVERSITARIO «DR. ANTONIO MARÍA PINEDA»', {
-      x: 106,
-      y: PAGE_HEIGHT - 38,
-      size: 11,
+      x: 100,
+      y: PAGE_HEIGHT - 34,
+      size: 10.5,
       font: fontBold,
       color: WHITE
     });
-    page.drawText('Decanato de Ciencias de la Salud · Barquisimeto, Estado Lara · Venezuela', {
-      x: 106,
-      y: PAGE_HEIGHT - 52,
+    page.drawText(`RIF: ${RIF_HCUAMP} · Barquisimeto, Estado Lara, Venezuela`, {
+      x: 100,
+      y: PAGE_HEIGHT - 48,
       size: 8.5,
       font: fontRegular,
       color: rgb(186 / 255, 230 / 255, 253 / 255)
     });
-    page.drawText('COMITÉ ORGANIZADOR Y CIENTÍFICO · PROGRAMA OFICIAL DEL CONGRESO', {
-      x: 106,
-      y: PAGE_HEIGHT - 66,
-      size: 7.5,
+    page.drawText('COMITÉ ORGANIZADOR Y CIENTÍFICO · GUÍA OFICIAL DEL PARTICIPANTE', {
+      x: 100,
+      y: PAGE_HEIGHT - 62,
+      size: 8,
       font: fontBold,
       color: CLINIC
     });
 
-    // BLOQUE HERO CENTRAL (y = 505 a 675, height 170)
+    // BLOQUE HERO CENTRAL (y = 555 a 685, height 130)
     page.drawRectangle({
       x: 36,
-      y: 515,
+      y: 545,
       width: PAGE_WIDTH - 72,
-      height: 165,
+      height: 140,
       color: BRAND_LIGHT,
       borderColor: rgb(191 / 255, 219 / 255, 254 / 255),
       borderWidth: 1.5
     });
 
-    // Badge píldora
+    // Badge
     page.drawRectangle({
-      x: 52,
-      y: 648,
-      width: 250,
-      height: 18,
+      x: 50,
+      y: 658,
+      width: 220,
+      height: 17,
       color: NAVY
     });
-    page.drawText('FOLLETO OFICIAL & GUÍA DEL PARTICIPANTE', {
-      x: 62,
-      y: 653,
+    page.drawText('FOLLETO OFICIAL DEL EVENTO', {
+      x: 60,
+      y: 663,
       size: 8,
       font: fontBold,
       color: WHITE
     });
 
-    // Título Principal
-    page.drawText('LI CONGRESO MÉDICO HCUAMP 2026', {
-      x: 52,
-      y: 622,
+    // Título Principal Oficial
+    page.drawText('XIV CONGRESO PINEDA 2026', {
+      x: 50,
+      y: 633,
       size: 22,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('XIV CONGRESO PINEDA', {
-      x: 52,
-      y: 598,
-      size: 16,
+    page.drawText('LIX Jornada de Egresados · LXXII Aniversario del HCUAMP', {
+      x: 50,
+      y: 614,
+      size: 11.5,
       font: fontBold,
       color: BRAND
     });
 
     // Lema
     page.drawText('«Vanguardia Científica, Innovación y Compromiso con la Salud»', {
-      x: 52,
-      y: 578,
-      size: 10.5,
+      x: 50,
+      y: 598,
+      size: 9.5,
       font: fontOblique,
       color: SLATE_TEXT
     });
 
-    // Separador
-    page.drawRectangle({
-      x: 52,
-      y: 566,
-      width: PAGE_WIDTH - 104,
-      height: 1,
-      color: rgb(219 / 255, 234 / 255, 254 / 255)
-    });
-
-    // Datos rápidos del evento
-    page.drawText('FECHA: 2 al 6 de noviembre de 2026 (5 días continuos de jornadas académicas)', {
-      x: 52,
-      y: 548,
-      size: 9,
+    // Metadatos esenciales
+    page.drawText('• Fechas: 2 al 6 de noviembre de 2026 (5 días continuos de jornadas académicas)', {
+      x: 50,
+      y: 578,
+      size: 8.5,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('SEDE: Hotel Biotel Suites, Barquisimeto · Frente al Obelisco (Final Av. Libertador)', {
-      x: 52,
-      y: 533,
-      size: 8.5,
+    page.drawText('• Sede: Hotel Biotel Suites · Frente al Obelisco (Final Av. Libertador con Av. Florencio Jiménez, Barquisimeto)', {
+      x: 50,
+      y: 564,
+      size: 8,
       font: fontRegular,
       color: SLATE_TEXT
     });
-    page.drawText('MODALIDAD: Presencial · 2 Salones en paralelo · Aval Institucional y Crédito Académico', {
-      x: 52,
-      y: 520,
-      size: 8.5,
+    page.drawText('• Aval Institucional HCUAMP con acreditación de horas crédito académicas', {
+      x: 50,
+      y: 552,
+      size: 8,
       font: fontBold,
       color: CLINIC_TEAL
     });
 
-    // DOS SALONES SIMULTÁNEOS (y = 430 a 500, height 70)
-    // Salón Principal (1)
-    page.drawRectangle({
+    // FOTO TEMÁTICA Y SALONES (y = 445 a 535, height 90)
+    // Foto auditorium
+    page.drawImage(audImg, {
       x: 36,
-      y: 432,
-      width: 262,
-      height: 70,
-      color: WHITE,
-      borderColor: rgb(147 / 255, 197 / 255, 253 / 255),
-      borderWidth: 1.5
+      y: 440,
+      width: 140,
+      height: 95
     });
     page.drawRectangle({
       x: 36,
-      y: 480,
-      width: 262,
-      height: 22,
-      color: rgb(238 / 255, 242 / 255, 255 / 255)
-    });
-    page.drawText('Salón Principal (1)', {
-      x: 48,
-      y: 486,
-      size: 11,
-      font: fontBold,
-      color: NAVY
-    });
-    page.drawText('Capacidad máxima: 240 puestos por turno', {
-      x: 48,
-      y: 466,
-      size: 8.5,
-      font: fontBold,
-      color: BRAND
-    });
-    page.drawText('Sesiones plenarias, simposios de alta concurrencia y', {
-      x: 48,
-      y: 453,
-      size: 7.5,
-      font: fontRegular,
-      color: SLATE_MUTED
-    });
-    page.drawText('jornadas médicas centrales del evento.', {
-      x: 48,
-      y: 442,
-      size: 7.5,
-      font: fontRegular,
-      color: SLATE_MUTED
-    });
-
-    // Salón Alterno (2)
-    page.drawRectangle({
-      x: 314,
-      y: 432,
-      width: 262,
-      height: 70,
-      color: WHITE,
-      borderColor: rgb(167 / 255, 243 / 255, 208 / 255),
-      borderWidth: 1.5
-    });
-    page.drawRectangle({
-      x: 314,
-      y: 480,
-      width: 262,
-      height: 22,
-      color: GREEN_BG
-    });
-    page.drawText('Salón Alterno (2)', {
-      x: 326,
-      y: 486,
-      size: 11,
-      font: fontBold,
-      color: rgb(6 / 255, 95 / 255, 70 / 255)
-    });
-    page.drawText('Capacidad máxima: 60 puestos por turno', {
-      x: 326,
-      y: 466,
-      size: 8.5,
-      font: fontBold,
-      color: GREEN_TEXT
-    });
-    page.drawText('Subespecialidades focalizadas, talleres prácticos,', {
-      x: 326,
-      y: 453,
-      size: 7.5,
-      font: fontRegular,
-      color: SLATE_MUTED
-    });
-    page.drawText('imágenes diagnósticas y sesiones interactivas.', {
-      x: 326,
-      y: 442,
-      size: 7.5,
-      font: fontRegular,
-      color: SLATE_MUTED
-    });
-
-    // BIENVENIDA INSTITUCIONAL (y = 250 a 415, height 165)
-    page.drawRectangle({
-      x: 36,
-      y: 252,
-      width: PAGE_WIDTH - 72,
-      height: 165,
-      color: CARD_BG,
+      y: 440,
+      width: 140,
+      height: 95,
       borderColor: BORDER,
       borderWidth: 1
     });
 
-    page.drawText('MENSAJE DEL COMITÉ ORGANIZADOR Y DIRECCIÓN GENERAL', {
-      x: 52,
-      y: 396,
+    // Tarjeta Salón Principal (1)
+    page.drawRectangle({
+      x: 184,
+      y: 440,
+      width: 190,
+      height: 95,
+      color: WHITE,
+      borderColor: rgb(147 / 255, 197 / 255, 253 / 255),
+      borderWidth: 1.2
+    });
+    page.drawRectangle({
+      x: 184,
+      y: 515,
+      width: 190,
+      height: 20,
+      color: rgb(238 / 255, 242 / 255, 255 / 255)
+    });
+    page.drawText('Salón Principal (1)', {
+      x: 194,
+      y: 521,
       size: 10,
       font: fontBold,
       color: NAVY
     });
+    page.drawText('Capacidad: 240 puestos por turno', {
+      x: 194,
+      y: 502,
+      size: 8,
+      font: fontBold,
+      color: BRAND
+    });
+    drawWrappedText(
+      page,
+      'Acondicionado para sesiones plenarias, simposios magistrales y actos protocolares con transmisión simultánea.',
+      { x: 194, y: 488, font: fontRegular, size: 7.2, color: SLATE_TEXT, maxWidth: 172, lineHeight: 9.5 }
+    );
+
+    // Tarjeta Salón Alterno (2)
     page.drawRectangle({
-      x: 52,
-      y: 390,
-      width: 180,
+      x: 382,
+      y: 440,
+      width: 194,
+      height: 95,
+      color: WHITE,
+      borderColor: rgb(167 / 255, 243 / 255, 208 / 255),
+      borderWidth: 1.2
+    });
+    page.drawRectangle({
+      x: 382,
+      y: 515,
+      width: 194,
+      height: 20,
+      color: GREEN_BG
+    });
+    page.drawText('Salón Alterno (2)', {
+      x: 392,
+      y: 521,
+      size: 10,
+      font: fontBold,
+      color: rgb(6 / 255, 95 / 255, 70 / 255)
+    });
+    page.drawText('Capacidad: 60 puestos por turno', {
+      x: 392,
+      y: 502,
+      size: 8,
+      font: fontBold,
+      color: GREEN_TEXT
+    });
+    drawWrappedText(
+      page,
+      'Espacio interactivo para subespecialidades, discusión de casos clínicos focalizados y diagnóstico por imágenes.',
+      { x: 392, y: 488, font: fontRegular, size: 7.2, color: SLATE_TEXT, maxWidth: 176, lineHeight: 9.5 }
+    );
+
+    // LOS ATRACTIVOS DEL CONGRESO (y = 235 a 428, height 193)
+    page.drawRectangle({
+      x: 36,
+      y: 235,
+      width: PAGE_WIDTH - 72,
+      height: 193,
+      color: CARD_BG,
+      borderColor: BORDER,
+      borderWidth: 1.2
+    });
+
+    page.drawText('LOS ATRACTIVOS PRINCIPALES DEL CONGRESO', {
+      x: 50,
+      y: 408,
+      size: 11,
+      font: fontBold,
+      color: NAVY
+    });
+    page.drawRectangle({
+      x: 50,
+      y: 402,
+      width: 220,
       height: 2,
       color: BRAND
     });
 
-    const p1 = 'El Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP), institución pionera de salud, docencia';
-    const p2 = 'e investigación del centroccidente venezolano, presenta su máxima cita científica anual. Este congreso reúne a los';
-    const p3 = 'más distinguidos especialistas, docentes, residentes y profesionales de la salud con el propósito de transferir';
-    const p4 = 'conocimiento de frontera, discutir casos de alta complejidad y promover las mejores prácticas clínicas.';
-    const p5 = 'Durante cinco días de intensa actividad académica en dos salones simultáneos, se abordarán 13 especialidades';
-    const p6 = 'médicas y quirúrgicas, contando con ponencias magistrales, simposios de vanguardia y discusiones interdisciplinarias.';
-    const p7 = 'Reiteramos nuestro compromiso con la formación médica continua y la excelencia hospitalaria.';
-
-    let curY = 372;
-    [p1, p2, p3, p4, p5, p6, p7].forEach((line) => {
-      page.drawText(line, { x: 52, y: curY, size: 8.5, font: fontRegular, color: SLATE_TEXT });
-      curY -= 13;
-    });
-
-    page.drawText('Comité Organizador · HCUAMP · «Ciencia, Ética y Vocación de Servicio»', {
-      x: 52,
-      y: 268,
-      size: 8,
-      font: fontBoldOblique,
-      color: BRAND
-    });
-
-    // 4 INDICADORES DESTACADOS (y = 95 a 235, height 140)
-    const metrics = [
-      { num: '13', label: 'Especialidades', desc: 'Médicas y Quirúrgicas en paralelo', color: NAVY },
-      { num: '+40', label: 'Conferencias', desc: 'Ponencias magistrales de expertos', color: BRAND },
-      { num: '300', label: 'Puestos / Turno', desc: 'Aforo en Salones (1) y (2)', color: CLINIC_TEAL },
-      { num: '100%', label: 'Exonerado HCUAMP', desc: 'Acceso para todo el personal HCUAMP', color: GOLD }
+    const atractivos = [
+      {
+        badge: '104',
+        title: 'Ponencias Científicas',
+        desc: 'Distribuidas en 18 áreas especializadas durante las 5 jornadas académicas completas.'
+      },
+      {
+        badge: '100+',
+        title: 'Ponentes Destacados',
+        desc: 'Cuerpo docente de alta trayectoria nacional e internacional y líderes de opinión médica.'
+      },
+      {
+        badge: '2',
+        title: 'Salones Acondicionados',
+        desc: 'Salón Principal (1) [240 puestos] y Salón Alterno (2) [60 puestos] con tecnología audiovisual.'
+      },
+      {
+        badge: 'POSTER',
+        title: 'Casos Clínicos en Modalidad Póster',
+        desc: 'Exposición interactiva de investigaciones, casos clínicos y trabajos científicos libres.'
+      },
+      {
+        badge: 'EXPO',
+        title: 'Área de Stands Comerciales',
+        desc: 'Espacio de networking y exhibición de la industria médico-farmacéutica y tecnológica.'
+      },
+      {
+        badge: 'PREMIO',
+        title: 'Premiaciones y Reconocimientos',
+        desc: 'Premio al mejor trabajo de investigación y homenaje a las trayectorias médicas ejemplares.'
+      }
     ];
 
-    const boxW = (PAGE_WIDTH - 72 - 30) / 4;
-    metrics.forEach((m, idx) => {
-      const bx = 36 + idx * (boxW + 10);
+    const atW = (PAGE_WIDTH - 72 - 30) / 3; // 170
+    atractivos.forEach((at, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const ax = 50 + col * (atW + 8);
+      const ay = 328 - row * 72;
+
       page.drawRectangle({
-        x: bx,
-        y: 110,
-        width: boxW,
-        height: 125,
+        x: ax,
+        y: ay,
+        width: atW,
+        height: 64,
         color: WHITE,
         borderColor: BORDER,
         borderWidth: 1
       });
+
       page.drawRectangle({
-        x: bx,
-        y: 229,
-        width: boxW,
-        height: 6,
-        color: m.color
+        x: ax,
+        y: ay + 44,
+        width: atW,
+        height: 20,
+        color: i % 2 === 0 ? rgb(241 / 255, 245 / 255, 249 / 255) : rgb(238 / 255, 242 / 255, 255 / 255)
       });
 
-      page.drawText(m.num, {
-        x: bx + 12,
-        y: 188,
-        size: 26,
+      page.drawText(at.badge, {
+        x: ax + 8,
+        y: ay + 50,
+        size: 8,
         font: fontBold,
-        color: m.color
+        color: BRAND
       });
-      page.drawText(m.label, {
-        x: bx + 12,
-        y: 168,
-        size: 9.5,
+      page.drawText(at.title, {
+        x: ax + 8,
+        y: ay + 30,
+        size: 8.5,
         font: fontBold,
-        color: SLATE_DARK
+        color: NAVY
       });
-      page.drawText(m.desc, {
-        x: bx + 12,
-        y: 142,
-        size: 7.5,
+      drawWrappedText(page, at.desc, {
+        x: ax + 8,
+        y: ay + 18,
         font: fontRegular,
-        color: SLATE_MUTED
-      });
-      page.drawText('Certificado incluido', {
-        x: bx + 12,
-        y: 124,
-        size: 7,
-        font: fontBold,
-        color: CLINIC_TEAL
+        size: 6.8,
+        color: SLATE_TEXT,
+        maxWidth: atW - 16,
+        lineHeight: 8.5
       });
     });
 
-    // Nota al pie de portada
-    page.drawText('Inscripciones abiertas en línea: congresopineda.vercel.app · Registro inmediato con credencial y código QR.', {
+    // BIENVENIDA INSTITUCIONAL (y = 58 a 224, height 166)
+    page.drawRectangle({
       x: 36,
-      y: 80,
-      size: 8,
+      y: 58,
+      width: PAGE_WIDTH - 72,
+      height: 166,
+      color: WHITE,
+      borderColor: BORDER,
+      borderWidth: 1
+    });
+
+    page.drawText('BIENVENIDA DEL COMITÉ ORGANIZADOR Y DIRECCIÓN GENERAL', {
+      x: 50,
+      y: 206,
+      size: 9.5,
       font: fontBold,
+      color: NAVY
+    });
+
+    const introText =
+      'El Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP), máxima institución asistencial y docente del centroccidente de Venezuela, se complace en convocar a la comunidad médica, asistencial y científica al XIV Congreso Pineda 2026. ' +
+      'En el marco del LXXII Aniversario del HCUAMP y la LIX Jornada de Egresados, este magno evento constituye un espacio de convergencia científica para compartir avances diagnósticos y terapéuticos de vanguardia, debatir sobre casos clínicos de alta complejidad y fomentar la excelencia en la atención hospitalaria. ' +
+      'Invitamos a médicos especialistas, residentes, profesionales de enfermería, terapeutas y estudiantes de ciencias de la salud a protagonizar una semana de intensa formación académica y fraternidad profesional.';
+
+    drawWrappedText(page, introText, {
+      x: 50,
+      y: 190,
+      font: fontRegular,
+      size: 8.2,
+      color: SLATE_TEXT,
+      maxWidth: PAGE_WIDTH - 100,
+      lineHeight: 12
+    });
+
+    page.drawText('Hospital Central Universitario «Dr. Antonio María Pineda» · Barquisimeto, Estado Lara', {
+      x: 50,
+      y: 72,
+      size: 7.8,
+      font: fontBoldOblique,
       color: BRAND
     });
 
@@ -480,231 +539,282 @@ async function buildBrochure() {
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     PÁGINA 2: EJES TEMÁTICOS Y ESPECIALIDADES MÉDICAS
+     PÁGINA 2: LAS 18 ÁREAS ESPECIALIZADAS Y PONENTES
      ══════════════════════════════════════════════════════════════════ */
   {
     const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-    drawInnerHeader(page, 'EJES TEMÁTICOS Y ESPECIALIDADES MÉDICAS', 'Programa científico multidisciplinario de alto nivel académico');
+    drawInnerHeader(
+      page,
+      '18 ÁREAS ESPECIALIZADAS · 104 PONENCIAS CIENTÍFICAS',
+      'Programa científico multidisciplinario diseñado para el perfeccionamiento clínico y quirúrgico'
+    );
 
-    // Introducción
-    page.drawText('El congreso contempla 13 áreas especializadas distribuidas a lo largo de las 5 jornadas académicas:', {
-      x: 36,
-      y: PAGE_HEIGHT - 82,
-      size: 9,
-      font: fontBold,
-      color: SLATE_DARK
-    });
-
-    const specialtiesCol1 = [
-      {
-        num: '01',
-        name: 'Medicina Interna',
-        desc: 'Manejo del paciente crítico crónico, protocolos de sepsis, terapéutica cardiovascular y patologías metabólicas prevalentes.'
-      },
-      {
-        num: '02',
-        name: 'Neurocirugía',
-        desc: 'Microcirugía vascular y tumoral, neurotrauma severo, monitorización multimodal e innovaciones en cirugía mínimamente invasiva.'
-      },
-      {
-        num: '03',
-        name: 'Diagnóstico por Imágenes',
-        desc: 'Resonancia magnética de alto campo, ecografía Doppler vascular avanzada y radiología intervencionista en el paciente agudo.'
-      },
-      {
-        num: '04',
-        name: 'Ginecología y Obstetricia',
-        desc: 'Medicina materno-fetal de precisión, control de hemorragia obstétrica masiva, patología del suelo pélvico y cirugía laparoscópica.'
-      },
-      {
-        num: '05',
-        name: 'Dermatología',
-        desc: 'Dermatoscopia avanzada en lesiones melanocíticas, dermatología oncológica y terapéutica en patologías autoinmunes complejas.'
-      },
-      {
-        num: '06',
-        name: 'Otorrinolaringología',
-        desc: 'Cirugía endoscópica funcional nasosinusal, patología laríngea y fonocirugía, así como novedades en otología e hipoacusias.'
-      },
-      {
-        num: '07',
-        name: 'Urología',
-        desc: 'Endourología moderna, litiasis urinaria compleja, abordaje uro-oncológico y técnicas quirúrgicas reconstructivas.'
-      }
+    // Grid de 18 especialidades (3 columnas x 6 filas)
+    const specialties = [
+      { num: '01', name: 'Medicina Interna', talks: '8 ponencias', desc: 'Manejo del paciente crítico, patología cardiovascular, sepsis y metabolismo.' },
+      { num: '02', name: 'Cirugía General', talks: '6 ponencias', desc: 'Cirugía laparoscópica avanzada, abdomen agudo y trauma quirúrgico.' },
+      { num: '03', name: 'Ginecología y Obstetricia', talks: '7 ponencias', desc: 'Medicina materno-fetal, hemorragia obstétrica y suelo pélvico.' },
+      { num: '04', name: 'Traumatología y Ortopedia', talks: '8 ponencias', desc: 'Osteosíntesis moderna, reemplazos articulares y fracturas complejas.' },
+      { num: '05', name: 'Emergencia General', talks: '8 ponencias', desc: 'Soporte vital avanzado, reanimación y estabilización del politraumatizado.' },
+      { num: '06', name: 'Cardiología', talks: '6 ponencias', desc: 'Cardiología intervencionista, insuficiencia cardíaca y arritmias.' },
+      { num: '07', name: 'Neurocirugía', talks: '5 ponencias', desc: 'Microcirugía vascular, neurotrauma severo y tumores cerebrales.' },
+      { num: '08', name: 'Diagnóstico por Imágenes', talks: '6 ponencias', desc: 'Resonancia de alto campo, ultrasonido Doppler y radiología intervencionista.' },
+      { num: '09', name: 'Dermatología', talks: '8 ponencias', desc: 'Dermatoscopia avanzada, oncología cutánea y patologías autoinmunes.' },
+      { num: '10', name: 'Urología', talks: '6 ponencias', desc: 'Endourología mínimamente invasiva, litiasis urinaria y uro-oncología.' },
+      { num: '11', name: 'Anestesiología', talks: '6 ponencias', desc: 'Manejo avanzado de la vía aérea, anestesia regional y analgesia postoperatoria.' },
+      { num: '12', name: 'Oftalmología', talks: '7 ponencias', desc: 'Cirugía facoemulsificante, patología vítreo-retiniana y glaucoma.' },
+      { num: '13', name: 'Otorrinolaringología (ORL)', talks: '5 ponencias', desc: 'Cirugía endoscópica nasosinusal, fonocirugía y patología ótica.' },
+      { num: '14', name: 'Gastroenterología', talks: '4 ponencias', desc: 'Endoscopia terapéutica, hepatología clínica y hemorragia digestiva.' },
+      { num: '15', name: 'Cirugía Plástica', talks: '5 ponencias', desc: 'Cirugía reconstructiva compleja, manejo del paciente quemado y estética.' },
+      { num: '16', name: 'Medicina Física y Rehab.', talks: '4 ponencias', desc: 'Neurorrehabilitación integral, biomecánica y terapia musculoesquelética.' },
+      { num: '17', name: 'Enfermería', talks: '4 ponencias', desc: 'Cuidados críticos hospitalarios, seguridad del paciente y gestión clínica.' },
+      { num: '18', name: 'Salud Mental y Psiquiatría', talks: '1 ponencia', desc: 'Neurociencias, estrés laboral hospitalario y psiquiatría de enlace.' }
     ];
 
-    const specialtiesCol2 = [
-      {
-        num: '08',
-        name: 'Oftalmología',
-        desc: 'Cirugía facoemulsificante de catarata, diagnóstico de retina médica y quirúrgica, glaucoma y manejo de la superficie ocular.'
-      },
-      {
-        num: '09',
-        name: 'Emergencia y Soporte Vital',
-        desc: 'Reanimación cardiopulmonar avanzada, triaje hospitalario de emergencias masivas y estabilización del paciente politraumatizado.'
-      },
-      {
-        num: '10',
-        name: 'Medicina Física y Rehabilitación',
-        desc: 'Neurorrehabilitación integral, rehabilitación post-quirúrgica temprana, terapia ocupacional y readaptación funcional biomecánica.'
-      },
-      {
-        num: '11',
-        name: 'Salud Mental y Psiquiatría',
-        desc: 'Salud mental del personal sanitario, neurociencias, abordaje interdisciplinario de trastornos afectivos y psiquiatría de enlace.'
-      },
-      {
-        num: '12',
-        name: 'Gastroenterología',
-        desc: 'Endoscopia digestiva diagnóstica y terapéutica avanzada, hepatología clínica y abordaje integral de la enfermedad inflamatoria.'
-      },
-      {
-        num: '13',
-        name: 'Traumatología y Ortopedia',
-        desc: 'Osteosíntesis biológica, reemplazos articulares primarios y de revisión, rescate en trauma musculoesquelético y artroscopia.'
-      }
-    ];
+    const colW = (PAGE_WIDTH - 72 - 16) / 3; // 174 pt
+    const cardH = 47;
+    const startY = PAGE_HEIGHT - 82;
 
-    const colW = 262;
-    let yPos = PAGE_HEIGHT - 100;
+    specialties.forEach((s, idx) => {
+      const col = idx % 3;
+      const row = Math.floor(idx / 3);
+      const cx = 36 + col * (colW + 8);
+      const cy = startY - row * (cardH + 6);
 
-    // Render Columna 1
-    specialtiesCol1.forEach((s) => {
       page.drawRectangle({
-        x: 36,
-        y: yPos - 56,
+        x: cx,
+        y: cy - cardH,
         width: colW,
-        height: 52,
+        height: cardH,
         color: CARD_BG,
         borderColor: BORDER,
         borderWidth: 1
       });
+
+      // Acento lateral
       page.drawRectangle({
-        x: 36,
-        y: yPos - 56,
-        width: 4,
-        height: 52,
+        x: cx,
+        y: cy - cardH,
+        width: 3.5,
+        height: cardH,
+        color: idx % 2 === 0 ? BRAND : CLINIC_TEAL
+      });
+
+      // Título y ponencias
+      page.drawText(`${s.num}. ${s.name}`, {
+        x: cx + 8,
+        y: cy - 13,
+        size: 8,
+        font: fontBold,
+        color: NAVY
+      });
+      page.drawText(s.talks, {
+        x: cx + colW - 55,
+        y: cy - 13,
+        size: 7,
+        font: fontBold,
         color: BRAND
       });
-      page.drawText(`${s.num}. ${s.name}`, {
-        x: 48,
-        y: yPos - 18,
-        size: 9.5,
-        font: fontBold,
-        color: NAVY
-      });
-      page.drawText(s.desc, {
-        x: 48,
-        y: yPos - 32,
-        size: 7.2,
+
+      // Descripción
+      drawWrappedText(page, s.desc, {
+        x: cx + 8,
+        y: cy - 26,
         font: fontRegular,
+        size: 6.5,
         color: SLATE_TEXT,
-        maxWidth: colW - 20,
-        lineHeight: 9.5
+        maxWidth: colW - 14,
+        lineHeight: 8.5
       });
-      yPos -= 58;
     });
 
-    // Render Columna 2
-    let yPos2 = PAGE_HEIGHT - 100;
-    specialtiesCol2.forEach((s) => {
+    // PANEL DE PONENTES DESTACADOS CON FOTOS REALES (y = 56 a 330, height 274)
+    page.drawRectangle({
+      x: 36,
+      y: 56,
+      width: PAGE_WIDTH - 72,
+      height: 270,
+      color: WHITE,
+      borderColor: BORDER,
+      borderWidth: 1.2
+    });
+
+    page.drawRectangle({
+      x: 36,
+      y: 298,
+      width: PAGE_WIDTH - 72,
+      height: 28,
+      color: BRAND_LIGHT
+    });
+
+    page.drawText('CUERPO DOCENTE Y PONENTES DESTACADOS', {
+      x: 48,
+      y: 308,
+      size: 10.5,
+      font: fontBold,
+      color: NAVY
+    });
+    page.drawText('+100 especialistas, conferencistas magistrales y líderes de opinión', {
+      x: 320,
+      y: 308,
+      size: 7.5,
+      font: fontRegular,
+      color: SLATE_MUTED
+    });
+
+    // 4 Tarjetas con fotos de ponentes
+    const speakerCards = [
+      {
+        img: spkEchenique,
+        name: 'Dr. Ángel Echenique',
+        specialty: 'Emergencia General y Medicina Interna',
+        salon: 'Salón Alterno (2)'
+      },
+      {
+        img: spkAndrade,
+        name: 'Dr. Adelino Andrade',
+        specialty: 'Urología y Endourología Avanzada',
+        salon: 'Salón Alterno (2)'
+      },
+      {
+        img: spkHernandez,
+        name: 'Dr. José Gregorio Hernández',
+        specialty: 'Cardiología Intervencionista',
+        salon: 'Salón Principal (1)'
+      },
+      {
+        img: spkMendoza,
+        name: 'Dra. María Corina Mendoza',
+        specialty: 'Neurocirugía y Microcirugía Vascular',
+        salon: 'Salón Principal (1)'
+      }
+    ];
+
+    const spkW = (PAGE_WIDTH - 72 - 24) / 4; // 126 pt
+    speakerCards.forEach((spk, idx) => {
+      const sx = 44 + idx * (spkW + 8);
+      const sy = 160;
+
       page.drawRectangle({
-        x: 314,
-        y: yPos2 - 56,
-        width: colW,
-        height: 52,
+        x: sx,
+        y: sy,
+        width: spkW,
+        height: 128,
         color: CARD_BG,
         borderColor: BORDER,
         borderWidth: 1
       });
-      page.drawRectangle({
-        x: 314,
-        y: yPos2 - 56,
-        width: 4,
-        height: 52,
-        color: CLINIC_TEAL
+
+      // Foto
+      page.drawImage(spk.img, {
+        x: sx + 18,
+        y: sy + 44,
+        width: 90,
+        height: 74
       });
-      page.drawText(`${s.num}. ${s.name}`, {
-        x: 326,
-        y: yPos2 - 18,
-        size: 9.5,
+      page.drawRectangle({
+        x: sx + 18,
+        y: sy + 44,
+        width: 90,
+        height: 74,
+        borderColor: rgb(203 / 255, 213 / 255, 225 / 255),
+        borderWidth: 1
+      });
+
+      // Nombre y área
+      page.drawText(spk.name, {
+        x: sx + 6,
+        y: sy + 30,
+        size: 7.5,
         font: fontBold,
         color: NAVY
       });
-      page.drawText(s.desc, {
-        x: 326,
-        y: yPos2 - 32,
-        size: 7.2,
+      drawWrappedText(page, spk.specialty, {
+        x: sx + 6,
+        y: sy + 20,
         font: fontRegular,
+        size: 6.5,
         color: SLATE_TEXT,
-        maxWidth: colW - 20,
-        lineHeight: 9.5
+        maxWidth: spkW - 12,
+        lineHeight: 8
       });
-      yPos2 -= 58;
+      page.drawText(spk.salon, {
+        x: sx + 6,
+        y: sy + 7,
+        size: 6.5,
+        font: fontBold,
+        color: BRAND
+      });
     });
 
-    // PANEL DE PONENTES DESTACADOS (y = 65 a 215, height 150)
+    // Fila inferior del panel con foto grupal y resumen
+    page.drawImage(teamImg, {
+      x: 44,
+      y: 66,
+      width: 140,
+      height: 82
+    });
     page.drawRectangle({
-      x: 36,
-      y: 65,
-      width: PAGE_WIDTH - 72,
-      height: 145,
-      color: BRAND_LIGHT,
-      borderColor: rgb(191 / 255, 219 / 255, 254 / 255),
-      borderWidth: 1.5
+      x: 44,
+      y: 66,
+      width: 140,
+      height: 82,
+      borderColor: BORDER,
+      borderWidth: 1
     });
 
-    page.drawText('ALGUNOS DE NUESTROS PONENTES Y DOCENTES DESTACADOS', {
-      x: 52,
-      y: 192,
-      size: 10,
+    page.drawText('ACTUALIZACIÓN CIENTÍFICA CON AVAL HOSPITALARIO', {
+      x: 196,
+      y: 136,
+      size: 9,
       font: fontBold,
       color: NAVY
     });
 
-    const speakers = [
-      { name: 'Dr. Ángel Echenique', area: 'Emergencia General y Medicina Interna', loc: 'Salón Alterno (2)' },
-      { name: 'Dr. Adelino Andrade', area: 'Urología y Endourología Avanzada', loc: 'Salón Alterno (2)' },
-      { name: 'Dr. José Gregorio Hernández', area: 'Cardiología Intervencionista', loc: 'Salón Principal (1)' },
-      { name: 'Dra. María Corina Mendoza', area: 'Neurocirugía y Microcirugía Vascular', loc: 'Salón Principal (1)' },
-      { name: 'Dra. Carmen Elena Romero', area: 'Ginecología y Obstetricia de Alta Complejidad', loc: 'Salón Principal (1)' },
-      { name: 'Dr. Luis Eduardo Pernalete', area: 'Traumatología y Ortopedia Quirúrgica', loc: 'Salón Principal (1)' },
-      { name: 'Dr. Carlos Alberto Méndez', area: 'Gastroenterología y Endoscopia Terapéutica', loc: 'Salón Principal (1)' },
-      { name: 'Dra. Patricia Isabel Colmenárez', area: 'Dermatología Clínica y Dermatoscopia', loc: 'Salón Alterno (2)' }
-    ];
+    const docText =
+      'Las 104 ponencias científicas están a cargo de más de 100 especialistas y docentes de reconocida trayectoria, ' +
+      'quienes abordarán las innovaciones más recientes en medicina clínica, quirúrgica e intervencionista. ' +
+      'El congreso incluye además la presentación de casos clínicos en modalidad póster, stands comerciales de la industria ' +
+      'farmacéutica y biomédica, y entrega de premios académicos a las mejores investigaciones.';
 
-    const spkW = (PAGE_WIDTH - 72 - 30) / 2;
-    speakers.forEach((spk, idx) => {
-      const col = idx % 2;
-      const row = Math.floor(idx / 2);
-      const sx = 52 + col * (spkW + 10);
-      const sy = 172 - row * 26;
+    drawWrappedText(page, docText, {
+      x: 196,
+      y: 122,
+      font: fontRegular,
+      size: 7.5,
+      color: SLATE_TEXT,
+      maxWidth: 320,
+      lineHeight: 10.5
+    });
 
-      page.drawText(`• ${spk.name}`, { x: sx, y: sy, size: 8, font: fontBold, color: NAVY });
-      page.drawText(`${spk.area} · ${spk.loc}`, { x: sx + 8, y: sy - 10, size: 7, font: fontRegular, color: SLATE_MUTED });
+    page.drawText('• Acceso controlado mediante Código QR en Salón Principal (1) y Salón Alterno (2).', {
+      x: 196,
+      y: 74,
+      size: 7.5,
+      font: fontBold,
+      color: CLINIC_TEAL
     });
 
     drawFooter(page, 2);
   }
 
   /* ══════════════════════════════════════════════════════════════════
-     PÁGINA 3: CRONOGRAMA GENERAL DE ACTIVIDADES (AGENDA)
+     PÁGINA 3: CRONOGRAMA DE ACTIVIDADES (5 DÍAS · 2 SALONES)
      ══════════════════════════════════════════════════════════════════ */
   {
     const page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     drawInnerHeader(
       page,
       'CRONOGRAMA GENERAL DE ACTIVIDADES',
-      'Distribución de jornadas en Salón Principal (1) y Salón Alterno (2)'
+      'Distribución de jornadas en Salón Principal (1) [240 puestos] y Salón Alterno (2) [60 puestos]'
     );
 
-    // Franja de Horarios
+    // Franja de Horarios Oficiales
     page.drawRectangle({
       x: 36,
-      y: PAGE_HEIGHT - 102,
+      y: PAGE_HEIGHT - 98,
       width: PAGE_WIDTH - 72,
-      height: 30,
+      height: 26,
       color: CARD_BG,
       borderColor: BORDER,
       borderWidth: 1
@@ -712,29 +822,29 @@ async function buildBrochure() {
 
     page.drawText('HORARIOS OFICIALES:', {
       x: 48,
-      y: PAGE_HEIGHT - 92,
-      size: 8.5,
+      y: PAGE_HEIGHT - 89,
+      size: 8,
       font: fontBold,
       color: NAVY
     });
     page.drawText('Turno Mañana: 8:00 a. m. – 12:30 m.', {
-      x: 170,
-      y: PAGE_HEIGHT - 92,
-      size: 8.5,
+      x: 155,
+      y: PAGE_HEIGHT - 89,
+      size: 8,
       font: fontBold,
       color: BRAND
     });
-    page.drawText('·   Receso y Almuerzo: 12:30 m. – 2:00 p. m.   ·', {
-      x: 325,
-      y: PAGE_HEIGHT - 92,
-      size: 8,
+    page.drawText('· Receso / Almuerzo: 12:30 m. – 2:00 p. m. ·', {
+      x: 300,
+      y: PAGE_HEIGHT - 89,
+      size: 7.5,
       font: fontRegular,
       color: SLATE_MUTED
     });
     page.drawText('Turno Tarde: 2:00 p. m. – 5:50 p. m.', {
-      x: 480,
-      y: PAGE_HEIGHT - 92,
-      size: 8.5,
+      x: 450,
+      y: PAGE_HEIGHT - 89,
+      size: 8,
       font: fontBold,
       color: CLINIC_TEAL
     });
@@ -743,64 +853,67 @@ async function buildBrochure() {
     const daysData = [
       {
         day: 'LUNES 02 DE NOVIEMBRE DE 2026',
-        theme: 'Inauguración Oficial, Medicina Interna, Neurocirugía e Imágenes',
+        theme: 'Inauguración Oficial · Medicina Interna · Neurocirugía · Imágenes',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Acto Protocolar de Apertura Institucional (8:00 a. m.) & Jornada de Medicina Interna: sepsis, patología vascular y soporte clínico.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Acto Protocolar de Apertura Institucional (8:00 a. m.) & Jornada de Medicina Interna (8 ponencias): sepsis, patología vascular y soporte clínico.' }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Neurocirugía: microcirugía craneal, neurotrauma severo e hipertensión intracraneal.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Diagnóstico por Imágenes: ultrasonido doppler intervencionista y resonancia magnética.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Neurocirugía (5 ponencias): microcirugía craneal, neurotrauma severo e hipertensión endocraneana.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Diagnóstico por Imágenes (6 ponencias): ultrasonido Doppler intervencionista y resonancia magnética.' }
         ]
       },
       {
         day: 'MARTES 03 DE NOVIEMBRE DE 2026',
-        theme: 'Ginecología y Obstetricia, Dermatología, ORL y Urología',
+        theme: 'Ginecología y Obstetricia · Dermatología · Otorrinolaringología · Urología',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Ginecología y Obstetricia: medicina materno-fetal, hemorragia postparto y piso pélvico.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Dermatología: dermatoscopia en lesiones de difícil diagnóstico y dermatología oncológica.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Ginecología y Obstetricia (7 ponencias): medicina materno-fetal, hemorragia postparto y piso pélvico.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Dermatología (8 ponencias): dermatoscopia en lesiones de difícil diagnóstico y dermatología oncológica.' }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Otorrinolaringología: cirugía nasosinusal guiada y patología de cuerdas vocales.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Urología: técnicas endourológicas en litiasis compleja y abordaje de masas renales.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Otorrinolaringología (5 ponencias): cirugía nasosinusal guiada y patología de cuerdas vocales.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Urología (6 ponencias): técnicas endourológicas en litiasis compleja y abordaje de masas renales.' }
         ]
       },
       {
         day: 'MIÉRCOLES 04 DE NOVIEMBRE DE 2026',
-        theme: 'Oftalmología, Emergencia, Medicina Física, Rehabilitación y Salud Mental',
+        theme: 'Oftalmología · Emergencia General · Medicina Física y Rehab. · Salud Mental',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Oftalmología: técnicas actuales en facoemulsificación, glaucoma y retinopatías.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Simposio de Emergencia: soporte vital avanzado, reanimación y manejo pre e intrahospitalario.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Oftalmología (7 ponencias): facoemulsificación moderna, glaucoma y patología vítreo-retiniana.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Simposio de Emergencia General (8 ponencias): soporte vital avanzado, reanimación y estabilización en trauma.' }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Medicina Física y Rehabilitación: neurorrehabilitación y terapia musculoesquelética.' },
-          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Salud Mental y Psiquiatría: manejo del estrés clínico hospitalario y neurociencias.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Medicina Física y Rehabilitación (4 ponencias): neurorrehabilitación y terapia musculoesquelética.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Salud Mental y Psiquiatría (1 ponencia): abordaje biopsicosocial y manejo del estrés clínico hospitalario.' }
         ]
       },
       {
         day: 'JUEVES 05 DE NOVIEMBRE DE 2026',
-        theme: 'Gastroenterología y Cardiología Intervencionista',
+        theme: 'Gastroenterología · Anestesiología · Cardiología · Cirugía Plástica',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Gastroenterología: endoscopia digestiva terapéutica, hemorragia digestiva y hepatología.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Simposio de Gastroenterología (4 ponencias): endoscopia digestiva terapéutica y hepatología clínica.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Anestesiología (6 ponencias): manejo avanzado de la vía aérea y anestesia regional.' }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Cardiología: síndromes coronarios agudos, falla cardíaca, hemodinámica y arritmias.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Cardiología (6 ponencias): síndromes coronarios agudos, falla cardíaca y hemodinámica.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Simposio de Cirugía Plástica (5 ponencias): cirugía reconstructiva compleja y paciente quemado.' }
         ]
       },
       {
         day: 'VIERNES 06 DE NOVIEMBRE DE 2026',
-        theme: 'Traumatología, Trabajos Libres, Plenaria y Clausura del Congreso',
+        theme: 'Traumatología · Cirugía General · Enfermería · Plenaria y Clausura',
         morning: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Traumatología y Ortopedia: osteosíntesis biológica y reemplazos articulares complejos.' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Jornada de Traumatología y Ortopedia (8 ponencias): osteosíntesis biológica y reemplazos articulares complejos.' },
+          { salon: 'Salón Alterno (2) [60 puestos]:', text: 'Jornada de Cirugía General (6 ponencias) y Enfermería (4 ponencias): cuidados críticos y protocolos quirúrgicos.' }
         ],
         afternoon: [
-          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Sesión Plenaria de Cierre, Presentación de Trabajos de Investigación Ganadores, Entrega de Premios Académicos y Acto Solemne de Clausura (5:30 p. m.).' }
+          { salon: 'Salón Principal (1) [240 puestos]:', text: 'Sesión Plenaria de Cierre, Presentación de Trabajos Libres Ganadores, Entrega de Premiaciones y Acto de Clausura (5:30 p. m.).' }
         ]
       }
     ];
 
-    let dayY = PAGE_HEIGHT - 120;
+    let dayY = PAGE_HEIGHT - 110;
     daysData.forEach((d, dIdx) => {
-      const cardHeight = d.morning.length + d.afternoon.length > 2 ? 104 : 92;
+      const cardHeight = d.morning.length + d.afternoon.length > 2 ? 96 : 84;
 
       page.drawRectangle({
         x: 36,
@@ -809,85 +922,119 @@ async function buildBrochure() {
         height: cardHeight,
         color: WHITE,
         borderColor: BORDER,
-        borderWidth: 1.2
+        borderWidth: 1.1
       });
 
       // Cabecera del día
       page.drawRectangle({
         x: 36,
-        y: dayY - 22,
+        y: dayY - 20,
         width: PAGE_WIDTH - 72,
-        height: 22,
+        height: 20,
         color: dIdx % 2 === 0 ? NAVY : BRAND
       });
 
       page.drawText(d.day, {
-        x: 48,
-        y: dayY - 15,
-        size: 9,
+        x: 46,
+        y: dayY - 14,
+        size: 8.5,
         font: fontBold,
         color: WHITE
       });
       page.drawText(`·   ${d.theme}`, {
-        x: 230,
-        y: dayY - 15,
-        size: 7.5,
+        x: 235,
+        y: dayY - 14,
+        size: 7,
         font: fontRegular,
         color: rgb(224 / 255, 242 / 255, 254 / 255)
       });
 
-      let subY = dayY - 36;
+      let subY = dayY - 33;
 
       // Mañana
       d.morning.forEach((m) => {
-        page.drawText('MAÑANA:', { x: 48, y: subY, size: 7.5, font: fontBold, color: BRAND });
-        page.drawText(m.salon, { x: 92, y: subY, size: 7.5, font: fontBold, color: NAVY });
-        page.drawText(m.text, { x: 235, y: subY, size: 7.2, font: fontRegular, color: SLATE_TEXT, maxWidth: 330 });
-        subY -= 17;
+        page.drawText('MAÑANA:', { x: 46, y: subY, size: 7.2, font: fontBold, color: BRAND });
+        page.drawText(m.salon, { x: 92, y: subY, size: 7.2, font: fontBold, color: NAVY });
+        drawWrappedText(page, m.text, {
+          x: 235,
+          y: subY,
+          font: fontRegular,
+          size: 6.8,
+          color: SLATE_TEXT,
+          maxWidth: 325,
+          lineHeight: 8.5
+        });
+        subY -= 15;
       });
 
       // Tarde
       d.afternoon.forEach((a) => {
-        page.drawText('TARDE:', { x: 48, y: subY, size: 7.5, font: fontBold, color: CLINIC_TEAL });
-        page.drawText(a.salon, { x: 92, y: subY, size: 7.5, font: fontBold, color: NAVY });
-        page.drawText(a.text, { x: 235, y: subY, size: 7.2, font: fontRegular, color: SLATE_TEXT, maxWidth: 330 });
-        subY -= 17;
+        page.drawText('TARDE:', { x: 46, y: subY, size: 7.2, font: fontBold, color: CLINIC_TEAL });
+        page.drawText(a.salon, { x: 92, y: subY, size: 7.2, font: fontBold, color: NAVY });
+        drawWrappedText(page, a.text, {
+          x: 235,
+          y: subY,
+          font: fontRegular,
+          size: 6.8,
+          color: SLATE_TEXT,
+          maxWidth: 325,
+          lineHeight: 8.5
+        });
+        subY -= 15;
       });
 
-      dayY -= (cardHeight + 10);
+      dayY -= (cardHeight + 7);
     });
 
-    // Cuadro de control de acceso y asistencia
+    // PANEL INFERIOR CON FOTO DE KEYNOTE Y ÁREAS COMPLEMENTARIAS (y = 54 a 140, height 86)
     page.drawRectangle({
       x: 36,
-      y: 55,
+      y: 54,
       width: PAGE_WIDTH - 72,
-      height: 54,
-      color: BRAND_LIGHT,
-      borderColor: rgb(191 / 255, 219 / 255, 254 / 255),
+      height: 86,
+      color: CARD_BG,
+      borderColor: BORDER,
+      borderWidth: 1.1
+    });
+
+    // Foto keynote
+    page.drawImage(keynoteImg, {
+      x: 44,
+      y: 60,
+      width: 120,
+      height: 74
+    });
+    page.drawRectangle({
+      x: 44,
+      y: 60,
+      width: 120,
+      height: 74,
+      borderColor: BORDER,
       borderWidth: 1
     });
 
-    page.drawText('CONTROL DE ASISTENCIA Y ACREDITACIÓN DIGITAL EN SALA:', {
-      x: 48,
-      y: 93,
+    page.drawText('EXPOSICIÓN DE PÓSTERS, STANDS COMERCIALES Y PREMIACIONES', {
+      x: 174,
+      y: 122,
       size: 8.5,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('• Cada participante dispone de un Código QR único generado al registrarse, el cual será escaneado en las puertas de cada salón.', {
-      x: 48,
-      y: 80,
-      size: 7.5,
+
+    const infoExtra =
+      '• Modalidad Póster: Exposición continua de investigaciones científicas en los pasillos principales del hotel.\n' +
+      '• Stands Comerciales: Muestra de equipamiento médico y productos farmacéuticos de empresas patrocinadoras.\n' +
+      '• Premiaciones: Reconocimiento formal al mejor trabajo científico de investigación y menciones honoríficas.\n' +
+      '• Control de acceso: Escaneo obligatorio de Código QR al ingreso a las sesiones en ambos salones.';
+
+    drawWrappedText(page, infoExtra, {
+      x: 174,
+      y: 108,
       font: fontRegular,
-      color: SLATE_TEXT
-    });
-    page.drawText('• Se requiere un mínimo del 75% de asistencia a las sesiones seleccionadas para la emisión del certificado con aval curricular.', {
-      x: 48,
-      y: 67,
-      size: 7.5,
-      font: fontBold,
-      color: BRAND
+      size: 7,
+      color: SLATE_TEXT,
+      maxWidth: 350,
+      lineHeight: 11
     });
 
     drawFooter(page, 3);
@@ -915,7 +1062,6 @@ async function buildBrochure() {
       borderWidth: 1.5
     });
 
-    // Badge
     page.drawRectangle({
       x: 50,
       y: PAGE_HEIGHT - 105,
@@ -933,7 +1079,7 @@ async function buildBrochure() {
 
     page.drawText('Exoneración Total de Pago (0$ / Sin Costo)', {
       x: 50,
-      y: PAGE_HEIGHT - 125,
+      y: PAGE_HEIGHT - 124,
       size: 14,
       font: fontBold,
       color: rgb(6 / 255, 95 / 255, 70 / 255)
@@ -941,8 +1087,8 @@ async function buildBrochure() {
 
     page.drawText('Aplica a todo el talento humano activo y en formación del Hospital Central Universitario Dr. Antonio María Pineda:', {
       x: 50,
-      y: PAGE_HEIGHT - 142,
-      size: 8.2,
+      y: PAGE_HEIGHT - 141,
+      size: 8,
       font: fontBold,
       color: SLATE_DARK
     });
@@ -950,10 +1096,10 @@ async function buildBrochure() {
     const hcuampRoles = [
       '• Médicos Especialistas y Adjuntos',
       '• Médicos Residentes de Postgrado',
-      '• Profesionales de Enfermería',
+      '• Profesionales y Técnicos de Enfermería',
       '• Fisioterapeutas y Terapeutas Ocupacionales',
       '• Técnicos Radiólogos y Optometristas',
-      '• Bachilleres y Personal Asistencial'
+      '• Bachilleres, Acompañantes y Personal Afín'
     ];
 
     hcuampRoles.forEach((role, i) => {
@@ -961,16 +1107,16 @@ async function buildBrochure() {
       const row = Math.floor(i / 2);
       page.drawText(role, {
         x: 50 + col * 250,
-        y: PAGE_HEIGHT - 158 - row * 14,
+        y: PAGE_HEIGHT - 157 - row * 13,
         size: 7.8,
         font: fontRegular,
         color: SLATE_TEXT
       });
     });
 
-    page.drawText('VALIDACIÓN DIRECTA: Solo ingresa tu número de cédula en el portal y el sistema consultará automáticamente la nómina institucional.', {
+    page.drawText('CONSULTA EN NÓMINA: Ingresa tu cédula en el portal y el sistema valida tus datos automáticamente.', {
       x: 50,
-      y: PAGE_HEIGHT - 206,
+      y: PAGE_HEIGHT - 204,
       size: 7.5,
       font: fontBold,
       color: GREEN_TEXT
@@ -987,7 +1133,6 @@ async function buildBrochure() {
       borderWidth: 1.5
     });
 
-    // Cabecera tabla de tarifas
     page.drawRectangle({
       x: 36,
       y: PAGE_HEIGHT - 250,
@@ -1010,7 +1155,6 @@ async function buildBrochure() {
       color: SLATE_MUTED
     });
 
-    // Tabla de tarifas
     const rates = [
       { cat: 'Médico General y Médico Especialista', price: '20 USD / día' },
       { cat: 'Médico Residente de Postgrado', price: '15 USD / día' },
@@ -1031,18 +1175,18 @@ async function buildBrochure() {
         height: 17,
         color: idx % 2 === 0 ? rgb(248 / 255, 250 / 255, 252 / 255) : rgb(241 / 255, 245 / 255, 249 / 255)
       });
-      page.drawText(r.cat, { x: rx, y: ry, size: 7.5, font: fontRegular, color: SLATE_DARK, maxWidth: 180 });
-      page.drawText(r.price, { x: rx + 185, y: ry, size: 7.8, font: fontBold, color: BRAND });
+      page.drawText(r.cat, { x: rx, y: ry, size: 7.2, font: fontRegular, color: SLATE_DARK, maxWidth: 175 });
+      page.drawText(r.price, { x: rx + 182, y: ry, size: 7.5, font: fontBold, color: BRAND });
     });
 
-    page.drawText('• Pagos en Bolívares mediante Pago Móvil o Transferencia bancaria a la tasa oficial BCV del día de inscripción.', {
+    page.drawText('• Pagos en Bolívares mediante Pago Móvil o Transferencia bancaria a la tasa oficial BCV del momento del registro.', {
       x: 50,
       y: PAGE_HEIGHT - 355,
       size: 7.5,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('• Todo comprobante bancario es verificado por el comité administrativo antes de validar el pase final.', {
+    page.drawText('• El comprobante bancario es validado por el comité administrativo para la confirmación de la credencial oficial.', {
       x: 50,
       y: PAGE_HEIGHT - 368,
       size: 7.2,
@@ -1050,12 +1194,12 @@ async function buildBrochure() {
       color: SLATE_MUTED
     });
 
-    // BENEFICIOS INCLUIDOS EN LA INSCRIPCIÓN (y = 230 a 305, height 75)
+    // BENEFICIOS INCLUIDOS EN LA INSCRIPCIÓN (y = 230 a 304, height 74)
     page.drawRectangle({
       x: 36,
-      y: 228,
+      y: 230,
       width: PAGE_WIDTH - 72,
-      height: 72,
+      height: 74,
       color: BRAND_LIGHT,
       borderColor: rgb(191 / 255, 219 / 255, 254 / 255),
       borderWidth: 1
@@ -1063,7 +1207,7 @@ async function buildBrochure() {
 
     page.drawText('LA INSCRIPCIÓN INCLUYE FORMALMENTE:', {
       x: 50,
-      y: 285,
+      y: 288,
       size: 9,
       font: fontBold,
       color: NAVY
@@ -1081,7 +1225,7 @@ async function buildBrochure() {
       const row = Math.floor(idx / 2);
       page.drawText(p, {
         x: 50 + col * 260,
-        y: 268 - row * 15,
+        y: 270 - row * 15,
         size: 7.5,
         font: fontRegular,
         color: SLATE_TEXT
@@ -1093,7 +1237,7 @@ async function buildBrochure() {
       x: 36,
       y: 52,
       width: PAGE_WIDTH - 72,
-      height: 164,
+      height: 168,
       color: CARD_BG,
       borderColor: BORDER,
       borderWidth: 1.5
@@ -1102,81 +1246,77 @@ async function buildBrochure() {
     // Código QR
     page.drawImage(qrImg, {
       x: 50,
-      y: 62,
+      y: 64,
       width: 140,
       height: 140
     });
 
-    // Información al lado del QR
-    page.drawText('REGÍSTRATE EN LÍNEA DESDE TU MÓVIL', {
+    // Información de registro
+    page.drawText('REGÍSTRATE EN LÍNEA DESDE TU TELÉFONO MÓVIL', {
       x: 205,
-      y: 190,
-      size: 11,
+      y: 194,
+      size: 10.5,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('Escanea este código QR con la cámara de tu teléfono inteligente para acceder', {
+
+    const qrInstrucc =
+      'Escanea este código QR con la cámara de tu teléfono móvil para acceder inmediatamente a la plataforma oficial de inscripciones:';
+    drawWrappedText(page, qrInstrucc, {
       x: 205,
-      y: 176,
-      size: 7.8,
+      y: 180,
       font: fontRegular,
-      color: SLATE_TEXT
-    });
-    page.drawText('directamente a la plataforma oficial de registro del congreso:', {
-      x: 205,
-      y: 165,
       size: 7.8,
-      font: fontRegular,
-      color: SLATE_TEXT
+      color: SLATE_TEXT,
+      maxWidth: 335,
+      lineHeight: 10.5
     });
 
     page.drawRectangle({
       x: 205,
-      y: 135,
-      width: 340,
-      height: 24,
+      y: 144,
+      width: 335,
+      height: 22,
       color: BRAND
     });
     page.drawText('https://congresopineda.vercel.app', {
-      x: 220,
-      y: 143,
-      size: 10,
+      x: 218,
+      y: 151,
+      size: 9.5,
       font: fontBold,
       color: WHITE
     });
 
     page.drawText('SEDE: Hotel Biotel Suites · Barquisimeto, Estado Lara', {
       x: 205,
-      y: 122,
+      y: 130,
       size: 8,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('Final de la Av. Libertador con inicio de la Av. Florencio Jiménez,', {
+
+    const dirText =
+      'Final de la Av. Libertador con inicio de la Av. Florencio Jiménez, frente al monumento El Obelisco, Barquisimeto (3001), estado Lara, Venezuela.';
+    drawWrappedText(page, dirText, {
       x: 205,
-      y: 110,
-      size: 7.5,
+      y: 118,
       font: fontRegular,
-      color: SLATE_MUTED
-    });
-    page.drawText('frente al monumento El Obelisco, Barquisimeto (3001), estado Lara, Venezuela.', {
-      x: 205,
-      y: 99,
-      size: 7.5,
-      font: fontRegular,
-      color: SLATE_MUTED
+      size: 7.2,
+      color: SLATE_MUTED,
+      maxWidth: 335,
+      lineHeight: 9.5
     });
 
-    page.drawText('CONTACTO: congreso@hcuamp.gob.ve · Hospital Central Dr. Antonio María Pineda', {
+    page.drawText(`CONTACTO: congreso@hcuamp.gob.ve · Hospital Central Dr. Antonio María Pineda (RIF: ${RIF_HCUAMP})`, {
       x: 205,
-      y: 84,
-      size: 7.5,
+      y: 88,
+      size: 7.2,
       font: fontBold,
       color: CLINIC_TEAL
     });
-    page.drawText('Comité Organizador · Dirección General · Decanato de Ciencias de la Salud', {
+    page.drawText('Comité Organizador · Dirección General · Barquisimeto, Estado Lara', {
       x: 205,
-      y: 72,
+      y: 76,
       size: 7.2,
       font: fontRegular,
       color: SLATE_MUTED
