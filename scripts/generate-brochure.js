@@ -69,11 +69,13 @@ async function buildBrochure() {
   const keynoteImg = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'medical-keynote.jpg')));
   const teamImg = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'doctor-team.jpg')));
 
-  // Ponentes destacados
+  // Ponentes destacados auténticos
   const spkEchenique = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/dr-angel-echenique.jpg')));
   const spkAndrade = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/dr-adelino-andrade.jpg')));
-  const spkHernandez = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-3.jpg')));
-  const spkMendoza = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-4.jpg')));
+  const spkCifuentes = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-4.jpg')));
+  const spkGonzalez = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-8.jpg')));
+  const spkFernandez = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-5.jpg')));
+  const spkCatari = await doc.embedJpg(fs.readFileSync(path.join(imgDir, 'speakers/speaker-9.jpg')));
 
   // Generar Código QR de registro oficial
   const qrBuffer = await QRCode.toBuffer('https://congresopineda.vercel.app', {
@@ -601,17 +603,21 @@ async function buildBrochure() {
       });
 
       // Título y ponencias
-      page.drawText(`${s.num}. ${s.name}`, {
+      const titleStr = `${s.num}. ${s.name}`;
+      const titleSize = titleStr.length > 25 ? 6.8 : titleStr.length > 20 ? 7.2 : 7.8;
+      page.drawText(titleStr, {
         x: cx + 8,
         y: cy - 13,
-        size: 8,
+        size: titleSize,
         font: fontBold,
         color: NAVY
       });
+
+      const talksW = fontBold.widthOfTextAtSize(s.talks, 6.2);
       page.drawText(s.talks, {
-        x: cx + colW - 55,
+        x: cx + colW - 6 - talksW,
         y: cy - 13,
-        size: 7,
+        size: 6.2,
         font: fontBold,
         color: BRAND
       });
@@ -628,169 +634,300 @@ async function buildBrochure() {
       });
     });
 
-    // PANEL DE PONENTES DESTACADOS CON FOTOS REALES (y = 56 a 330, height 274)
+    // PANEL DE PONENTES DESTACADOS CON FOTOS REALES (y = 52 a 390, height 338)
     page.drawRectangle({
       x: 36,
-      y: 56,
+      y: 52,
       width: PAGE_WIDTH - 72,
-      height: 270,
+      height: 338,
       color: WHITE,
       borderColor: BORDER,
       borderWidth: 1.2
     });
 
+    // Barra de título del panel
     page.drawRectangle({
       x: 36,
-      y: 298,
+      y: 364,
       width: PAGE_WIDTH - 72,
-      height: 28,
+      height: 26,
       color: BRAND_LIGHT
     });
 
     page.drawText('CUERPO DOCENTE Y PONENTES DESTACADOS', {
       x: 48,
-      y: 308,
-      size: 10.5,
+      y: 373,
+      size: 10,
       font: fontBold,
       color: NAVY
     });
-    page.drawText('+100 especialistas, conferencistas magistrales y líderes de opinión', {
-      x: 320,
-      y: 308,
-      size: 7.5,
+    page.drawText('+100 especialistas, conferencistas magistrales y docentes de trayectoria', {
+      x: 298,
+      y: 373,
+      size: 7.2,
       font: fontRegular,
       color: SLATE_MUTED
     });
 
-    // 4 Tarjetas con fotos de ponentes
+    // 6 Tarjetas de ponentes reales (2 filas x 3 columnas)
     const speakerCards = [
       {
         img: spkEchenique,
         name: 'Dr. Ángel Echenique',
-        specialty: 'Emergencia General y Medicina Interna',
-        salon: 'Salón Alterno (2)'
+        role: 'Medicina Interna y Emergencia',
+        hospital: 'HCUAMP · Docente Asistencial',
+        talk: '«Preeclampsia: Una misma tensión arterial, 2 fenotipos»',
+        salon: 'Salón Principal (1)',
+        isPrincipal: true,
+        day: 'Viernes 06/11',
+        time: '11:30 a. m.'
       },
       {
         img: spkAndrade,
         name: 'Dr. Adelino Andrade',
-        specialty: 'Urología y Endourología Avanzada',
-        salon: 'Salón Alterno (2)'
+        role: 'Urología · Cirujano Urólogo',
+        hospital: 'HCUAMP · Uro-oncología',
+        talk: '«Cáncer de próstata oligometastásico»',
+        salon: 'Salón Alterno (2)',
+        isPrincipal: false,
+        day: 'Lunes 02/11',
+        time: '3:00 p. m.'
       },
       {
-        img: spkHernandez,
-        name: 'Dr. José Gregorio Hernández',
-        specialty: 'Cardiología Intervencionista',
-        salon: 'Salón Principal (1)'
+        img: spkCifuentes,
+        name: 'Dr. Hugo Cifuentes Díaz',
+        role: 'Otorrinolaringología (ORL)',
+        hospital: 'UCLA Medicina · Cirugía Nasosinusal',
+        talk: '«Claves para abordaje seguro de senos paranasales»',
+        salon: 'Salón Alterno (2)',
+        isPrincipal: false,
+        day: 'Jueves 05/11',
+        time: '4:20 p. m.'
       },
       {
-        img: spkMendoza,
-        name: 'Dra. María Corina Mendoza',
-        specialty: 'Neurocirugía y Microcirugía Vascular',
-        salon: 'Salón Principal (1)'
+        img: spkGonzalez,
+        name: 'Dra. Isbel González',
+        role: 'Especialista en Medicina Interna',
+        hospital: 'HCUAMP · Semiología Clínica',
+        talk: '«Historia clínica como método diagnóstico eficaz»',
+        salon: 'Salón Principal (1)',
+        isPrincipal: true,
+        day: 'Viernes 06/11',
+        time: '8:50 a. m.'
+      },
+      {
+        img: spkFernandez,
+        name: 'Dr. Jesús Fernández Tang',
+        role: 'Cirujano General · Urólogo',
+        hospital: 'HCUAMP · Urología Reconstructiva',
+        talk: '«Urología de transición: el puente entre dos mundos»',
+        salon: 'Salón Alterno (2)',
+        isPrincipal: false,
+        day: 'Lunes 02/11',
+        time: '2:50 p. m.'
+      },
+      {
+        img: spkCatari,
+        name: 'Dra. Ángela Catarí',
+        role: 'Especialista en Oftalmología',
+        hospital: 'HCUAMP · Microcirugía Ocular',
+        talk: '«Fronteras y avances en oftalmología quirúrgica»',
+        salon: 'Salón Alterno (2)',
+        isPrincipal: false,
+        day: 'Viernes 06/11',
+        time: '8:30 a. m.'
       }
     ];
 
-    const spkW = (PAGE_WIDTH - 72 - 24) / 4; // 126 pt
+    const spkCardW = 168;
+    const spkCardH = 110;
     speakerCards.forEach((spk, idx) => {
-      const sx = 44 + idx * (spkW + 8);
-      const sy = 160;
+      const col = idx % 3;
+      const row = Math.floor(idx / 3);
+      const cx = 44 + col * (spkCardW + 10);
+      const cy = row === 0 ? 248 : 132;
 
+      // Fondo tarjeta
       page.drawRectangle({
-        x: sx,
-        y: sy,
-        width: spkW,
-        height: 128,
+        x: cx,
+        y: cy,
+        width: spkCardW,
+        height: spkCardH,
         color: CARD_BG,
         borderColor: BORDER,
         borderWidth: 1
       });
 
-      // Foto
+      // Cabecera de la tarjeta con Salón y Día
+      const topBarBg = spk.isPrincipal ? rgb(238 / 255, 242 / 255, 255 / 255) : rgb(240 / 255, 253 / 255, 250 / 255);
+      const salonColor = spk.isPrincipal ? BRAND : CLINIC_TEAL;
+      page.drawRectangle({
+        x: cx,
+        y: cy + spkCardH - 18,
+        width: spkCardW,
+        height: 18,
+        color: topBarBg
+      });
+      page.drawText(spk.salon, {
+        x: cx + 6,
+        y: cy + spkCardH - 13,
+        size: 6.8,
+        font: fontBold,
+        color: salonColor
+      });
+      page.drawText(spk.day, {
+        x: cx + spkCardW - 48,
+        y: cy + spkCardH - 13,
+        size: 6.2,
+        font: fontBold,
+        color: SLATE_MUTED
+      });
+
+      // Foto del ponente
       page.drawImage(spk.img, {
-        x: sx + 18,
-        y: sy + 44,
-        width: 90,
-        height: 74
+        x: cx + 6,
+        y: cy + 24,
+        width: 52,
+        height: 64
       });
       page.drawRectangle({
-        x: sx + 18,
-        y: sy + 44,
-        width: 90,
-        height: 74,
+        x: cx + 6,
+        y: cy + 24,
+        width: 52,
+        height: 64,
         borderColor: rgb(203 / 255, 213 / 255, 225 / 255),
         borderWidth: 1
       });
 
-      // Nombre y área
+      // Badge de hora bajo la foto
+      page.drawRectangle({
+        x: cx + 6,
+        y: cy + 8,
+        width: 52,
+        height: 13,
+        color: WHITE,
+        borderColor: BORDER,
+        borderWidth: 0.8
+      });
+      page.drawText(spk.time, {
+        x: cx + 11,
+        y: cy + 12,
+        size: 5.8,
+        font: fontBold,
+        color: NAVY
+      });
+
+      // Textos a la derecha de la foto
+      const textX = cx + 64;
+      const textMaxW = spkCardW - 70; // 98 pt
+
+      // Nombre
       page.drawText(spk.name, {
-        x: sx + 6,
-        y: sy + 30,
+        x: textX,
+        y: cy + 76,
         size: 7.5,
         font: fontBold,
         color: NAVY
       });
-      drawWrappedText(page, spk.specialty, {
-        x: sx + 6,
-        y: sy + 20,
+
+      // Especialidad / Rol
+      drawWrappedText(page, `${spk.role} · ${spk.hospital}`, {
+        x: textX,
+        y: cy + 65,
         font: fontRegular,
-        size: 6.5,
+        size: 5.6,
         color: SLATE_TEXT,
-        maxWidth: spkW - 12,
-        lineHeight: 8
+        maxWidth: textMaxW,
+        lineHeight: 7.2
       });
-      page.drawText(spk.salon, {
-        x: sx + 6,
-        y: sy + 7,
-        size: 6.5,
+
+      // Ponencia label y título
+      page.drawText('Ponencia:', {
+        x: textX,
+        y: cy + 45,
+        size: 5.4,
         font: fontBold,
-        color: BRAND
+        color: SLATE_MUTED
+      });
+
+      drawWrappedText(page, spk.talk, {
+        x: textX,
+        y: cy + 36,
+        font: fontBoldOblique,
+        size: 5.7,
+        color: NAVY,
+        maxWidth: textMaxW,
+        lineHeight: 7.4
       });
     });
 
-    // Fila inferior del panel con foto grupal y resumen
-    page.drawImage(teamImg, {
-      x: 44,
-      y: 66,
-      width: 140,
-      height: 82
-    });
+    // Fila inferior del panel con foto institucional y resumen
     page.drawRectangle({
       x: 44,
-      y: 66,
-      width: 140,
-      height: 82,
+      y: 58,
+      width: PAGE_WIDTH - 88,
+      height: 68,
+      color: CARD_BG,
       borderColor: BORDER,
       borderWidth: 1
     });
 
-    page.drawText('ACTUALIZACIÓN CIENTÍFICA CON AVAL HOSPITALARIO', {
-      x: 196,
-      y: 136,
-      size: 9,
+    page.drawImage(teamImg, {
+      x: 48,
+      y: 62,
+      width: 98,
+      height: 60
+    });
+    page.drawRectangle({
+      x: 48,
+      y: 62,
+      width: 98,
+      height: 60,
+      borderColor: BORDER,
+      borderWidth: 1
+    });
+
+    page.drawText('DOCENCIA MÉDICA Y ACTUALIZACIÓN CIENTÍFICA CONTINUA', {
+      x: 154,
+      y: 114,
+      size: 8.2,
       font: fontBold,
       color: NAVY
     });
 
     const docText =
-      'Las 104 ponencias científicas están a cargo de más de 100 especialistas y docentes de reconocida trayectoria, ' +
-      'quienes abordarán las innovaciones más recientes en medicina clínica, quirúrgica e intervencionista. ' +
-      'El congreso incluye además la presentación de casos clínicos en modalidad póster, stands comerciales de la industria ' +
-      'farmacéutica y biomédica, y entrega de premios académicos a las mejores investigaciones.';
+      'Las 104 ponencias científicas son dictadas por más de 100 destacados especialistas y docentes adscritos al ' +
+      'HCUAMP e instituciones invitadas. El evento incluye presentación de casos clínicos en póster, stands comerciales ' +
+      'de la industria biomédica y premiaciones académicas a los mejores trabajos científicos de investigación.';
 
     drawWrappedText(page, docText, {
-      x: 196,
-      y: 122,
+      x: 154,
+      y: 104,
       font: fontRegular,
-      size: 7.5,
+      size: 6.3,
       color: SLATE_TEXT,
-      maxWidth: 320,
-      lineHeight: 10.5
+      maxWidth: 406,
+      lineHeight: 8.5
     });
 
-    page.drawText('• Acceso controlado mediante Código QR en Salón Principal (1) y Salón Alterno (2).', {
-      x: 196,
-      y: 74,
-      size: 7.5,
+    const othersText =
+      'Otros ponentes destacados: Dra. María Jesús Rojas A. (ORL) · Dr. Narciel Sáez (Urología) · ' +
+      'Dr. Joseph Sáez (Urología) · Dra. Soli Molina (Urología) · Dr. Christian Araujo (R3) · Dr. Manuel Castro (R3).';
+
+    drawWrappedText(page, othersText, {
+      x: 154,
+      y: 77,
+      font: fontBold,
+      size: 5.6,
+      color: BRAND,
+      maxWidth: 406,
+      lineHeight: 7.2
+    });
+
+    page.drawText('• Control de acceso mediante Código QR en Salón Principal (1) [240 puestos] y Salón Alterno (2) [60 puestos].', {
+      x: 154,
+      y: 64,
+      size: 6.2,
       font: fontBold,
       color: CLINIC_TEAL
     });
@@ -1159,7 +1296,7 @@ async function buildBrochure() {
       { cat: 'Médico General y Médico Especialista', price: '20 USD / día' },
       { cat: 'Médico Residente de Postgrado', price: '15 USD / día' },
       { cat: 'Licenciados(as) y Técnicos(as) en Enfermería', price: '10 USD / día' },
-      { cat: 'Fisioterapeuta / Terapeuta Ocupacional / Terapeutas Afines', price: '15 USD / día' },
+      { cat: 'Fisioterapeuta / Terapeuta Ocupacional', price: '15 USD / día' },
       { cat: 'Otro Personal Afín a las Ciencias de la Salud', price: '15 USD / día' },
       { cat: 'Acompañante de Participante', price: '15 USD / día' }
     ];
@@ -1175,7 +1312,8 @@ async function buildBrochure() {
         height: 17,
         color: idx % 2 === 0 ? rgb(248 / 255, 250 / 255, 252 / 255) : rgb(241 / 255, 245 / 255, 249 / 255)
       });
-      page.drawText(r.cat, { x: rx, y: ry, size: 7.2, font: fontRegular, color: SLATE_DARK, maxWidth: 175 });
+      const catSize = r.cat.length > 38 ? 6.5 : 7.1;
+      page.drawText(r.cat, { x: rx, y: ry, size: catSize, font: fontRegular, color: SLATE_DARK });
       page.drawText(r.price, { x: rx + 182, y: ry, size: 7.5, font: fontBold, color: BRAND });
     });
 
