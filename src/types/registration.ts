@@ -114,6 +114,7 @@ export interface RegistrationPayload {
   telefono: string;
   correo: string;
   tipoParticipante: ParticipantTypeId;
+  tipoLabel?: string;
   nombrePonencia?: string;
   especialidad?: string;
   pais: string;

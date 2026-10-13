@@ -415,8 +415,21 @@ function validate_(b) {
 
   // 3. Tipo de participante y tarifa
   var tipoId = b.tipoParticipante;
+  if (tipoId === 'terapeutas' || tipoId === 'terapeutas_otra' || tipoId === 'fisioterapeuta' || tipoId === 'terapeuta') {
+    tipoId = origenInstitucion === 'HCUAMP' ? 'terapeutas' : 'terapeutas_otra';
+  }
   var tipo = RATES[tipoId];
-  if (!tipo) throw new UserError_('Tipo de participante inválido.');
+  if (!tipo) {
+    if (tipoId === 'otro_personal_afin' || String(b.tipoLabel || '').toLowerCase().indexOf('terapeuta') !== -1) {
+      tipo = {
+        label: b.tipoLabel || 'Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas',
+        rate: origenInstitucion === 'HCUAMP' ? 0 : 15,
+        hcuamp: origenInstitucion === 'HCUAMP'
+      };
+    } else {
+      throw new UserError_('Tipo de participante inválido.');
+    }
+  }
 
   var detalleExtra = '';
   if (origenInstitucion === 'HCUAMP') {
@@ -500,7 +513,7 @@ function validate_(b) {
     telefono: telefono,
     correo: correo,
     tipoId: tipoId,
-    tipoLabel: tipo.label,
+    tipoLabel: b.tipoLabel || tipo.label,
     detalleExtra: detalleExtra,
     pais: pais,
     estado: estado,
