@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { ArrowRight, CalendarDays, ChevronDown, MapPin } from "lucide-react";
+import { ArrowRight, CalendarDays, ChevronDown, FileDown, MapPin } from "lucide-react";
 import { EVENT } from "@/data/event";
 import { Countdown } from "./Countdown";
 
@@ -61,7 +61,7 @@ export function Hero() {
           </li>
         </ul>
 
-        <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           <a
             href="#inscripciones"
             className="group inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-brand-500 to-clinic-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-brand-600/30 transition hover:-translate-y-0.5 hover:brightness-110"
@@ -74,6 +74,14 @@ export function Hero() {
             className="glass inline-flex items-center gap-2 rounded-2xl px-6 py-4 text-base font-semibold text-brand-700 transition hover:bg-white/80"
           >
             Ver programa científico
+          </a>
+          <a
+            href="/folleto-congreso-pineda-2026.pdf"
+            download="Folleto_Congreso_Pineda_2026.pdf"
+            className="glass inline-flex items-center gap-2 rounded-2xl px-5 py-4 text-base font-semibold text-ink transition hover:bg-white/80 hover:text-brand-600"
+          >
+            <FileDown className="size-5 text-clinic-600" />
+            Descargar Folleto PDF
           </a>
         </div>
       </div>

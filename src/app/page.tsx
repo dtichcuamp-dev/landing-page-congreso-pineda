@@ -1,4 +1,5 @@
 import { Footer } from "@/components/layout/Footer";
+import { FloatingBrochure } from "@/components/layout/FloatingBrochure";
 import { FloatingCTA } from "@/components/layout/FloatingCTA";
 import { Navbar } from "@/components/layout/Navbar";
 import { About } from "@/components/sections/About";
@@ -30,6 +31,7 @@ export default function Home() {
       </main>
       <Footer />
       <FloatingCTA />
+      <FloatingBrochure />
     </>
   );
 }
