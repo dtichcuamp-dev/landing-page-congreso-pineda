@@ -927,6 +927,10 @@ function getDashboardData_() {
       telefono: r[9],
       correo: r[10],
       tipo: r[11],
+      dias: r[17],
+      numDias: r[18],
+      turnosTexto: r[19],
+      turnosJson: r[20],
       monto: r[22],
       comprobante: r[23],
       estado: r[24]

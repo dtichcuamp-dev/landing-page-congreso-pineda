@@ -25,6 +25,7 @@ import {
   UserRound,
 } from "lucide-react";
 import {
+  CAPACIDADES_SALON,
   DAYS_CONGRESO,
   ESPECIALIDADES_CONGRESO,
   PARTICIPANT_BY_ID,
@@ -183,6 +184,41 @@ export function RegistrationForm() {
 
   const next = () => {
     const e = validateStep(step, values);
+
+    if (step === 1 && Object.keys(e).length === 0) {
+      // Verificación estricta de aforo en tiempo real para evitar depósitos bancarios errados
+      for (const [diaId, t] of Object.entries(values.turnos)) {
+        if (t.manana) {
+          const key = `${diaId}_manana_${t.manana}`;
+          const occ = capacities[key] || 0;
+          const cap = CAPACIDADES_SALON[t.manana];
+          if (occ >= cap) {
+            const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
+            const salonName = t.manana === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)";
+            setErrors({
+              ...e,
+              turnos: `El ${salonName} para el turno Mañana del ${diaMeta?.dateLabel || diaId} ha alcanzado su cupo máximo (0 libres). NO realices depósitos para este turno. Por favor selecciona otro salón o turno con disponibilidad.`,
+            });
+            return;
+          }
+        }
+        if (t.tarde) {
+          const key = `${diaId}_tarde_${t.tarde}`;
+          const occ = capacities[key] || 0;
+          const cap = CAPACIDADES_SALON[t.tarde];
+          if (occ >= cap) {
+            const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
+            const salonName = t.tarde === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)";
+            setErrors({
+              ...e,
+              turnos: `El ${salonName} para el turno Tarde del ${diaMeta?.dateLabel || diaId} ha alcanzado su cupo máximo (0 libres). NO realices depósitos para este turno. Por favor selecciona otro salón o turno con disponibilidad.`,
+            });
+            return;
+          }
+        }
+      }
+    }
+
     setErrors(e);
     if (Object.keys(e).length === 0) {
       goTo(step + 1);
@@ -203,6 +239,22 @@ export function RegistrationForm() {
       if (Object.keys(e).length > 0) {
         setErrors(e);
         goTo(s);
+        return;
+      }
+    }
+
+    // Verificación final de aforo antes del envío
+    for (const [diaId, t] of Object.entries(values.turnos)) {
+      if (t.manana && (capacities[`${diaId}_manana_${t.manana}`] || 0) >= CAPACIDADES_SALON[t.manana]) {
+        const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
+        setServerError(`El Salón ${t.manana === "principal" ? "Principal (1)" : "Alterno (2)"} para el turno Mañana del ${diaMeta?.dateLabel || diaId} se encuentra agotado. No realices transferencias para este horario.`);
+        goTo(1);
+        return;
+      }
+      if (t.tarde && (capacities[`${diaId}_tarde_${t.tarde}`] || 0) >= CAPACIDADES_SALON[t.tarde]) {
+        const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
+        setServerError(`El Salón ${t.tarde === "principal" ? "Principal (1)" : "Alterno (2)"} para el turno Tarde del ${diaMeta?.dateLabel || diaId} se encuentra agotado. No realices transferencias para este horario.`);
+        goTo(1);
         return;
       }
     }

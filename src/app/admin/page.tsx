@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   CheckCircle,
   Clock,
@@ -20,8 +20,24 @@ import {
   Square,
   X,
   FileCheck2,
+  Building,
+  Calendar,
+  Layers,
+  ChevronRight,
+  ShieldAlert,
+  Filter,
 } from "lucide-react";
-import { usd } from "@/data/pricing";
+import {
+  usd,
+  DAYS_CONGRESO,
+  CAPACIDADES_SALON,
+  SALONES_INFO,
+  TURNOS_HORARIOS,
+  computeAforoAlert,
+  type SalonKey,
+  type TurnoKey,
+} from "@/data/pricing";
+import { getCapacities } from "@/lib/api";
 import {
   BarChart,
   Bar,
@@ -49,6 +65,49 @@ interface Registration {
   monto: number;
   comprobante: string;
   estado: string;
+  turnosTexto?: string;
+  turnosJson?: string;
+  dias?: string;
+  numDias?: number;
+}
+
+interface RosterModalState {
+  isOpen: boolean;
+  diaLabel: string;
+  turnoLabel: string;
+  salonName: string;
+  capacity: number;
+  occupied: number;
+  participants: Registration[];
+}
+
+/** Helper para parsear turnos de un participante de forma segura */
+function parseTurnos(r: Registration): Record<string, { manana?: string; tarde?: string }> {
+  if (r.turnosJson) {
+    try {
+      const parsed = typeof r.turnosJson === "string" ? JSON.parse(r.turnosJson) : r.turnosJson;
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch (_) {}
+  }
+  // Fallback si no hay JSON pero hay texto legible
+  if (r.turnosTexto) {
+    const res: Record<string, { manana?: string; tarde?: string }> = {};
+    for (const dia of DAYS_CONGRESO) {
+      if (r.turnosTexto.includes(dia.shortLabel) || r.turnosTexto.includes(dia.dateLabel)) {
+        const lower = r.turnosTexto.toLowerCase();
+        if (lower.includes("mañana")) {
+          const s = lower.includes("alterno") ? "alterno" : "principal";
+          res[dia.id] = { ...res[dia.id], manana: s };
+        }
+        if (lower.includes("tarde")) {
+          const s = lower.includes("alterno") ? "alterno" : "principal";
+          res[dia.id] = { ...res[dia.id], tarde: s };
+        }
+      }
+    }
+    return res;
+  }
+  return {};
 }
 
 export default function AdminDashboard() {
@@ -56,6 +115,7 @@ export default function AdminDashboard() {
   const [showPassword, setShowPassword] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [data, setData] = useState<Registration[]>([]);
+  const [serverCapacities, setServerCapacities] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -70,9 +130,17 @@ export default function AdminDashboard() {
     message: string;
   } | null>(null);
 
-  // Filtros de búsqueda
+  // Filtros de búsqueda para la tabla
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dayFilter, setDayFilter] = useState<string>("all");
+  const [salonFilter, setSalonFilter] = useState<string>("all");
+  const [turnoFilter, setTurnoFilter] = useState<string>("all");
+
+  // Control de Aforo por Día, Turno y Salón
+  const [selectedAforoDay, setSelectedAforoDay] = useState<string>("all");
+  const [rosterModal, setRosterModal] = useState<RosterModalState | null>(null);
+  const [rosterSearch, setRosterSearch] = useState<string>("");
 
   // Recuperar sesión si ya existe
   useEffect(() => {
@@ -98,6 +166,12 @@ export default function AdminDashboard() {
       setData(json.data);
       setIsAuthenticated(true);
       sessionStorage.setItem("admin_password", pass);
+
+      // Sincronizar capacidades en tiempo real del servidor
+      try {
+        const caps = await getCapacities();
+        if (caps) setServerCapacities(caps);
+      } catch (_) {}
     } catch (err: any) {
       setError(err.message);
       setIsAuthenticated(false);
@@ -121,7 +195,12 @@ export default function AdminDashboard() {
   };
 
   const approvePayment = async (id: string, correo: string) => {
-    if (!confirm(`¿Estás seguro de aprobar el pago del registro ${id}? Se enviará automáticamente su código QR a ${correo}.`)) return;
+    if (
+      !confirm(
+        `¿Estás seguro de aprobar el pago del registro ${id}? Se enviará automáticamente su comprobante y código QR a ${correo}.`
+      )
+    )
+      return;
     try {
       const res = await fetch("/api/admin", {
         method: "POST",
@@ -146,7 +225,12 @@ export default function AdminDashboard() {
 
   // Reenvío individual de comprobante con código QR
   const handleResendSingle = async (row: Registration) => {
-    if (!confirm(`¿Reenviar comprobante oficial y código QR a ${row.nombres} ${row.apellidos} (${row.correo})?`)) return;
+    if (
+      !confirm(
+        `¿Reenviar comprobante oficial y código QR a ${row.nombres} ${row.apellidos} (${row.correo})?`
+      )
+    )
+      return;
     setResendingId(row.id);
     setNotification(null);
     try {
@@ -214,24 +298,111 @@ export default function AdminDashboard() {
     }
   };
 
-  // Filtrado de la tabla
-  const filteredData = data.filter((r) => {
-    const matchesSearch =
-      !searchTerm.trim() ||
-      `${r.nombres} ${r.apellidos}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.cedula.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.tipo.toLowerCase().includes(searchTerm.toLowerCase());
+  // Computar conteo de reservas por cada combinación de Día, Turno y Salón
+  const reservationsBySlot = useMemo(() => {
+    const map: Record<
+      string,
+      {
+        total: number;
+        aprobados: number;
+        pendientes: number;
+        registrations: Registration[];
+      }
+    > = {};
 
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "Aprobado" && r.estado === "Aprobado") ||
-      (statusFilter === "Exonerado" && r.estado === "Exonerado") ||
-      (statusFilter === "Pendiente" && r.estado === "Pendiente de verificación");
+    // Inicializar los 20 slots posibles (5 días * 2 turnos * 2 salones)
+    for (const dia of DAYS_CONGRESO) {
+      for (const turnoKey of ["manana", "tarde"] as const) {
+        for (const salonKey of ["principal", "alterno"] as const) {
+          const key = `${dia.id}_${turnoKey}_${salonKey}`;
+          map[key] = {
+            total: 0,
+            aprobados: 0,
+            pendientes: 0,
+            registrations: [],
+          };
+        }
+      }
+    }
 
-    return matchesSearch && matchesStatus;
-  });
+    // Agregar inscripciones reales
+    data.forEach((r) => {
+      const turnos = parseTurnos(r);
+      for (const [diaId, t] of Object.entries(turnos)) {
+        if (t.manana && (t.manana === "principal" || t.manana === "alterno")) {
+          const key = `${diaId}_manana_${t.manana}`;
+          if (map[key]) {
+            map[key].total++;
+            if (r.estado === "Aprobado" || r.estado === "Exonerado") {
+              map[key].aprobados++;
+            } else {
+              map[key].pendientes++;
+            }
+            map[key].registrations.push(r);
+          }
+        }
+        if (t.tarde && (t.tarde === "principal" || t.tarde === "alterno")) {
+          const key = `${diaId}_tarde_${t.tarde}`;
+          if (map[key]) {
+            map[key].total++;
+            if (r.estado === "Aprobado" || r.estado === "Exonerado") {
+              map[key].aprobados++;
+            } else {
+              map[key].pendientes++;
+            }
+            map[key].registrations.push(r);
+          }
+        }
+      }
+    });
+
+    return map;
+  }, [data]);
+
+  // Filtrado de la tabla de participantes
+  const filteredData = useMemo(() => {
+    return data.filter((r) => {
+      const search = searchTerm.toLowerCase().trim();
+      const matchesSearch =
+        !search ||
+        `${r.nombres} ${r.apellidos}`.toLowerCase().includes(search) ||
+        r.cedula.toLowerCase().includes(search) ||
+        r.correo.toLowerCase().includes(search) ||
+        r.id.toLowerCase().includes(search) ||
+        r.tipo.toLowerCase().includes(search) ||
+        (r.turnosTexto && r.turnosTexto.toLowerCase().includes(search));
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "Aprobado" && r.estado === "Aprobado") ||
+        (statusFilter === "Exonerado" && r.estado === "Exonerado") ||
+        (statusFilter === "Pendiente" && r.estado === "Pendiente de verificación");
+
+      // Filtros opcionales de aforo
+      let matchesDay = true;
+      let matchesSalon = true;
+      let matchesTurno = true;
+
+      if (dayFilter !== "all" || salonFilter !== "all" || turnoFilter !== "all") {
+        const turnos = parseTurnos(r);
+        if (dayFilter !== "all") {
+          matchesDay = !!turnos[dayFilter];
+        }
+        if (salonFilter !== "all") {
+          matchesSalon = Object.values(turnos).some(
+            (t) => t.manana === salonFilter || t.tarde === salonFilter
+          );
+        }
+        if (turnoFilter !== "all") {
+          matchesTurno = Object.values(turnos).some((t) =>
+            turnoFilter === "manana" ? !!t.manana : !!t.tarde
+          );
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesDay && matchesSalon && matchesTurno;
+    });
+  }, [data, searchTerm, statusFilter, dayFilter, salonFilter, turnoFilter]);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredData.length && filteredData.length > 0) {
@@ -252,7 +423,11 @@ export default function AdminDashboard() {
       <main className="min-h-screen flex items-center justify-center bg-clinic-50 px-4">
         <form onSubmit={handleLogin} className="glass w-full max-w-sm rounded-3xl p-8 shadow-xl">
           <h1 className="text-2xl font-bold text-ink mb-6 text-center">Acceso Administrativo</h1>
-          {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">{error}</div>}
+          {error && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-xl border border-red-100">
+              {error}
+            </div>
+          )}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-ink-soft mb-2">Contraseña</label>
             <div className="relative">
@@ -290,17 +465,23 @@ export default function AdminDashboard() {
   const aprobados = data.filter((r) => r.estado === "Aprobado").length;
   const exonerados = data.filter((r) => r.estado === "Exonerado").length;
 
-  // Estadísticas
+  // Estadísticas Demográficas
   const tipoStatsMap: Record<string, number> = {};
   const sexoStatsMap: Record<string, number> = { Femenino: 0, Masculino: 0 };
-  const edadStatsMap: Record<string, number> = { "18-25": 0, "26-35": 0, "36-45": 0, "46-55": 0, "56+": 0 };
+  const edadStatsMap: Record<string, number> = {
+    "18-25": 0,
+    "26-35": 0,
+    "36-45": 0,
+    "46-55": 0,
+    "56+": 0,
+  };
   const currentYear = new Date().getFullYear();
 
   data.forEach((r) => {
     tipoStatsMap[r.tipo] = (tipoStatsMap[r.tipo] || 0) + 1;
     if (r.sexo === "F") sexoStatsMap.Femenino++;
     else if (r.sexo === "M") sexoStatsMap.Masculino++;
-    
+
     if (r.fechaNacimiento) {
       const birthYear = new Date(r.fechaNacimiento).getFullYear();
       const age = currentYear - birthYear;
@@ -312,22 +493,178 @@ export default function AdminDashboard() {
     }
   });
 
-  const tipoData = Object.entries(tipoStatsMap).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
+  const tipoData = Object.entries(tipoStatsMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
   const sexoData = [
     { name: "Femenino", value: sexoStatsMap.Femenino, color: "#ec4899" },
     { name: "Masculino", value: sexoStatsMap.Masculino, color: "#3b82f6" },
-  ].filter(d => d.value > 0);
+  ].filter((d) => d.value > 0);
   const edadData = Object.entries(edadStatsMap).map(([name, value]) => ({ name, value }));
+
+  // Helper para renderizar tarjeta de aforo por Salón
+  const renderSalonCard = (
+    dia: (typeof DAYS_CONGRESO)[number],
+    turnoKey: "manana" | "tarde",
+    salonKey: "principal" | "alterno"
+  ) => {
+    const key = `${dia.id}_${turnoKey}_${salonKey}`;
+    const slot = reservationsBySlot[key] || {
+      total: 0,
+      aprobados: 0,
+      pendientes: 0,
+      registrations: [],
+    };
+    const cap = SALONES_INFO[salonKey].capacity;
+    // Si el servidor reporta un número mayor, respetamos la ocupación máxima
+    const occ = Math.max(slot.total, serverCapacities[key] || 0);
+    const rem = Math.max(0, cap - occ);
+    const pct = Math.min(100, Math.round((occ / cap) * 100));
+    const alert = computeAforoAlert(salonKey, occ);
+    const isFull = occ >= cap;
+
+    const isPrincipal = salonKey === "principal";
+    const turnoLabel =
+      turnoKey === "manana" ? "Mañana (08:00 a 12:45)" : "Tarde (13:00 a 18:00)";
+
+    // Colores de la barra de progreso
+    let barColor = "bg-emerald-500";
+    if (isFull) {
+      barColor = "bg-red-600";
+    } else if (alert?.level === "danger") {
+      barColor = "bg-rose-600";
+    } else if (alert?.level === "warning") {
+      barColor = "bg-amber-500";
+    } else if (alert?.level === "info") {
+      barColor = "bg-yellow-500";
+    }
+
+    return (
+      <div
+        key={key}
+        className={`rounded-2xl p-4 transition shadow-xs border ${
+          isFull
+            ? "bg-red-50/80 border-red-300 ring-1 ring-red-300"
+            : alert
+              ? "bg-amber-50/70 border-amber-300 ring-1 ring-amber-200"
+              : "bg-white/90 border-slate-200 hover:border-slate-300"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div>
+            <span
+              className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md mb-1 ${
+                isPrincipal
+                  ? "bg-blue-100 text-blue-800"
+                  : "bg-emerald-100 text-emerald-800"
+              }`}
+            >
+              {SALONES_INFO[salonKey].name}
+            </span>
+            <div className="text-xs text-ink-mute">
+              Capacidad Total: <b>{cap} puestos</b>
+            </div>
+          </div>
+
+          {/* Badge de Estado / Alerta */}
+          {isFull ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">
+              <AlertTriangle className="size-2.5" /> Cupos Completos
+            </span>
+          ) : alert ? (
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                alert.level === "danger"
+                  ? "bg-rose-100 text-rose-800 ring-1 ring-rose-300"
+                  : "bg-amber-100 text-amber-900 ring-1 ring-amber-300"
+              }`}
+            >
+              <AlertTriangle className="size-2.5" /> Alerta: {alert.threshold} ocupados
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200">
+              🟢 {rem} puestos libres
+            </span>
+          )}
+        </div>
+
+        {/* Cifras Grandes de Aforo */}
+        <div className="flex items-baseline justify-between mt-3 mb-1.5">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-ink">{occ}</span>
+            <span className="text-xs text-ink-mute">/ {cap} ocupados</span>
+          </div>
+          <div className="text-right">
+            <span className={`text-sm font-black ${isFull ? "text-red-600" : rem <= 20 ? "text-amber-600" : "text-emerald-600"}`}>
+              {rem} libres
+            </span>
+            <span className="block text-[10px] text-ink-mute">{pct}% ocupación</span>
+          </div>
+        </div>
+
+        {/* Barra de progreso */}
+        <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden mb-3">
+          <div
+            className={`h-2.5 rounded-full transition-all duration-500 ${barColor}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+
+        {/* Desglose de aprobados vs pendientes */}
+        <div className="flex items-center justify-between text-[11px] text-ink-soft border-t border-black/5 pt-2 mb-3">
+          <span className="flex items-center gap-1 font-semibold text-emerald-700">
+            <CheckCircle className="size-3" /> {slot.aprobados} Confirmados
+          </span>
+          <span className="flex items-center gap-1 font-semibold text-amber-700">
+            <Clock className="size-3" /> {slot.pendientes} Por Verificar
+          </span>
+        </div>
+
+        {/* Mensaje descriptivo de alerta oficial */}
+        {alert && (
+          <div
+            className={`rounded-xl p-2 text-[10px] leading-snug mb-3 flex items-start gap-1.5 font-medium ${
+              alert.level === "max" || alert.level === "danger"
+                ? "bg-red-100/90 text-red-900 border border-red-200"
+                : "bg-amber-100/90 text-amber-950 border border-amber-200"
+            }`}
+          >
+            <ShieldAlert className="size-3.5 shrink-0 mt-0.5 text-amber-700" />
+            <span>{alert.text}</span>
+          </div>
+        )}
+
+        {/* Botón para ver lista de participantes */}
+        <button
+          type="button"
+          onClick={() =>
+            setRosterModal({
+              isOpen: true,
+              diaLabel: dia.dateLabel,
+              turnoLabel,
+              salonName: SALONES_INFO[salonKey].name,
+              capacity: cap,
+              occupied: occ,
+              participants: slot.registrations,
+            })
+          }
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 py-1.5 text-xs font-bold text-ink-soft hover:text-brand-600 transition shadow-2xs"
+        >
+          <Users className="size-3.5" /> Ver participantes ({slot.registrations.length})
+        </button>
+      </div>
+    );
+  };
 
   return (
     <main className="min-h-screen bg-clinic-50 p-4 sm:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
+        {/* Header Principal */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-3xl font-black text-ink">Dashboard del Congreso</h1>
             <p className="text-xs sm:text-sm text-ink-soft">
-              Panel de control de inscripciones, control de aforo y emisión de credenciales oficiales
+              Panel de control de inscripciones, conteo de reservas por salón y emisión de credenciales
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -351,7 +688,7 @@ export default function AdminDashboard() {
               onClick={() => fetchData(password)}
               className="inline-flex items-center gap-1.5 bg-white border border-slate-200 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-ink-soft shadow-sm hover:text-brand-600 hover:border-brand-200 transition"
             >
-              <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} /> Actualizar
+              <RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} /> Actualizar
             </button>
 
             <button
@@ -391,11 +728,13 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Métricas */}
+        {/* Tarjetas Métricas Globales */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="glass rounded-2xl p-5 flex flex-col border-b-4 border-brand-500">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">Total Inscritos</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
+                Total Inscritos
+              </span>
               <Users className="size-5 text-brand-500" />
             </div>
             <div className="flex items-baseline gap-2">
@@ -406,7 +745,9 @@ export default function AdminDashboard() {
 
           <div className="glass rounded-2xl p-5 flex flex-col border-b-4 border-emerald-500">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">Monto Total (USD)</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
+                Monto Total (USD)
+              </span>
               <DollarSign className="size-5 text-emerald-500" />
             </div>
             <span className="text-3xl font-black text-ink">{usd(totalMonto)}</span>
@@ -414,7 +755,9 @@ export default function AdminDashboard() {
 
           <div className="glass rounded-2xl p-5 flex flex-col border-b-4 border-amber-500">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">Por Verificar</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
+                Por Verificar
+              </span>
               <Clock className="size-5 text-amber-500" />
             </div>
             <span className="text-3xl font-black text-ink">{pendientes}</span>
@@ -422,38 +765,328 @@ export default function AdminDashboard() {
 
           <div className="glass rounded-2xl p-5 flex flex-col border-b-4 border-clinic-500">
             <div className="flex justify-between items-center mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">Aprobados</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-ink-soft">
+                Aprobados
+              </span>
               <CheckCircle className="size-5 text-clinic-500" />
             </div>
             <span className="text-3xl font-black text-ink">{aprobados}</span>
           </div>
         </div>
 
-        {/* Gráficos Estadísticos */}
+        {/* ═════════════════════════════════════════════════════════════════════════ */}
+        {/* SECCIÓN NUEVA: CONTEO DE RESERVAS Y AFORO POR DÍA, TURNO Y SALÓN          */}
+        {/* ═════════════════════════════════════════════════════════════════════════ */}
+        <div className="glass rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="flex h-3 w-3 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+                <h2 className="text-xl font-black text-ink">
+                  Control de Reservas y Aforo por Salón
+                </h2>
+              </div>
+              <p className="text-xs text-ink-soft mt-0.5">
+                Monitoreo en tiempo real de reservas por Día, Turnos (Mañana 08:00 a 12:45 / Tarde 13:00 a 18:00) y Salones (Principal 240 / Alterno 60)
+              </p>
+            </div>
+
+            {/* Selector de Día (Pills) */}
+            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setSelectedAforoDay("all")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  selectedAforoDay === "all"
+                    ? "bg-brand-600 text-white shadow-xs"
+                    : "text-ink-soft hover:text-ink hover:bg-white/60"
+                }`}
+              >
+                Matriz Consolidada (5 Días)
+              </button>
+              {DAYS_CONGRESO.map((dia) => (
+                <button
+                  key={dia.id}
+                  type="button"
+                  onClick={() => setSelectedAforoDay(dia.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                    selectedAforoDay === dia.id
+                      ? "bg-brand-600 text-white shadow-xs"
+                      : "text-ink-soft hover:text-ink hover:bg-white/60"
+                  }`}
+                >
+                  {dia.shortLabel}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* VISTA 1: MATRIZ CONSOLIDADA DE LOS 5 DÍAS */}
+          {selectedAforoDay === "all" ? (
+            <div className="space-y-4">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/80 text-ink-soft font-bold">
+                      <th className="p-3.5 pl-4">Día / Fecha</th>
+                      <th className="p-3.5 text-center bg-blue-50/40">
+                        Mañana: Salón Principal (1)
+                        <span className="block font-normal text-[10px] text-ink-mute">Cap. 240</span>
+                      </th>
+                      <th className="p-3.5 text-center bg-emerald-50/40">
+                        Mañana: Salón Alterno (2)
+                        <span className="block font-normal text-[10px] text-ink-mute">Cap. 60</span>
+                      </th>
+                      <th className="p-3.5 text-center bg-blue-50/40">
+                        Tarde: Salón Principal (1)
+                        <span className="block font-normal text-[10px] text-ink-mute">Cap. 240</span>
+                      </th>
+                      <th className="p-3.5 text-center bg-emerald-50/40">
+                        Tarde: Salón Alterno (2)
+                        <span className="block font-normal text-[10px] text-ink-mute">Cap. 60</span>
+                      </th>
+                      <th className="p-3.5 text-right pr-4">Total Reservas Día</th>
+                      <th className="p-3.5 text-center">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {DAYS_CONGRESO.map((dia) => {
+                      const occM1 = Math.max(
+                        reservationsBySlot[`${dia.id}_manana_principal`]?.total || 0,
+                        serverCapacities[`${dia.id}_manana_principal`] || 0
+                      );
+                      const occM2 = Math.max(
+                        reservationsBySlot[`${dia.id}_manana_alterno`]?.total || 0,
+                        serverCapacities[`${dia.id}_manana_alterno`] || 0
+                      );
+                      const occT1 = Math.max(
+                        reservationsBySlot[`${dia.id}_tarde_principal`]?.total || 0,
+                        serverCapacities[`${dia.id}_tarde_principal`] || 0
+                      );
+                      const occT2 = Math.max(
+                        reservationsBySlot[`${dia.id}_tarde_alterno`]?.total || 0,
+                        serverCapacities[`${dia.id}_tarde_alterno`] || 0
+                      );
+                      const diaTotal = occM1 + occM2 + occT1 + occT2;
+
+                      const alertM1 = computeAforoAlert("principal", occM1);
+                      const alertM2 = computeAforoAlert("alterno", occM2);
+                      const alertT1 = computeAforoAlert("principal", occT1);
+                      const alertT2 = computeAforoAlert("alterno", occT2);
+
+                      return (
+                        <tr key={dia.id} className="hover:bg-slate-50/60 transition">
+                          <td className="p-3.5 pl-4">
+                            <div className="font-bold text-ink">{dia.dateLabel}</div>
+                            <div className="text-[10px] text-ink-mute font-mono">{dia.id}</div>
+                          </td>
+
+                          {/* Mañana Salón 1 */}
+                          <td className="p-3.5 text-center bg-blue-50/20">
+                            <span
+                              className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${
+                                occM1 >= 240
+                                  ? "bg-red-600 text-white"
+                                  : alertM1
+                                    ? "bg-amber-100 text-amber-900"
+                                    : "bg-blue-50 text-blue-800"
+                              }`}
+                            >
+                              {occM1} / 240
+                              <span className="text-[9px] font-normal opacity-80">
+                                ({Math.max(0, 240 - occM1)} lib)
+                              </span>
+                            </span>
+                          </td>
+
+                          {/* Mañana Salón 2 */}
+                          <td className="p-3.5 text-center bg-emerald-50/20">
+                            <span
+                              className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${
+                                occM2 >= 60
+                                  ? "bg-red-600 text-white"
+                                  : alertM2
+                                    ? "bg-amber-100 text-amber-900"
+                                    : "bg-emerald-50 text-emerald-800"
+                              }`}
+                            >
+                              {occM2} / 60
+                              <span className="text-[9px] font-normal opacity-80">
+                                ({Math.max(0, 60 - occM2)} lib)
+                              </span>
+                            </span>
+                          </td>
+
+                          {/* Tarde Salón 1 */}
+                          <td className="p-3.5 text-center bg-blue-50/20">
+                            <span
+                              className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${
+                                occT1 >= 240
+                                  ? "bg-red-600 text-white"
+                                  : alertT1
+                                    ? "bg-amber-100 text-amber-900"
+                                    : "bg-blue-50 text-blue-800"
+                              }`}
+                            >
+                              {occT1} / 240
+                              <span className="text-[9px] font-normal opacity-80">
+                                ({Math.max(0, 240 - occT1)} lib)
+                              </span>
+                            </span>
+                          </td>
+
+                          {/* Tarde Salón 2 */}
+                          <td className="p-3.5 text-center bg-emerald-50/20">
+                            <span
+                              className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-md ${
+                                occT2 >= 60
+                                  ? "bg-red-600 text-white"
+                                  : alertT2
+                                    ? "bg-amber-100 text-amber-900"
+                                    : "bg-emerald-50 text-emerald-800"
+                              }`}
+                            >
+                              {occT2} / 60
+                              <span className="text-[9px] font-normal opacity-80">
+                                ({Math.max(0, 60 - occT2)} lib)
+                              </span>
+                            </span>
+                          </td>
+
+                          {/* Total Reservas Día */}
+                          <td className="p-3.5 text-right pr-4 font-black text-ink">
+                            {diaTotal}
+                          </td>
+
+                          {/* Botón Ver Detalle */}
+                          <td className="p-3.5 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAforoDay(dia.id)}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg transition"
+                            >
+                              Detallar día <ChevronRight className="size-3" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            /* VISTA 2: DETALLE DEL DÍA SELECCIONADO POR TURNOS Y SALONES */
+            (() => {
+              const dia = DAYS_CONGRESO.find((d) => d.id === selectedAforoDay);
+              if (!dia) return null;
+
+              return (
+                <div className="space-y-5 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                    <div className="flex items-center gap-2.5">
+                      <Calendar className="size-5 text-brand-600" />
+                      <div>
+                        <h3 className="text-base font-bold text-ink">{dia.dateLabel}</h3>
+                        <p className="text-xs text-ink-mute">
+                          Control de aforo por turnos de mañana y tarde
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAforoDay("all")}
+                      className="text-xs font-bold text-brand-700 underline hover:text-brand-900"
+                    >
+                      ← Volver a Matriz Consolidada
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* COLUMNA 1: TURNO MAÑANA (08:00 a 12:45) */}
+                    <div className="space-y-3.5 rounded-3xl bg-slate-50/70 p-4 ring-1 ring-slate-200">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <Clock className="size-4 text-brand-600" />
+                          <h4 className="font-black text-ink text-sm">Turno Mañana</h4>
+                        </div>
+                        <span className="text-[11px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md ring-1 ring-brand-200">
+                          08:00 a 12:45
+                        </span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {renderSalonCard(dia, "manana", "principal")}
+                        {renderSalonCard(dia, "manana", "alterno")}
+                      </div>
+                    </div>
+
+                    {/* COLUMNA 2: TURNO TARDE (13:00 a 18:00) */}
+                    <div className="space-y-3.5 rounded-3xl bg-slate-50/70 p-4 ring-1 ring-slate-200">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
+                        <div className="flex items-center gap-2">
+                          <Clock className="size-4 text-clinic-600" />
+                          <h4 className="font-black text-ink text-sm">Turno Tarde</h4>
+                        </div>
+                        <span className="text-[11px] font-bold text-clinic-700 bg-clinic-50 px-2 py-0.5 rounded-md ring-1 ring-clinic-200">
+                          13:00 a 18:00
+                        </span>
+                      </div>
+
+                      <div className="space-y-3">
+                        {renderSalonCard(dia, "tarde", "principal")}
+                        {renderSalonCard(dia, "tarde", "alterno")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+        </div>
+
+        {/* Gráficos Estadísticos Demográficos */}
         {totalInscritos > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="glass rounded-3xl p-6 flex flex-col items-center">
-              <h3 className="text-base font-bold text-ink mb-4 w-full text-center">Inscritos por Sexo</h3>
+              <h3 className="text-base font-bold text-ink mb-4 w-full text-center">
+                Inscritos por Sexo
+              </h3>
               <div className="w-full h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={sexoData} dataKey="value" cx="50%" cy="50%" innerRadius={45} outerRadius={68} paddingAngle={5}>
-                      {sexoData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                    <Pie
+                      data={sexoData}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={68}
+                      paddingAngle={5}
+                    >
+                      {sexoData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
                     </Pie>
-                    <Tooltip cursor={{fill: 'rgba(0,0,0,0.05)'}} />
+                    <Tooltip cursor={{ fill: "rgba(0,0,0,0.05)" }} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            
+
             <div className="glass rounded-3xl p-6 flex flex-col items-center">
-              <h3 className="text-base font-bold text-ink mb-4 w-full text-center">Inscritos por Edades</h3>
+              <h3 className="text-base font-bold text-ink mb-4 w-full text-center">
+                Inscritos por Edades
+              </h3>
               <div className="w-full h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={edadData}>
-                    <XAxis dataKey="name" tick={{fontSize: 11}} />
-                    <Tooltip cursor={{fill: 'rgba(0,0,0,0.05)'}} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                    <Tooltip cursor={{ fill: "rgba(0,0,0,0.05)" }} />
                     <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -461,13 +1094,15 @@ export default function AdminDashboard() {
             </div>
 
             <div className="glass rounded-3xl p-6 flex flex-col items-center">
-              <h3 className="text-base font-bold text-ink mb-4 w-full text-center">Inscritos por Categoría</h3>
+              <h3 className="text-base font-bold text-ink mb-4 w-full text-center">
+                Inscritos por Categoría
+              </h3>
               <div className="w-full h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={tipoData} layout="vertical" margin={{ left: 0 }}>
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={110} tick={{fontSize: 10}} />
-                    <Tooltip cursor={{fill: 'rgba(0,0,0,0.05)'}} />
+                    <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 10 }} />
+                    <Tooltip cursor={{ fill: "rgba(0,0,0,0.05)" }} />
                     <Bar dataKey="value" fill="#0ea5e9" radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -477,7 +1112,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Barra de Filtros y Búsqueda */}
-        <div className="glass rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm">
+        <div className="glass rounded-2xl p-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 shadow-sm">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-ink-mute" />
             <input
@@ -489,18 +1124,52 @@ export default function AdminDashboard() {
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-ink-soft">Estado:</span>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-ink focus:border-brand-500 focus:outline-none"
-            >
-              <option value="all">Todos ({data.length})</option>
-              <option value="Aprobado">Aprobados ({aprobados})</option>
-              <option value="Exonerado">Exonerados ({exonerados})</option>
-              <option value="Pendiente">Pendientes ({pendientes})</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Filtro Estado */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-ink-soft">Estado:</span>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-ink focus:border-brand-500 focus:outline-none"
+              >
+                <option value="all">Todos ({data.length})</option>
+                <option value="Aprobado">Aprobados ({aprobados})</option>
+                <option value="Exonerado">Exonerados ({exonerados})</option>
+                <option value="Pendiente">Pendientes ({pendientes})</option>
+              </select>
+            </div>
+
+            {/* Filtro Día */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-ink-soft">Día:</span>
+              <select
+                value={dayFilter}
+                onChange={(e) => setDayFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-ink focus:border-brand-500 focus:outline-none"
+              >
+                <option value="all">Todos los días</option>
+                {DAYS_CONGRESO.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.shortLabel}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtro Salón */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-ink-soft">Salón:</span>
+              <select
+                value={salonFilter}
+                onChange={(e) => setSalonFilter(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-ink focus:border-brand-500 focus:outline-none"
+              >
+                <option value="all">Todos los salones</option>
+                <option value="principal">Salón Principal (1)</option>
+                <option value="alterno">Salón Alterno (2)</option>
+              </select>
+            </div>
 
             {selectedIds.length > 0 && (
               <button
@@ -525,7 +1194,11 @@ export default function AdminDashboard() {
                       type="button"
                       onClick={toggleSelectAll}
                       className="text-ink-mute hover:text-brand-600 transition"
-                      title={selectedIds.length === filteredData.length ? "Deseleccionar todos" : "Seleccionar todos"}
+                      title={
+                        selectedIds.length === filteredData.length
+                          ? "Deseleccionar todos"
+                          : "Seleccionar todos"
+                      }
                     >
                       {selectedIds.length > 0 && selectedIds.length === filteredData.length ? (
                         <CheckSquare className="size-4 text-brand-600" />
@@ -538,6 +1211,7 @@ export default function AdminDashboard() {
                   <th className="p-4">Participante & Contacto</th>
                   <th className="p-4">Cédula</th>
                   <th className="p-4">Categoría</th>
+                  <th className="p-4">Turnos y Salones</th>
                   <th className="p-4 text-right">Monto</th>
                   <th className="p-4 text-center">Comprobante</th>
                   <th className="p-4 text-center">Estado</th>
@@ -605,6 +1279,20 @@ export default function AdminDashboard() {
                         </span>
                       </td>
 
+                      {/* Turnos y Salones Asignados */}
+                      <td className="p-4 max-w-xs">
+                        {row.turnosTexto ? (
+                          <div
+                            className="text-xs text-ink-soft whitespace-normal leading-tight font-medium"
+                            title={row.turnosTexto}
+                          >
+                            {row.turnosTexto}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-ink-mute">-</span>
+                        )}
+                      </td>
+
                       {/* Monto */}
                       <td className="p-4 text-right font-bold text-ink">
                         {Number(row.monto) > 0 ? (
@@ -652,86 +1340,176 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-center gap-1.5">
                           {row.estado === "Pendiente de verificación" && (
                             <button
-                              type="button"
                               onClick={() => approvePayment(row.id, row.correo)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-white bg-amber-500 hover:bg-amber-600 px-2.5 py-1.5 rounded-lg shadow-sm transition"
+                              className="inline-flex items-center gap-1 bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-xl text-xs hover:bg-emerald-700 transition shadow-sm"
                               title="Aprobar pago y enviar QR"
                             >
-                              <FileCheck2 className="size-3.5" /> Aprobar
+                              <Check className="size-3.5" /> Aprobar
                             </button>
                           )}
 
-                          {/* Botón individual de reenvío de comprobante */}
                           <button
-                            type="button"
-                            disabled={isResending}
                             onClick={() => handleResendSingle(row)}
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-700 hover:text-brand-900 bg-white hover:bg-brand-50 border border-brand-200 px-2.5 py-1.5 rounded-lg shadow-sm transition disabled:opacity-50"
-                            title={`Reenviar comprobante oficial y código QR a ${row.correo}`}
+                            disabled={isResending}
+                            className="inline-flex items-center gap-1 bg-white border border-slate-200 hover:border-brand-300 hover:text-brand-600 text-ink-soft font-semibold px-2.5 py-1.5 rounded-xl text-xs shadow-2xs transition disabled:opacity-50"
+                            title="Reenviar comprobante oficial y código QR a este participante"
                           >
-                            {isResending ? (
-                              <>
-                                <RefreshCw className="size-3 animate-spin text-brand-600" />
-                                Enviando...
-                              </>
-                            ) : (
-                              <>
-                                <Mail className="size-3 text-brand-600" />
-                                Reenviar QR
-                              </>
-                            )}
+                            <Mail
+                              className={`size-3.5 text-brand-500 ${isResending ? "animate-spin" : ""}`}
+                            />
+                            {isResending ? "Enviando..." : "Reenviar QR"}
                           </button>
                         </div>
                       </td>
                     </tr>
                   );
                 })}
-
-                {filteredData.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="p-8 text-center text-ink-soft">
-                      {searchTerm
-                        ? "No se encontraron inscripciones que coincidan con la búsqueda."
-                        : "No hay inscripciones registradas todavía."}
-                    </td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* ──────── MODAL DE REENVÍO MASIVO ──────── */}
-        {showBulkModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs">
-            <div className="glass-strong w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
-              <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-brand-100 text-brand-700">
-                    <Send className="size-5" />
-                  </span>
-                  <div>
-                    <h3 className="text-lg font-bold text-ink">Reenvío Masivo de Comprobantes</h3>
-                    <p className="text-xs text-ink-soft">Emisión masiva de credenciales y códigos QR por correo</p>
-                  </div>
+        {/* ────────────────── MODAL DE PARTICIPANTES POR SALÓN Y TURNO ────────────────── */}
+        {rosterModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="relative w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/10 space-y-4 max-h-[85vh] flex flex-col">
+              <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-3">
+                <div>
+                  <h3 className="text-lg font-black text-ink">{rosterModal.salonName}</h3>
+                  <p className="text-xs text-ink-soft">
+                    {rosterModal.diaLabel} · {rosterModal.turnoLabel} (
+                    <b>
+                      {rosterModal.occupied} de {rosterModal.capacity} puestos ocupados
+                    </b>
+                    )
+                  </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowBulkModal(false)}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  onClick={() => {
+                    setRosterModal(null);
+                    setRosterSearch("");
+                  }}
+                  className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-ink transition"
                 >
                   <X className="size-5" />
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs sm:text-sm text-ink-soft">
-                <p>
-                  Esta acción enviará a cada participante su correo oficial con la <b>credencial digital de acceso</b>, los <b>días/turnos asignados en Salón Principal (1) y Salón Alterno (2)</b> y su <b>Código QR en alta resolución</b>.
+              {/* Búsqueda dentro del salón */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-ink-mute" />
+                <input
+                  type="text"
+                  placeholder="Buscar en este salón por nombre, cédula o correo..."
+                  value={rosterSearch}
+                  onChange={(e) => setRosterSearch(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 py-2 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+
+              {/* Lista con scroll */}
+              <div className="overflow-y-auto flex-1 divide-y divide-slate-100 pr-1">
+                {rosterModal.participants
+                  .filter((p) => {
+                    const s = rosterSearch.toLowerCase();
+                    return (
+                      !s ||
+                      `${p.nombres} ${p.apellidos}`.toLowerCase().includes(s) ||
+                      p.cedula.toLowerCase().includes(s) ||
+                      p.correo.toLowerCase().includes(s) ||
+                      p.tipo.toLowerCase().includes(s)
+                    );
+                  })
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="py-2.5 flex items-center justify-between text-xs hover:bg-slate-50 px-2 rounded-lg transition"
+                    >
+                      <div>
+                        <div className="font-bold text-ink">
+                          {p.nombres} {p.apellidos}
+                        </div>
+                        <div className="text-[11px] text-ink-soft font-mono">
+                          {p.cedula} · {p.correo}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-semibold text-slate-700">
+                          {p.tipo}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                            p.estado === "Aprobado"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : p.estado === "Exonerado"
+                                ? "bg-clinic-100 text-clinic-800"
+                                : "bg-amber-100 text-amber-800"
+                          }`}
+                        >
+                          {p.estado}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+
+                {rosterModal.participants.length === 0 && (
+                  <div className="text-center py-8 text-xs text-ink-mute">
+                    No hay participantes registrados todavía en este salón y turno.
+                  </div>
+                )}
+              </div>
+
+              <div className="border-t border-slate-200 pt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRosterModal(null);
+                    setRosterSearch("");
+                  }}
+                  className="rounded-xl bg-slate-100 hover:bg-slate-200 px-4 py-2 text-xs font-bold text-ink transition"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ────────────────── MODAL DE REENVÍO MASIVO ────────────────── */}
+        {showBulkModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/10 space-y-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-10 items-center justify-center rounded-2xl bg-brand-100 text-brand-700">
+                    <Send className="size-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-ink">Reenvío Masivo de Comprobantes</h3>
+                    <p className="text-xs text-ink-soft">
+                      Emisión y reenvío de comprobantes oficiales con código QR
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowBulkModal(false)}
+                  className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 hover:text-ink transition"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 pt-2 text-xs sm:text-sm">
+                <p className="text-ink-soft">
+                  Selecciona a qué grupo de participantes deseas reenviar su comprobante oficial y pase QR por correo electrónico:
                 </p>
 
-                <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200/80 space-y-2.5">
-                  <label className="block font-bold text-ink">Selecciona el grupo de destinatarios:</label>
-
+                <div className="space-y-2 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                   {selectedIds.length > 0 && (
                     <label className="flex items-center gap-2.5 cursor-pointer">
                       <input
@@ -741,8 +1519,8 @@ export default function AdminDashboard() {
                         onChange={() => setBulkFilter("selected")}
                         className="text-brand-600 focus:ring-brand-500"
                       />
-                      <span>
-                        <b>Solo los seleccionados manualmente</b> ({selectedIds.length} participantes)
+                      <span className="font-bold text-brand-800">
+                        Solo a los seleccionados manualmente ({selectedIds.length} participantes)
                       </span>
                     </label>
                   )}
@@ -775,7 +1553,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="rounded-xl bg-brand-50 p-3 text-xs text-brand-900 border border-brand-200">
-                  ℹ️ Los correos se remitirán desde la cuenta oficial del Congreso con el remitente configurado.
+                  ℹ️ Los correos se remitirán desde la cuenta oficial del Congreso con su plantilla institucional y código QR de alta resolución adjunto.
                 </div>
               </div>
 
