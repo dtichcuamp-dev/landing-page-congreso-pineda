@@ -99,6 +99,64 @@ export async function lookupHcuamp(cedula: string): Promise<HcuampLookupResult> 
   }
 }
 
+export interface ExistingRegistrationInfo {
+  registered: boolean;
+  by?: "cedula" | "correo";
+  id?: string;
+  fecha?: string;
+  nombres?: string;
+  apellidos?: string;
+  cedula?: string;
+  correo?: string;
+  message?: string;
+}
+
+/**
+ * Consulta si un participante ya se encuentra registrado por Cédula o Correo.
+ * Previene la duplicación de inscripciones y la pérdida de cupos para otros asistentes.
+ */
+export async function checkExistingRegistration(
+  cedula: string,
+  correo?: string
+): Promise<ExistingRegistrationInfo> {
+  const url = process.env.NEXT_PUBLIC_GAS_URL;
+  if (!url) return { registered: false };
+
+  const digits = cleanCedula(cedula);
+  if (!digits && !correo) return { registered: false };
+
+  try {
+    const params = new URLSearchParams({
+      action: "check_registration",
+    });
+    if (digits) params.append("cedula", digits);
+    if (correo && correo.trim()) params.append("correo", correo.trim().toLowerCase());
+
+    const res = await fetch(`${url}?${params.toString()}`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data && data.ok && data.registered) {
+      return {
+        registered: true,
+        by: data.by,
+        id: data.data?.id,
+        fecha: data.data?.fecha,
+        nombres: data.data?.nombres,
+        apellidos: data.data?.apellidos,
+        cedula: data.data?.cedula,
+        correo: data.data?.correo,
+        message: data.message,
+      };
+    }
+    return { registered: false };
+  } catch (err) {
+    console.warn("Error consultando registro previo:", err);
+    return { registered: false };
+  }
+}
+
 /**
  * Consulta la disponibilidad de aforo en tiempo real.
  */

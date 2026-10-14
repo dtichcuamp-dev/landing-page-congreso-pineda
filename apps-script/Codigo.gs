@@ -122,6 +122,9 @@ function doGet(e) {
     if (action === 'get_capacities') {
       return json_(getCapacities_());
     }
+    if (action === 'check_registration') {
+      return json_(checkExistingRegistration_(p.cedula, p.correo));
+    }
 
     return json_({
       ok: true,
@@ -148,6 +151,9 @@ function doPost(e) {
     }
     if (body.action === 'get_capacities') {
       return json_(getCapacities_());
+    }
+    if (body.action === 'check_registration') {
+      return json_(checkExistingRegistration_(body.cedula, body.correo));
     }
     if (body.action === 'get_dashboard') {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
@@ -327,6 +333,64 @@ function lookupHcuamp_(rawCedula) {
   return { ok: true, found: false };
 }
 
+// ───────────────────────────── PARTICIPANTE ÚNICO (ANTI-DUPLICADOS) ─────────────────────────────
+
+/**
+ * Verifica si un participante ya se encuentra registrado por Cédula o Correo.
+ * Previene la duplicación de registros y la pérdida de cupos para otros participantes.
+ */
+function checkExistingRegistration_(rawCedula, rawEmail) {
+  var cleanCed = String(rawCedula || '').replace(/\D/g, '');
+  var cleanEmail = String(rawEmail || '').trim().toLowerCase();
+  if (!cleanCed && !cleanEmail) return { ok: false, error: 'Cédula o correo requerido.' };
+
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var sh = ss.getSheetByName(CONFIG.SHEET_NAME);
+  if (!sh || sh.getLastRow() < 2) return { ok: true, registered: false };
+
+  var data = sh.getRange(2, 1, sh.getLastRow() - 1, 11).getValues();
+  for (var i = 0; i < data.length; i++) {
+    var rowCed = String(data[i][6] || '').replace(/\D/g, '');
+    var rowEmail = String(data[i][10] || '').trim().toLowerCase();
+
+    if (cleanCed && rowCed && cleanCed === rowCed) {
+      return {
+        ok: true,
+        registered: true,
+        by: 'cedula',
+        data: {
+          id: String(data[i][0] || ''),
+          fecha: data[i][1],
+          nombres: String(data[i][4] || ''),
+          apellidos: String(data[i][5] || ''),
+          cedula: String(data[i][6] || ''),
+          correo: String(data[i][10] || '')
+        },
+        message: 'La cédula ' + data[i][6] + ' ya se encuentra formalmente registrada con el comprobante N.º ' + data[i][0] + '.'
+      };
+    }
+
+    if (cleanEmail && rowEmail && cleanEmail === rowEmail) {
+      return {
+        ok: true,
+        registered: true,
+        by: 'correo',
+        data: {
+          id: String(data[i][0] || ''),
+          fecha: data[i][1],
+          nombres: String(data[i][4] || ''),
+          apellidos: String(data[i][5] || ''),
+          cedula: String(data[i][6] || ''),
+          correo: String(data[i][10] || '')
+        },
+        message: 'El correo ' + data[i][10] + ' ya se encuentra formalmente registrado con el comprobante N.º ' + data[i][0] + '.'
+      };
+    }
+  }
+
+  return { ok: true, registered: false };
+}
+
 // ───────────────────────────── CONTROL DE AFORO ─────────────────────────────
 
 /**
@@ -422,6 +486,15 @@ function validate_(b) {
 
   var correo = str_(b.correo, 120).toLowerCase();
   if (!emailRe.test(correo)) throw new UserError_('Correo electrónico inválido.');
+
+  // Verificación estricta de participante único (prevenir doble registro y duplicidad de cupos)
+  var dup = checkExistingRegistration_(cedula, correo);
+  if (dup.registered) {
+    throw new UserError_(
+      'El participante con Cédula ' + cedula + ' ya se encuentra formalmente registrado en el XIV Congreso Pineda (Comprobante ' +
+      dup.data.id + '). Cada persona solo puede registrarse una sola vez para no quitarle cupo a otro participante.'
+    );
+  }
 
   // País, Estado, Municipio, Parroquia (ALMACENAR EN MAYÚSCULAS)
   var pais = (str_(b.pais, 120) || 'VENEZUELA').toUpperCase();
@@ -630,11 +703,27 @@ function appendRow_(d, receiptFile) {
 
     var note = '';
     if (row > 2) {
-      var ceds = sh.getRange(2, 7, row - 2, 1).getValues();
-      for (var i = 0; i < ceds.length; i++) {
-        if (String(ceds[i][0]) === d.cedula) {
-          note = 'Cédula registrada previamente en fila ' + (i + 2);
-          break;
+      var allRows = sh.getRange(2, 1, row - 2, 11).getValues();
+      var cleanTargetCed = String(d.cedula || '').replace(/\D/g, '');
+      var cleanTargetEmail = String(d.correo || '').trim().toLowerCase();
+
+      for (var i = 0; i < allRows.length; i++) {
+        var existingId = String(allRows[i][0] || '');
+        var existingCed = String(allRows[i][6] || '').replace(/\D/g, '');
+        var existingEmail = String(allRows[i][10] || '').trim().toLowerCase();
+
+        if (cleanTargetCed && existingCed && cleanTargetCed === existingCed) {
+          throw new UserError_(
+            'Esta persona ya se encuentra registrada en el XIV Congreso Pineda (Cédula: ' + d.cedula +
+            ', Comprobante ID: ' + existingId + '). Cada participante solo puede registrarse una vez para no quitarle cupo a otra persona.'
+          );
+        }
+
+        if (cleanTargetEmail && existingEmail && cleanTargetEmail === existingEmail) {
+          throw new UserError_(
+            'El correo ' + d.correo + ' ya se encuentra registrado con el Comprobante ID: ' +
+            existingId + '. No se permite duplicar registros para garantizar el cupo a otros participantes.'
+          );
         }
       }
     }

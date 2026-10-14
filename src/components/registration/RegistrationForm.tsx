@@ -20,9 +20,11 @@ import {
   QrCode,
   Search,
   Send,
+  ShieldAlert,
   Sparkles,
   Stethoscope,
   UserRound,
+  X,
 } from "lucide-react";
 import {
   CAPACIDADES_SALON,
@@ -34,7 +36,14 @@ import {
   calcTotal,
   usd,
 } from "@/data/pricing";
-import { ApiError, getCapacities, lookupHcuamp, submitRegistration } from "@/lib/api";
+import {
+  ApiError,
+  checkExistingRegistration,
+  getCapacities,
+  lookupHcuamp,
+  submitRegistration,
+  type ExistingRegistrationInfo,
+} from "@/lib/api";
 import { cleanCedula, validateStep } from "@/lib/validation";
 import {
   EMPTY_VALUES,
@@ -61,6 +70,8 @@ export function RegistrationForm() {
     message?: string;
   }>({ status: "idle" });
   const [capacities, setCapacities] = useState<Record<string, number>>({});
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState<ExistingRegistrationInfo | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [result, setResult] = useState<RegistrationResult | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -102,6 +113,7 @@ export function RegistrationForm() {
   const set = <K extends keyof RegistrationValues>(key: K, value: RegistrationValues[K]) => {
     setValues((v) => ({ ...v, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+    if (key === "cedula" || key === "correo") setAlreadyRegistered(null);
   };
 
   const handleOrigenChange = (origen: InstitucionOrigen) => {
@@ -117,7 +129,23 @@ export function RegistrationForm() {
       especialidad: "",
     }));
     setHcuampFeedback({ status: "idle" });
+    setAlreadyRegistered(null);
     setErrors({});
+  };
+
+  const checkCedulaDuplicate = async (rawCed: string) => {
+    const cleaned = cleanCedula(rawCed);
+    if (!cleaned || cleaned.length < 5) return;
+    try {
+      const dup = await checkExistingRegistration(cleaned, values.correo);
+      if (dup.registered) {
+        setAlreadyRegistered(dup);
+        setErrors((e) => ({
+          ...e,
+          cedula: `Esta cédula ya está registrada en el Congreso (Comprobante ${dup.id}). No se permiten inscripciones duplicadas para no quitar cupo a otros participantes.`,
+        }));
+      }
+    } catch (_) {}
   };
 
   const handleLookupHcuamp = async () => {
@@ -129,7 +157,20 @@ export function RegistrationForm() {
 
     setSearchingHcuamp(true);
     setHcuampFeedback({ status: "idle" });
+    setAlreadyRegistered(null);
     try {
+      // 1. Verificar primero si este participante ya se encuentra registrado
+      const dup = await checkExistingRegistration(rawCed, values.correo);
+      if (dup.registered) {
+        setAlreadyRegistered(dup);
+        setErrors((e) => ({
+          ...e,
+          cedula: `Esta persona ya se encuentra registrada en el Congreso (Comprobante ${dup.id}). No se permiten registros duplicados.`,
+        }));
+        return;
+      }
+
+      // 2. Si no está registrado, buscar en nómina HCUAMP
       const res = await lookupHcuamp(rawCed);
       if (res.found && res.data) {
         setValues((v) => ({
@@ -182,9 +223,31 @@ export function RegistrationForm() {
     requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   };
 
-  const next = () => {
+  const next = async () => {
     const e = validateStep(step, values);
 
+    // ── Paso 0: Verificación estricta de Participante Único (Anti-Duplicados) ──
+    if (step === 0 && Object.keys(e).length === 0) {
+      setCheckingDuplicate(true);
+      try {
+        const dup = await checkExistingRegistration(values.cedula, values.correo);
+        if (dup.registered) {
+          setCheckingDuplicate(false);
+          setAlreadyRegistered(dup);
+          setErrors({
+            ...e,
+            cedula: `Esta persona ya se encuentra registrada en el Congreso (ID: ${dup.id}). No se permite duplicar registros para garantizar el cupo a otros participantes.`,
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn("Error verificando participante único:", err);
+      } finally {
+        setCheckingDuplicate(false);
+      }
+    }
+
+    // ── Paso 1: Verificación estricta de Aforo en Tiempo Real ──
     if (step === 1 && Object.keys(e).length === 0) {
       // Verificación estricta de aforo en tiempo real para evitar depósitos bancarios errados
       for (const [diaId, t] of Object.entries(values.turnos)) {
@@ -259,6 +322,17 @@ export function RegistrationForm() {
       }
     }
 
+    // Verificación final de participante único antes del envío
+    const dupFinal = await checkExistingRegistration(values.cedula, values.correo);
+    if (dupFinal.registered) {
+      setAlreadyRegistered(dupFinal);
+      setServerError(
+        `Esta persona ya se encuentra registrada en el Congreso (Comprobante ID: ${dupFinal.id}). No se permite duplicar registros para garantizar el cupo a otros participantes.`
+      );
+      goTo(0);
+      return;
+    }
+
     setSubmitting(true);
     setServerError(null);
     try {
@@ -282,8 +356,22 @@ export function RegistrationForm() {
       const res = await submitRegistration(upperValues);
       setResult(res);
       requestAnimationFrame(() => topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-    } catch (err) {
-      setServerError(err instanceof ApiError ? err.message : "Ocurrió un error inesperado al procesar la inscripción.");
+    } catch (err: any) {
+      const msg = err instanceof ApiError ? err.message : (err?.message || "Ocurrió un error inesperado al procesar la inscripción.");
+      if (
+        msg.includes("ya se encuentra registrado") ||
+        msg.includes("ya se encuentra formalmente registrado") ||
+        msg.includes("ya fue registrada")
+      ) {
+        setAlreadyRegistered({
+          registered: true,
+          cedula: values.cedula,
+          correo: values.correo,
+          message: msg,
+        });
+        goTo(0);
+      }
+      setServerError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -669,6 +757,7 @@ export function RegistrationForm() {
                     placeholder="Número de cédula (ej. 12345678)"
                     className={inputClass(!!errors.cedula)}
                     value={values.cedula}
+                    onBlur={() => checkCedulaDuplicate(values.cedula)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
@@ -683,7 +772,7 @@ export function RegistrationForm() {
                 </div>
                 <button
                   type="button"
-                  disabled={searchingHcuamp}
+                  disabled={searchingHcuamp || checkingDuplicate}
                   onClick={handleLookupHcuamp}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
                 >
@@ -703,6 +792,20 @@ export function RegistrationForm() {
 
               {errors.cedula && (
                 <p className="text-xs font-medium text-red-600">{errors.cedula}</p>
+              )}
+
+              {alreadyRegistered && (
+                <div className="rounded-xl bg-amber-50 p-3 text-xs text-amber-950 border border-amber-300 flex items-start gap-2.5 animate-in fade-in">
+                  <ShieldAlert className="size-4 shrink-0 mt-0.5 text-amber-600" />
+                  <div>
+                    <p className="font-bold text-amber-900">
+                      Participante ya registrado (Comprobante {alreadyRegistered.id}):
+                    </p>
+                    <p className="mt-0.5 text-amber-800">
+                      Esta cédula ya tiene un registro activo. No se permiten inscripciones duplicadas para no quitarle el cupo a otra persona.
+                    </p>
+                  </div>
+                </div>
               )}
 
               {hcuampFeedback.status === "found" && (
@@ -743,10 +846,25 @@ export function RegistrationForm() {
                     placeholder="12345678"
                     className={inputClass(!!errors.cedula)}
                     value={values.cedula}
+                    onBlur={() => checkCedulaDuplicate(values.cedula)}
                     onChange={(e) => set("cedula", e.target.value.replace(/[^\d.]/g, ""))}
                     aria-invalid={!!errors.cedula}
                   />
                 </div>
+
+                {alreadyRegistered && (
+                  <div className="mt-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-950 border border-amber-300 flex items-start gap-2.5 animate-in fade-in">
+                    <ShieldAlert className="size-4 shrink-0 mt-0.5 text-amber-600" />
+                    <div>
+                      <p className="font-bold text-amber-900">
+                        Participante ya registrado (Comprobante {alreadyRegistered.id}):
+                      </p>
+                      <p className="mt-0.5 text-amber-800">
+                        Esta cédula ya tiene un registro activo. No se permiten inscripciones duplicadas para no quitarle el cupo a otra persona.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </Field>
             )}
 
@@ -1085,9 +1203,18 @@ export function RegistrationForm() {
         {step < maxSteps - 1 ? (
           <button
             type="submit"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-clinic-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-brand-500/25 transition hover:brightness-110"
+            disabled={checkingDuplicate}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-clinic-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-brand-500/25 transition hover:brightness-110 disabled:opacity-70"
           >
-            {step === 0 ? "Siguiente" : "Continuar"} <ArrowRight className="size-4" aria-hidden />
+            {checkingDuplicate ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden /> Verificando cédula…
+              </>
+            ) : (
+              <>
+                {step === 0 ? "Siguiente" : "Continuar"} <ArrowRight className="size-4" aria-hidden />
+              </>
+            )}
           </button>
         ) : (
           <button
@@ -1107,6 +1234,94 @@ export function RegistrationForm() {
           </button>
         )}
       </div>
+
+      {/* ────────────────── MODAL PARTICIPANTE YA REGISTRADO ────────────────── */}
+      {alreadyRegistered && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-duplicate-title"
+        >
+          <div className="relative w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-black/10 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200">
+            {/* Header del Modal con Icono */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 ring-4 ring-amber-50">
+                  <ShieldAlert className="size-6" />
+                </div>
+                <div>
+                  <h3 id="modal-duplicate-title" className="text-lg font-black text-ink">
+                    Participante Ya Registrado
+                  </h3>
+                  <p className="text-xs font-semibold text-amber-600">
+                    Inscripción activa detectada en el sistema
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAlreadyRegistered(null)}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-ink transition"
+                aria-label="Cerrar modal"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            {/* Ficha del Registro Previo */}
+            <div className="rounded-2xl bg-slate-50 p-4 text-xs space-y-2 ring-1 ring-slate-200">
+              <div className="flex justify-between items-center text-ink">
+                <span className="font-semibold text-ink-mute">Cédula:</span>
+                <span className="font-bold text-ink font-mono">{alreadyRegistered.cedula || values.cedula}</span>
+              </div>
+              {(alreadyRegistered.nombres || alreadyRegistered.apellidos) && (
+                <div className="flex justify-between items-center text-ink">
+                  <span className="font-semibold text-ink-mute">Participante:</span>
+                  <span className="font-bold text-ink uppercase">
+                    {alreadyRegistered.nombres} {alreadyRegistered.apellidos}
+                  </span>
+                </div>
+              )}
+              {alreadyRegistered.id && (
+                <div className="flex justify-between items-center text-ink border-t border-slate-200 pt-2 mt-2">
+                  <span className="font-semibold text-ink-mute">N.º Comprobante / Registro:</span>
+                  <span className="font-mono font-black text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md ring-1 ring-brand-200">
+                    {alreadyRegistered.id}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* AVISO IMPORTANTE SOBRE AFORO Y NO DUPLICIDAD */}
+            <div className="rounded-2xl bg-amber-50 p-4 text-xs text-amber-950 border border-amber-200 space-y-1.5">
+              <p className="font-bold text-amber-900">
+                Garantía de aforo y cupo de asistencia para todos los colegas:
+              </p>
+              <p className="text-amber-800 leading-relaxed">
+                Para asegurar que todos los profesionales de la salud tengan la oportunidad de asistir al Congreso y <b>evitar que se le quite el cupo a otra persona</b>, el sistema restringe el registro a <b>una sola inscripción por participante</b>.
+              </p>
+            </div>
+
+            {/* ¿Qué hacer si ya estás registrado? */}
+            <div className="rounded-xl bg-blue-50/70 p-3.5 text-xs text-blue-900 ring-1 ring-blue-100 space-y-1">
+              <p className="font-bold">¿Necesitas tu credencial o código QR?</p>
+              <p className="text-blue-800 leading-relaxed">
+                Tu registro ya está guardado de forma segura en la base de datos oficial. Si no has recibido tu comprobante con código QR en tu correo o deseas consultar tu asignación de salones, el administrador del sistema puede reenviártelo o validarlo con tu número de cédula el día del evento.
+              </p>
+            </div>
+
+            {/* Botón de Cierre */}
+            <button
+              type="button"
+              onClick={() => setAlreadyRegistered(null)}
+              className="w-full rounded-2xl bg-gradient-to-r from-brand-600 to-clinic-600 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-brand-500/25 transition hover:brightness-110"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
