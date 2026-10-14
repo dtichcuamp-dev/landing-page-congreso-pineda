@@ -125,8 +125,9 @@ export default function AdminDashboard() {
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkFilter, setBulkFilter] = useState<"all" | "approved_only" | "selected">("all");
   const [bulkSending, setBulkSending] = useState(false);
+  const [mailQuota, setMailQuota] = useState<number | null>(null);
   const [notification, setNotification] = useState<{
-    type: "success" | "error" | "info";
+    type: "success" | "error" | "info" | "warning";
     message: string;
   } | null>(null);
 
@@ -164,6 +165,9 @@ export default function AdminDashboard() {
       if (!res.ok || !json.ok) throw new Error(json.error || "Error al autenticar");
 
       setData(json.data);
+      if (typeof json.mailQuota === "number") {
+        setMailQuota(json.mailQuota);
+      }
       setIsAuthenticated(true);
       sessionStorage.setItem("admin_password", pass);
 
@@ -276,18 +280,90 @@ export default function AdminDashboard() {
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (!res.ok || !json.ok) throw new Error(json.error || "Error en el reenvío masivo");
+      if (!res.ok || !json.ok) {
+        // Si el servidor retornó error explícito de cuota
+        if (json.quotaExceeded || json.error?.includes("demasiadas veces") || json.error?.toLowerCase().includes("cuota")) {
+          setMailQuota(0);
+          throw new Error(
+            "Límite diario de envíos de Google alcanzado («Servicio solicitado demasiadas veces para un mismo día: email»). Google restablece automáticamente esta cuota en 24 horas."
+          );
+        }
+        throw new Error(json.error || "Error en el reenvío masivo");
+      }
+
+      const sentCount: number = json.data?.sentCount ?? 0;
+      const totalCount: number = json.data?.totalCount ?? 0;
+      const failed: any[] = json.data?.failed || [];
+
+      if (typeof json.mailQuota === "number") {
+        setMailQuota(json.mailQuota);
+      } else if (typeof json.data?.quotaRemaining === "number") {
+        setMailQuota(json.data.quotaRemaining);
+      }
+
+      const isQuotaStopped =
+        json.quotaExceeded ||
+        json.stoppedByQuota ||
+        json.data?.quotaExceeded ||
+        json.data?.stoppedByQuota ||
+        failed.some(
+          (f) =>
+            f.isQuota ||
+            f.error?.includes("demasiadas veces") ||
+            f.error?.toLowerCase().includes("quota")
+        );
+
+      const invalidEmailFails = failed.filter(
+        (f) =>
+          f.isInvalidEmail ||
+          f.error?.includes("Correo inválido") ||
+          f.error?.includes("ausente")
+      );
+
+      const otherFails = failed.filter(
+        (f) =>
+          !f.isQuota &&
+          !f.isInvalidEmail &&
+          !f.error?.includes("demasiadas veces") &&
+          !f.error?.toLowerCase().includes("quota")
+      );
 
       setShowBulkModal(false);
       setSelectedIds([]);
-      setNotification({
-        type: "success",
-        message: `✓ Reenvío masivo completado exitosamente: Se enviaron ${json.data.sentCount} correos con código QR de ${json.data.totalCount} participantes.${
-          json.data.failed && json.data.failed.length > 0
-            ? ` (${json.data.failed.length} no pudieron enviarse por dirección errónea)`
-            : ""
-        }`,
-      });
+
+      if (isQuotaStopped) {
+        setMailQuota(0);
+        setNotification({
+          type: "warning",
+          message: `⚠️ Límite de envíos diarios de Google alcanzado: Se enviaron ${sentCount} correos. Google suspendió los envíos restantes («Servicio solicitado demasiadas veces para un mismo día: email»). Esta cuota es restablecida por Google automáticamente cada 24 horas.`,
+        });
+      } else if (sentCount > 0 && failed.length === 0) {
+        setNotification({
+          type: "success",
+          message: `✓ Reenvío masivo completado exitosamente: Se enviaron los ${sentCount} correos con comprobante y código QR oficial de ${totalCount} participantes.`,
+        });
+      } else if (failed.length > 0) {
+        const detailParts: string[] = [];
+        if (invalidEmailFails.length > 0) {
+          detailParts.push(`${invalidEmailFails.length} por dirección de correo no válida`);
+        }
+        if (otherFails.length > 0) {
+          detailParts.push(`${otherFails.length} por error de red/servidor`);
+        }
+        setNotification({
+          type: sentCount > 0 ? "warning" : "error",
+          message: `${
+            sentCount > 0
+              ? `✓ Se enviaron ${sentCount} correos.`
+              : "No se pudo realizar el envío."
+          } ${detailParts.length > 0 ? `(${detailParts.join(", ")})` : `(${failed.length} fallos detectados)`}`,
+        });
+      } else {
+        setNotification({
+          type: "info",
+          message: `No se encontraron registros pendientes bajo el filtro seleccionado.`,
+        });
+      }
     } catch (err: any) {
       setNotification({
         type: "error",
@@ -668,6 +744,25 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Indicador de Cuota de Envíos de Google */}
+            {mailQuota !== null && (
+              <div
+                className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition ${
+                  mailQuota === 0
+                    ? "bg-rose-50 text-rose-700 border-rose-300 ring-1 ring-rose-200"
+                    : mailQuota < 20
+                      ? "bg-amber-50 text-amber-800 border-amber-300"
+                      : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                }`}
+                title="Cuota de correos diarios restantes en la cuenta de Google de Apps Script"
+              >
+                <Mail className="size-3.5" />
+                <span>
+                  Cuota Google: <b>{mailQuota}</b> envíos disponibles hoy
+                </span>
+              </div>
+            )}
+
             {/* Botón Reenvío Masivo de Comprobantes */}
             <button
               onClick={() => {
@@ -706,14 +801,18 @@ export default function AdminDashboard() {
             className={`flex items-center justify-between gap-3 p-4 rounded-2xl shadow-sm text-xs sm:text-sm font-semibold transition ${
               notification.type === "success"
                 ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                : notification.type === "error"
-                  ? "bg-red-50 text-red-800 border border-red-200"
-                  : "bg-blue-50 text-blue-800 border border-blue-200"
+                : notification.type === "warning"
+                  ? "bg-amber-50 text-amber-900 border border-amber-300 ring-1 ring-amber-200"
+                  : notification.type === "error"
+                    ? "bg-red-50 text-red-800 border border-red-200"
+                    : "bg-blue-50 text-blue-800 border border-blue-200"
             }`}
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {notification.type === "success" ? (
                 <CheckCircle className="size-5 text-emerald-600 shrink-0" />
+              ) : notification.type === "warning" ? (
+                <AlertTriangle className="size-5 text-amber-600 shrink-0" />
               ) : (
                 <AlertTriangle className="size-5 text-red-600 shrink-0" />
               )}
@@ -1552,8 +1651,39 @@ export default function AdminDashboard() {
                   </label>
                 </div>
 
-                <div className="rounded-xl bg-brand-50 p-3 text-xs text-brand-900 border border-brand-200">
-                  ℹ️ Los correos se remitirán desde la cuenta oficial del Congreso con su plantilla institucional y código QR de alta resolución adjunto.
+                {mailQuota === 0 && (
+                  <div className="rounded-2xl bg-rose-50 p-4 text-xs text-rose-900 border border-rose-300 ring-1 ring-rose-200 space-y-1.5">
+                    <div className="flex items-center gap-2 font-black text-rose-700">
+                      <AlertTriangle className="size-4 shrink-0 text-rose-600" />
+                      <span>Cuota diaria de correos agotada en Google (0 envíos disponibles hoy)</span>
+                    </div>
+                    <p className="text-rose-800 leading-relaxed">
+                      Google impone un límite máximo diario de correos salientes («<i>Servicio solicitado demasiadas veces para un mismo día: email</i>»). Cualquier reenvío en este momento rebotará hasta que <b>Google restablezca automáticamente la cuota en las próximas 24 horas</b>.
+                    </p>
+                  </div>
+                )}
+
+                {typeof mailQuota === "number" && mailQuota > 0 && (
+                  <div className="rounded-2xl bg-emerald-50 p-3.5 text-xs text-emerald-900 border border-emerald-200 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Mail className="size-4 text-emerald-600 shrink-0" />
+                      <span><b>Cuota disponible hoy:</b> ~{mailQuota} correos restantes en Google</span>
+                    </div>
+                    {mailQuota < data.length && (
+                      <span className="text-[11px] font-bold text-emerald-800 bg-white/70 px-2 py-0.5 rounded-md border border-emerald-300">
+                        Recomendado: Por selección manual
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="rounded-xl bg-brand-50 p-3 text-xs text-brand-900 border border-brand-200 space-y-1">
+                  <p className="font-semibold text-brand-950">
+                    ℹ️ Información sobre límites de envío de Google:
+                  </p>
+                  <p className="text-brand-800 leading-relaxed text-[11px]">
+                    Las cuentas estándar de Gmail tienen un límite estricto de 100 correos/día, mientras que las cuentas Google Workspace permiten hasta 1.500 correos/día. Para volúmenes altos, se recomienda marcar participantes manualmente y reenviar por lotes.
+                  </p>
                 </div>
               </div>
 
@@ -1569,14 +1699,20 @@ export default function AdminDashboard() {
 
                 <button
                   type="button"
-                  disabled={bulkSending}
+                  disabled={bulkSending || mailQuota === 0}
                   onClick={handleResendBulk}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-clinic-600 px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-md shadow-brand-500/25 transition hover:brightness-110 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-clinic-600 px-5 py-2 text-xs sm:text-sm font-bold text-white shadow-md shadow-brand-500/25 transition hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={mailQuota === 0 ? "Cuota de Google agotada hoy. Espera 24 horas." : "Iniciar reenvío"}
                 >
                   {bulkSending ? (
                     <>
                       <RefreshCw className="size-4 animate-spin" />
                       Procesando reenvío masivo...
+                    </>
+                  ) : mailQuota === 0 ? (
+                    <>
+                      <AlertTriangle className="size-4" />
+                      Cuota Agotada Hoy (0 envíos)
                     </>
                   ) : (
                     <>

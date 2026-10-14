@@ -67,10 +67,26 @@ export async function POST(req: Request) {
 
     const data = await res.json();
     if (!data.ok) {
-      return NextResponse.json({ ok: false, error: data.error });
+      return NextResponse.json({
+        ok: false,
+        error: data.error,
+        quotaExceeded: data.quotaExceeded,
+        data: data.data,
+      });
     }
 
-    return NextResponse.json({ ok: true, data: data.data });
+    return NextResponse.json({
+      ok: true,
+      data: data.data,
+      mailQuota:
+        data.mailQuota !== undefined
+          ? data.mailQuota
+          : data.data?.quotaRemaining !== undefined
+            ? data.data.quotaRemaining
+            : null,
+      stoppedByQuota: data.data?.stoppedByQuota || data.stoppedByQuota,
+      quotaExceeded: data.data?.quotaExceeded || data.quotaExceeded,
+    });
   } catch (error) {
     return NextResponse.json({ ok: false, error: "Error de servidor." }, { status: 500 });
   }

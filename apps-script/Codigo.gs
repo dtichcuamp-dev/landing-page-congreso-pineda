@@ -125,6 +125,11 @@ function doGet(e) {
     if (action === 'check_registration') {
       return json_(checkExistingRegistration_(p.cedula, p.correo));
     }
+    if (action === 'get_mail_quota') {
+      var q = null;
+      try { q = MailApp.getRemainingDailyQuota(); } catch (_) {}
+      return json_({ ok: true, quota: q });
+    }
 
     return json_({
       ok: true,
@@ -157,7 +162,9 @@ function doPost(e) {
     }
     if (body.action === 'get_dashboard') {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
-      return json_({ ok: true, data: getDashboardData_() });
+      var qDashboard = null;
+      try { qDashboard = MailApp.getRemainingDailyQuota(); } catch (_) {}
+      return json_({ ok: true, data: getDashboardData_(), mailQuota: qDashboard });
     }
     if (body.action === 'approve_payment') {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
@@ -917,9 +924,28 @@ function resendBulkEmails_(body) {
   var ids = body.ids; // Array de IDs específicos o nulo para todos
   var filter = body.filter || 'all'; // 'all', 'approved_only', 'pending_only'
 
+  var initialQuota = -1;
+  try {
+    initialQuota = MailApp.getRemainingDailyQuota();
+  } catch (qErr) {
+    console.warn('No se pudo consultar cuota de correo:', qErr);
+  }
+
+  // Si la cuota ya está en 0 antes de iniciar, detener de inmediato
+  if (initialQuota === 0) {
+    return {
+      success: false,
+      quotaExceeded: true,
+      sentCount: 0,
+      totalCount: 0,
+      quotaRemaining: 0,
+      error: 'Se ha agotado el límite diario de correos de Google (0 envíos disponibles hoy). Google restablece automáticamente esta cuota en 24 horas.'
+    };
+  }
+
   var sh = getSheet_();
   var data = sh.getDataRange().getValues();
-  if (data.length < 2) return { success: true, sentCount: 0, totalCount: 0, failed: [] };
+  if (data.length < 2) return { success: true, sentCount: 0, totalCount: 0, failed: [], quotaRemaining: initialQuota };
 
   var idsMap = null;
   if (ids && Array.isArray(ids) && ids.length > 0) {
@@ -931,6 +957,7 @@ function resendBulkEmails_(body) {
 
   var sentCount = 0;
   var failed = [];
+  var stoppedByQuota = false;
   var stamp = Utilities.formatDate(new Date(), 'America/Caracas', 'dd/MM/yyyy HH:mm:ss');
 
   for (var i = 1; i < data.length; i++) {
@@ -945,7 +972,7 @@ function resendBulkEmails_(body) {
     if (filter === 'pending_only' && estado !== 'Pendiente de verificación') continue;
 
     if (!correo || correo.indexOf('@') === -1) {
-      failed.push({ id: currentId, error: 'Correo inválido o ausente' });
+      failed.push({ id: currentId, error: 'Correo inválido o ausente', isInvalidEmail: true });
       continue;
     }
 
@@ -968,18 +995,39 @@ function resendBulkEmails_(body) {
       if (res.success) {
         sentCount++;
       } else {
-        failed.push({ id: currentId, correo: correo, error: res.error });
+        var errStr = String(res.error || '');
+        var isQuota = errStr.indexOf('demasiadas veces') !== -1 || errStr.toLowerCase().indexOf('quota') !== -1;
+        failed.push({ id: currentId, correo: correo, error: errStr, isQuota: isQuota });
+
+        // Si se agotó la cuota de Google, detener el ciclo de inmediato
+        if (isQuota) {
+          stoppedByQuota = true;
+          break;
+        }
       }
     } catch (err) {
-      failed.push({ id: currentId, correo: correo, error: err.message || String(err) });
+      var exStr = String(err && err.message ? err.message : err);
+      var isQuotaEx = exStr.indexOf('demasiadas veces') !== -1 || exStr.toLowerCase().indexOf('quota') !== -1;
+      failed.push({ id: currentId, correo: correo, error: exStr, isQuota: isQuotaEx });
+      if (isQuotaEx) {
+        stoppedByQuota = true;
+        break;
+      }
     }
   }
+
+  var finalQuota = initialQuota;
+  try {
+    finalQuota = MailApp.getRemainingDailyQuota();
+  } catch (_) {}
 
   return {
     success: true,
     sentCount: sentCount,
     totalCount: data.length - 1,
-    failed: failed
+    failed: failed,
+    stoppedByQuota: stoppedByQuota,
+    quotaRemaining: finalQuota
   };
 }
 
