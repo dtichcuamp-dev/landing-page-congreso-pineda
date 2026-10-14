@@ -13,8 +13,22 @@ import { Speakers } from "@/components/sections/Speakers";
 import { Specialties } from "@/components/sections/Specialties";
 import { Sponsors } from "@/components/sections/Sponsors";
 import { Venue } from "@/components/sections/Venue";
+import MaintenancePage from "./mantenimiento/page";
+import { IS_MAINTENANCE_ACTIVE } from "@/config/site";
 
-export default function Home() {
+interface PageProps {
+  searchParams?: Promise<{ preview?: string }>;
+}
+
+export default async function Home(props: PageProps) {
+  const searchParams = props.searchParams ? await props.searchParams : {};
+  const isPreview = searchParams.preview === "pineda2026";
+
+  // Si el modo de mantenimiento está activo y no se usa el token de preview, mostrar pantalla de mantenimiento
+  if (IS_MAINTENANCE_ACTIVE && !isPreview) {
+    return <MaintenancePage />;
+  }
+
   return (
     <>
       <Navbar />
