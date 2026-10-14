@@ -347,8 +347,8 @@ export function RegistrationForm() {
         apellidos: values.apellidos.trim().toUpperCase(),
         pais: (values.pais.trim() || "VENEZUELA").toUpperCase(),
         estado: (values.estado.trim() || "LARA").toUpperCase(),
-        municipio: (values.municipio.trim() || "IRIBARREN").toUpperCase(),
-        parroquia: (values.parroquia.trim() || "CONCEPCIÓN").toUpperCase(),
+        municipio: values.municipio.trim().toUpperCase(),
+        parroquia: values.parroquia.trim().toUpperCase(),
         nombrePonencia: values.nombrePonencia ? values.nombrePonencia.trim().toUpperCase() : "",
         especialidad: values.especialidad ? values.especialidad.trim().toUpperCase() : "",
       };
@@ -964,6 +964,7 @@ export function RegistrationForm() {
             <Field id="municipio" label="Municipio" error={errors.municipio} required>
               <input
                 id="municipio"
+                placeholder="EJ. IRIBARREN, PALAVECINO..."
                 className={`${inputClass(!!errors.municipio)} uppercase`}
                 value={values.municipio}
                 onChange={(e) => set("municipio", e.target.value.toUpperCase())}
@@ -974,6 +975,7 @@ export function RegistrationForm() {
             <Field id="parroquia" label="Parroquia" error={errors.parroquia} required>
               <input
                 id="parroquia"
+                placeholder="EJ. CATEDRAL, CONCEPCIÓN..."
                 className={`${inputClass(!!errors.parroquia)} uppercase`}
                 value={values.parroquia}
                 onChange={(e) => set("parroquia", e.target.value.toUpperCase())}

@@ -499,8 +499,10 @@ function validate_(b) {
   // País, Estado, Municipio, Parroquia (ALMACENAR EN MAYÚSCULAS)
   var pais = (str_(b.pais, 120) || 'VENEZUELA').toUpperCase();
   var estado = (str_(b.estado, 120) || 'LARA').toUpperCase();
-  var municipio = (str_(b.municipio, 120) || 'IRIBARREN').toUpperCase();
-  var parroquia = (str_(b.parroquia, 120) || 'CONCEPCIÓN').toUpperCase();
+  var municipio = str_(b.municipio, 120).toUpperCase();
+  var parroquia = str_(b.parroquia, 120).toUpperCase();
+  if (!municipio) throw new UserError_('Por favor ingresa el Municipio.');
+  if (!parroquia) throw new UserError_('Por favor ingresa la Parroquia.');
 
   // 3. Tipo de participante y tarifa (ALMACENAR EN MAYÚSCULAS)
   var tipoId = b.tipoParticipante;
