@@ -1115,7 +1115,7 @@ async function buildBrochure() {
         morning: [
           {
             salon: 'Salón Principal (1):',
-            text: 'Jornada de Medicina Interna (8:30 a. m. – 12:40 p. m.): Historia clínica (Dra. I. González), anticoagulación, neuroinfecciones, paraneoplásicos, eje cardiorrenometabólico, preeclampsia (Dr. Á. Echenique) y vasculitis.'
+            text: 'Jornada de Medicina Interna (8:30 a. m. – 12:40 p. m.): Apertura (Dra. R. Rosario), historia clínica (Dra. I. González), anticoagulación, neuroinfecciones (Dr. J. Rodríguez), paraneoplásicos, eje cardiorrenometabólico (Dra. A. Aguilar), composición corporal, preeclampsia (Dr. Á. Echenique) y vasculitis (Dra. M. Ramos).'
           },
           {
             salon: 'Salón Alterno (2):',
