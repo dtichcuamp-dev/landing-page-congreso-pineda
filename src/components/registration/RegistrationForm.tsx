@@ -201,14 +201,19 @@ export function RegistrationForm() {
         setHcuampVerifiedCedula(null);
         setHcuampFeedback({
           status: "not_found",
-          message: "Cédula no encontrada en nómina activa del HCUAMP. Verifica el número ingresado. Si perteneces al personal del HCUAMP y no apareces en nómina, consulta con el Comité Organizador.",
+          message:
+            "Cédula no encontrada en la nómina activa del HCUAMP. Por seguridad institucional, no se permite avanzar bajo esta categoría. Si perteneces a otra institución o eres participante general, selecciona «Otra Institución» para continuar tu inscripción.",
         });
+        setErrors((e) => ({
+          ...e,
+          cedula: "Cédula no registrada en nómina HCUAMP. No se permite avanzar como personal del hospital; selecciona «Otra Institución».",
+        }));
       }
     } catch {
       setHcuampVerifiedCedula(null);
       setHcuampFeedback({
         status: "error",
-        message: "No se pudo consultar la nómina en este momento. Completa tus datos manualmente.",
+        message: "No se pudo consultar la nómina en este momento. Por favor reintenta en unos instantes.",
       });
     } finally {
       setSearchingHcuamp(false);
@@ -243,10 +248,13 @@ export function RegistrationForm() {
 
     // ── Paso 0: Verificación de Cédula HCUAMP en Nómina (Dato protegido) ──
     if (step === 0 && values.origenInstitucion === "HCUAMP") {
-      if (!hcuampVerifiedCedula || cleanCedula(values.cedula) !== hcuampVerifiedCedula) {
+      if (!isHcuampCedulaLocked) {
         setErrors({
           ...e,
-          cedula: "Para registrarte como personal del HCUAMP, debes consultar y validar tu cédula en la nómina institucional.",
+          cedula:
+            hcuampFeedback.status === "not_found"
+              ? "Esta cédula no figura en la nómina del HCUAMP. No se permite avanzar como personal del hospital. Si deseas inscribirte, selecciona «Otra Institución»."
+              : "Debes consultar y validar tu número de cédula en la nómina del HCUAMP para poder avanzar.",
         });
         return;
       }
@@ -886,8 +894,41 @@ export function RegistrationForm() {
                 </div>
               )}
               {hcuampFeedback.status === "not_found" && (
-                <div className="rounded-xl bg-amber-50 p-2.5 text-xs text-amber-800 ring-1 ring-amber-200">
-                  {hcuampFeedback.message}
+                <div className="rounded-2xl bg-red-50/90 p-4 border border-red-300 text-left space-y-3 animate-in fade-in">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-700 ring-4 ring-red-50">
+                      <ShieldAlert className="size-5" />
+                    </span>
+                    <div className="space-y-1">
+                      <h5 className="text-xs font-bold text-red-950 uppercase tracking-wide">
+                        Cédula no encontrada en nómina activa HCUAMP
+                      </h5>
+                      <p className="text-xs text-red-900 leading-relaxed">
+                        El número <b>{values.nacionalidad}-{values.cedula}</b> no figura en los registros de personal del Hospital Central Universitario Dr. Antonio María Pineda.
+                      </p>
+                      <p className="text-xs font-bold text-red-950">
+                        Por motivos de control y seguridad institucional, NO se permite avanzar como personal del HCUAMP. Para continuar tu inscripción, debes seleccionar la opción «Otra Institución».
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-red-200/60">
+                    <button
+                      type="button"
+                      onClick={() => handleOrigenChange("OTRA")}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-brand-700 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-brand-800 transition"
+                    >
+                      <Building2 className="size-3.5" />
+                      Seleccionar «Otra Institución» y continuar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetHcuampCedula}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-red-300 bg-white px-3.5 py-2 text-xs font-semibold text-red-800 hover:bg-red-50 transition"
+                    >
+                      <RefreshCw className="size-3.5 text-red-600" />
+                      Intentar con otro número
+                    </button>
+                  </div>
                 </div>
               )}
               {hcuampFeedback.status === "error" && (
@@ -900,8 +941,42 @@ export function RegistrationForm() {
 
           {/* Formulario de Datos Personales */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {isHcuamp ? (
-              <Field id="cedula_display" label="Cédula de identidad (HCUAMP)" className="sm:col-span-2">
+            {isHcuamp && !isHcuampCedulaLocked ? (
+              <div className="sm:col-span-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-6 text-center">
+                {hcuampFeedback.status === "not_found" ? (
+                  <div className="max-w-md mx-auto space-y-3">
+                    <div className="flex size-12 mx-auto items-center justify-center rounded-2xl bg-red-100 text-red-700 ring-4 ring-red-50">
+                      <ShieldAlert className="size-6" />
+                    </div>
+                    <h4 className="text-sm font-bold text-red-950">Acceso HCUAMP No Autorizado</h4>
+                    <p className="text-xs text-red-900 leading-relaxed">
+                      Esta cédula no figura en los registros de nómina activa del hospital. No está permitido avanzar con el registro bajo la categoría institucional HCUAMP.
+                    </p>
+                    <p className="text-xs font-bold text-red-950">
+                      Para formalizar tu inscripción en el congreso, selecciona «Otra Institución».
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleOrigenChange("OTRA")}
+                      className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-brand-800 transition"
+                    >
+                      <Building2 className="size-4" /> Seleccionar «Otra Institución»
+                    </button>
+                  </div>
+                ) : (
+                  <div className="max-w-md mx-auto space-y-2 text-ink-soft">
+                    <Search className="size-8 mx-auto text-brand-500 opacity-80" />
+                    <h4 className="text-sm font-bold text-ink">Validación de Cédula Requerida</h4>
+                    <p className="text-xs text-ink-mute leading-relaxed">
+                      Ingresa tu número de cédula en el módulo de búsqueda superior y haz clic en <b>«Buscar en nómina»</b> para validar tu identidad y cargar tus datos institucionales.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                {isHcuamp ? (
+                  <Field id="cedula_display" label="Cédula de identidad (HCUAMP)" className="sm:col-span-2">
                 <div className="relative flex items-center">
                   <span className="absolute left-3 text-emerald-600">
                     <Lock className="size-4" />
@@ -1088,7 +1163,9 @@ export function RegistrationForm() {
                 aria-invalid={!!errors.parroquia}
               />
             </Field>
-          </div>
+          </>
+        )}
+      </div>
         </div>
       )}
 
@@ -1309,21 +1386,55 @@ export function RegistrationForm() {
         )}
 
         {step < maxSteps - 1 ? (
-          <button
-            type="submit"
-            disabled={checkingDuplicate}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-clinic-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-brand-500/25 transition hover:brightness-110 disabled:opacity-70"
-          >
-            {checkingDuplicate ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden /> Verificando cédula…
-              </>
-            ) : (
-              <>
-                {step === 0 ? "Siguiente" : "Continuar"} <ArrowRight className="size-4" aria-hidden />
-              </>
-            )}
-          </button>
+          step === 0 && isHcuamp && !isHcuampCedulaLocked ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (hcuampFeedback.status === "not_found") {
+                  setErrors((e) => ({
+                    ...e,
+                    cedula:
+                      "Cédula no encontrada en la nómina del HCUAMP. No se permite avanzar como personal del hospital. Para continuar tu inscripción, debes seleccionar «Otra Institución».",
+                  }));
+                } else {
+                  setErrors((e) => ({
+                    ...e,
+                    cedula:
+                      "Debes consultar y validar tu número de cédula en la nómina del HCUAMP para poder avanzar.",
+                  }));
+                }
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-slate-200 px-6 py-3 text-sm font-bold text-slate-500 cursor-not-allowed select-none shadow-sm transition hover:bg-slate-300/80"
+              title={
+                hcuampFeedback.status === "not_found"
+                  ? "No puedes avanzar como personal del HCUAMP. Selecciona «Otra Institución»."
+                  : "Debes validar tu cédula en nómina para continuar"
+              }
+            >
+              <Lock className="size-4 text-slate-500" />
+              <span>
+                {hcuampFeedback.status === "not_found"
+                  ? "Bloqueado (No figura en nómina)"
+                  : "Valida tu cédula para continuar"}
+              </span>
+            </button>
+          ) : (
+            <button
+              type="submit"
+              disabled={checkingDuplicate}
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-clinic-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-brand-500/25 transition hover:brightness-110 disabled:opacity-70"
+            >
+              {checkingDuplicate ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden /> Verificando cédula…
+                </>
+              ) : (
+                <>
+                  {step === 0 ? "Siguiente" : "Continuar"} <ArrowRight className="size-4" aria-hidden />
+                </>
+              )}
+            </button>
+          )
         ) : (
           <button
             type="submit"
