@@ -14,10 +14,12 @@ import {
   Download,
   Hospital,
   Loader2,
+  Lock,
   Mail,
   MapPin,
   Printer,
   QrCode,
+  RefreshCw,
   Search,
   Send,
   ShieldAlert,
@@ -65,6 +67,7 @@ export function RegistrationForm() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [searchingHcuamp, setSearchingHcuamp] = useState(false);
+  const [hcuampVerifiedCedula, setHcuampVerifiedCedula] = useState<string | null>(null);
   const [hcuampFeedback, setHcuampFeedback] = useState<{
     status: "idle" | "found" | "not_found" | "error";
     message?: string;
@@ -128,9 +131,17 @@ export function RegistrationForm() {
       nombrePonencia: "",
       especialidad: "",
     }));
+    setHcuampVerifiedCedula(null);
     setHcuampFeedback({ status: "idle" });
     setAlreadyRegistered(null);
     setErrors({});
+  };
+
+  const handleResetHcuampCedula = () => {
+    setHcuampVerifiedCedula(null);
+    setHcuampFeedback({ status: "idle" });
+    set("cedula", "");
+    setAlreadyRegistered(null);
   };
 
   const checkCedulaDuplicate = async (rawCed: string) => {
@@ -181,17 +192,20 @@ export function RegistrationForm() {
           fechaNacimiento: res.data?.fechaNacimiento || v.fechaNacimiento,
           telefono: res.data?.telefono || v.telefono,
         }));
+        setHcuampVerifiedCedula(rawCed);
         setHcuampFeedback({
           status: "found",
-          message: "✓ Datos encontrados y cargados desde la nómina HCUAMP. Puedes editarlos si lo requieres.",
+          message: "✓ Cédula validada en nómina institucional HCUAMP. Este dato ha sido protegido y bloqueado contra alteraciones.",
         });
       } else {
+        setHcuampVerifiedCedula(null);
         setHcuampFeedback({
           status: "not_found",
-          message: "Cédula no encontrada en nómina activa. Puedes completar tus datos manualmente.",
+          message: "Cédula no encontrada en nómina activa del HCUAMP. Verifica el número ingresado. Si perteneces al personal del HCUAMP y no apareces en nómina, consulta con el Comité Organizador.",
         });
       }
     } catch {
+      setHcuampVerifiedCedula(null);
       setHcuampFeedback({
         status: "error",
         message: "No se pudo consultar la nómina en este momento. Completa tus datos manualmente.",
@@ -202,6 +216,7 @@ export function RegistrationForm() {
   };
 
   const isHcuamp = values.origenInstitucion === "HCUAMP";
+  const isHcuampCedulaLocked = isHcuamp && Boolean(hcuampVerifiedCedula && cleanCedula(values.cedula) === hcuampVerifiedCedula);
   const selectedTypeInfo = values.tipoParticipante ? PARTICIPANT_BY_ID[values.tipoParticipante] : null;
   const isExoneratedType = isHcuamp || (selectedTypeInfo ? selectedTypeInfo.rate === 0 : false);
   const maxSteps = isExoneratedType ? 2 : 3;
@@ -225,6 +240,17 @@ export function RegistrationForm() {
 
   const next = async () => {
     const e = validateStep(step, values);
+
+    // ── Paso 0: Verificación de Cédula HCUAMP en Nómina (Dato protegido) ──
+    if (step === 0 && values.origenInstitucion === "HCUAMP") {
+      if (!hcuampVerifiedCedula || cleanCedula(values.cedula) !== hcuampVerifiedCedula) {
+        setErrors({
+          ...e,
+          cedula: "Para registrarte como personal del HCUAMP, debes consultar y validar tu cédula en la nómina institucional.",
+        });
+        return;
+      }
+    }
 
     // ── Paso 0: Verificación estricta de Participante Único (Anti-Duplicados) ──
     if (step === 0 && Object.keys(e).length === 0) {
@@ -333,6 +359,17 @@ export function RegistrationForm() {
       return;
     }
 
+    // Verificación final de integridad para HCUAMP
+    if (values.origenInstitucion === "HCUAMP") {
+      if (!hcuampVerifiedCedula || cleanCedula(values.cedula) !== hcuampVerifiedCedula) {
+        setServerError(
+          "Validación de seguridad: La cédula del participante HCUAMP debe coincidir con el registro verificado en nómina institucional."
+        );
+        goTo(0);
+        return;
+      }
+    }
+
     setSubmitting(true);
     setServerError(null);
     try {
@@ -382,6 +419,8 @@ export function RegistrationForm() {
     setErrors({});
     setResult(null);
     setQrCodeUrl(null);
+    setHcuampVerifiedCedula(null);
+    setAlreadyRegistered(null);
     setHcuampFeedback({ status: "idle" });
     setStep(0);
   };
@@ -744,51 +783,84 @@ export function RegistrationForm() {
                 <div className="flex gap-2 flex-1">
                   <select
                     aria-label="Nacionalidad"
-                    className={`${inputClass(false)} !w-20 shrink-0`}
+                    disabled={isHcuampCedulaLocked}
+                    className={`${inputClass(false)} !w-20 shrink-0 ${isHcuampCedulaLocked ? "!bg-slate-100 !text-slate-800 cursor-not-allowed select-none" : ""}`}
                     value={values.nacionalidad}
                     onChange={(e) => set("nacionalidad", e.target.value as "V" | "E")}
                   >
                     <option value="V">V</option>
                     <option value="E">E</option>
                   </select>
-                  <input
-                    id="cedula_lookup"
-                    inputMode="numeric"
-                    placeholder="Número de cédula (ej. 12345678)"
-                    className={inputClass(!!errors.cedula)}
-                    value={values.cedula}
-                    onBlur={() => checkCedulaDuplicate(values.cedula)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleLookupHcuamp();
-                      }
-                    }}
-                    onChange={(e) => {
-                      set("cedula", e.target.value.replace(/[^\d.]/g, ""));
-                      setHcuampFeedback({ status: "idle" });
-                    }}
-                  />
+                  <div className="relative flex-1">
+                    <input
+                      id="cedula_lookup"
+                      inputMode="numeric"
+                      readOnly={isHcuampCedulaLocked}
+                      placeholder="Número de cédula (ej. 12345678)"
+                      className={`${inputClass(!!errors.cedula)} ${
+                        isHcuampCedulaLocked
+                          ? "!bg-slate-100 !text-slate-900 font-mono font-bold cursor-not-allowed select-none pl-9 ring-1 ring-emerald-400"
+                          : ""
+                      }`}
+                      value={values.cedula}
+                      onBlur={() => !isHcuampCedulaLocked && checkCedulaDuplicate(values.cedula)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !isHcuampCedulaLocked) {
+                          e.preventDefault();
+                          handleLookupHcuamp();
+                        }
+                      }}
+                      onChange={(e) => {
+                        if (!isHcuampCedulaLocked) {
+                          set("cedula", e.target.value.replace(/[^\d.]/g, ""));
+                          setHcuampFeedback({ status: "idle" });
+                        }
+                      }}
+                    />
+                    {isHcuampCedulaLocked && (
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-emerald-600" />
+                    )}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  disabled={searchingHcuamp || checkingDuplicate}
-                  onClick={handleLookupHcuamp}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
-                >
-                  {searchingHcuamp ? (
-                    <>
-                      <Loader2 className="size-3.5 animate-spin" />
-                      Consultando…
-                    </>
-                  ) : (
-                    <>
-                      <Search className="size-3.5" />
-                      Buscar en nómina
-                    </>
-                  )}
-                </button>
+
+                {isHcuampCedulaLocked ? (
+                  <button
+                    type="button"
+                    onClick={handleResetHcuampCedula}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-ink shadow-sm transition hover:bg-slate-50"
+                    title="Permite consultar otra cédula en la nómina"
+                  >
+                    <RefreshCw className="size-3.5 text-slate-600" />
+                    Consultar otra cédula
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={searchingHcuamp || checkingDuplicate}
+                    onClick={handleLookupHcuamp}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-60"
+                  >
+                    {searchingHcuamp ? (
+                      <>
+                        <Loader2 className="size-3.5 animate-spin" />
+                        Consultando…
+                      </>
+                    ) : (
+                      <>
+                        <Search className="size-3.5" />
+                        Buscar en nómina
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
+
+              {isHcuampCedulaLocked && (
+                <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200">
+                  <Lock className="size-4 text-emerald-600 shrink-0" />
+                  <span>Cédula validada en nómina HCUAMP. Por seguridad institucional, este dato queda protegido y no puede modificarse.</span>
+                </div>
+              )}
 
               {errors.cedula && (
                 <p className="text-xs font-medium text-red-600">{errors.cedula}</p>
@@ -828,7 +900,41 @@ export function RegistrationForm() {
 
           {/* Formulario de Datos Personales */}
           <div className="grid gap-4 sm:grid-cols-2">
-            {!isHcuamp && (
+            {isHcuamp ? (
+              <Field id="cedula_display" label="Cédula de identidad (HCUAMP)" className="sm:col-span-2">
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 text-emerald-600">
+                    <Lock className="size-4" />
+                  </span>
+                  <input
+                    id="cedula_display"
+                    type="text"
+                    readOnly
+                    disabled
+                    value={
+                      values.cedula
+                        ? `${values.nacionalidad}-${values.cedula}`
+                        : "Debes validar tu cédula en el módulo superior"
+                    }
+                    className={`w-full rounded-xl py-2.5 pl-9 pr-28 text-sm font-mono font-bold cursor-not-allowed select-none transition ${
+                      isHcuampCedulaLocked
+                        ? "bg-slate-100/90 text-slate-900 ring-1 ring-emerald-300 shadow-inner"
+                        : "bg-slate-50 text-slate-400 ring-1 ring-slate-200 italic"
+                    }`}
+                  />
+                  {isHcuampCedulaLocked && (
+                    <span className="absolute right-2.5 inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800 ring-1 ring-emerald-200">
+                      <Check className="size-3" /> No editable
+                    </span>
+                  )}
+                </div>
+                <p className="mt-1 text-[11px] text-ink-mute">
+                  {isHcuampCedulaLocked
+                    ? "Dato validado contra la nómina del HCUAMP. Por seguridad institucional este número no puede ser alterado."
+                    : "Ingresa tu número en el módulo superior para validarlo contra nómina activa."}
+                </p>
+              </Field>
+            ) : (
               <Field id="cedula" label="Cédula de identidad" error={errors.cedula} required className="sm:col-span-2">
                 <div className="flex gap-2">
                   <select
