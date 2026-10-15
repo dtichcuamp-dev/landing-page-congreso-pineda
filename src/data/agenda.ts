@@ -132,7 +132,7 @@ const IMAGENES: Session = {
   talks: [
     cer("8:30 a. m.", "Bienvenida y apertura", "Servicio de Diagnóstico por Imágenes"),
     t("9:00 a. m.", "Traumatismo craneoencefálico: claves radiológicas en la toma de decisión quirúrgica vs. expectante", "Dra. Maruja Hidalgo y Dr. Ygnacio Ramírez"),
-    t("9:30 a. m.", "Evaluación radiológica de la pelvis traumática: signos de inestabilidad e impacto en la conducta quirúrgica", "Dr. Douglas García y Dr. Alejandro Orduz"),
+    t("9:30 a. m.", "Evaluación radiológica de la pelvis traumática: signos de inestabilidad e impacto en la conducta quirúrgica", "Dr. Douglas Garcías y Dr. Alejandro Orduz"),
     t("10:00 a. m.", "Ecografía pulmonar en emergencias: diagnóstico rápido a la cabecera del paciente", "Dra. María Daniela González y Dra. Karla Tamayo"),
     t("10:30 a. m.", "Algoritmo imagenológico en la embarazada", "Dr. Carlos Roa"),
     brk("10:30 – 10:50 a. m.", "Coffee Break · Receso"),
