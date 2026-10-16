@@ -263,7 +263,7 @@ export function Speakers() {
                         <h3 className="text-lg font-extrabold text-ink group-hover:text-brand-700 transition-colors line-clamp-1">
                           {speaker.name}
                         </h3>
-                        <p className="mt-0.5 text-xs font-semibold text-ink-soft line-clamp-1">
+                        <p className="mt-0.5 text-xs font-semibold text-ink-soft line-clamp-2 min-h-[2rem] leading-snug">
                           {speaker.role}
                         </p>
 
