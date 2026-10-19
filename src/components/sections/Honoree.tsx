@@ -6,7 +6,6 @@ import {
   Medal,
   Trophy,
   GraduationCap,
-  Stethoscope,
   Building2,
   Sparkles,
   Globe,
@@ -62,22 +61,23 @@ export function Honoree() {
                   {/* Halo dorado pulsante */}
                   <div
                     aria-hidden
-                    className="absolute -inset-2 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 opacity-30 blur-lg"
+                    className="absolute -inset-3 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 opacity-40 blur-xl animate-pulse"
                   />
-                  
-                  {/* Marco circular de honor */}
-                  <div className="relative flex size-40 sm:size-48 flex-col items-center justify-center rounded-full border-4 border-amber-300/80 bg-gradient-to-b from-slate-900 via-brand-950 to-slate-900 text-white shadow-2xl">
-                    <Crown className="size-8 text-amber-300 mb-1 animate-pulse" />
-                    <span className="font-serif text-3xl sm:text-4xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-300">
-                      SK
-                    </span>
-                    <span className="text-[11px] font-semibold uppercase tracking-widest text-amber-200/90 mt-1">
-                      Dr. Samir Saba
-                    </span>
-                    <div className="mt-1.5 flex items-center gap-1 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-[10px] font-bold text-amber-200 border border-amber-400/30">
-                      <Stethoscope className="size-3" />
-                      <span>GyO · UCLA</span>
-                    </div>
+                  {/* Anillo decorativo exterior */}
+                  <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-300 to-amber-400 opacity-80" />
+
+                  {/* Fotografía real del Homenajeado */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/dr-samir-saba-kahwati.jpg"
+                    alt="Dr. Samir Saba Kahwati — Homenajeado XIV Congreso Pineda"
+                    className="relative size-40 sm:size-48 rounded-full object-cover object-top border-4 border-white/90 shadow-2xl"
+                  />
+
+                  {/* Insignia de corona superpuesta */}
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-slate-900 shadow-lg border border-amber-300">
+                    <Crown className="size-3" />
+                    <span>Homenajeado</span>
                   </div>
                 </div>
 
