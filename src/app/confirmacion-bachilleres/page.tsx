@@ -116,6 +116,7 @@ type Step = "cedula" | "datos" | "seleccion" | "confirmado";
 export default function ConfirmacionBachilleresPage() {
   // ── Estado general ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("cedula");
+  const [nacionalidad, setNacionalidad] = useState<"V" | "E">("V");
   const [cedulaInput, setCedulaInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,26 +129,41 @@ export default function ConfirmacionBachilleresPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Paso 1 — Búsqueda por cédula
+  // Paso 1 — Búsqueda por cédula con interpretación flexible
   // ─────────────────────────────────────────────────────────────────────────
+  const handleCedulaChange = (raw: string) => {
+    let text = raw.trim().toUpperCase();
+    if (text.startsWith("E-") || text.startsWith("E")) {
+      setNacionalidad("E");
+      text = text.replace(/^E-?/, "");
+    } else if (text.startsWith("V-") || text.startsWith("V")) {
+      setNacionalidad("V");
+      text = text.replace(/^V-?/, "");
+    }
+    const digits = text.replace(/\D/g, "");
+    setCedulaInput(digits);
+    setError(null);
+  };
+
   const handleBuscar = useCallback(async () => {
     const digits = cedulaInput.replace(/\D/g, "");
     if (digits.length < 5) {
-      setError("Ingresa una cédula válida (mínimo 5 dígitos).");
+      setError("Ingresa un número de cédula válido (mínimo 5 dígitos).");
       return;
     }
     setError(null);
     setLoading(true);
     try {
+      const fullCedula = `${nacionalidad}-${digits}`;
       const res = await fetch(
-        `/api/confirmacion-bachilleres?cedula=${encodeURIComponent(digits)}`,
+        `/api/confirmacion-bachilleres?cedula=${encodeURIComponent(fullCedula)}`,
         { cache: "no-store" }
       );
       const data = await res.json();
       if (!data.ok || !data.participant) {
         setError(
           data.error ??
-            "No se encontró un participante con esa cédula en la lista de Bachilleres / Estudiantes de Pregrado. Verifica el número o comunícate con el equipo organizador."
+            `No se encontró un participante con la cédula ${fullCedula} (o ${digits}) en la lista de Bachilleres / Estudiantes de Pregrado. Verifica el número o comunícate con el equipo organizador.`
         );
         setLoading(false);
         return;
@@ -159,7 +175,7 @@ export default function ConfirmacionBachilleresPage() {
     } finally {
       setLoading(false);
     }
-  }, [cedulaInput]);
+  }, [cedulaInput, nacionalidad]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Paso 3 — Confirmar selección definitiva
@@ -176,7 +192,7 @@ export default function ConfirmacionBachilleresPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cedula: participant.cedula.replace(/\D/g, ""),
+          cedula: participant.cedula || `${nacionalidad}-${cedulaInput}`,
           diaId: selectedDia,
           turno: selectedTurno,
           salon: selectedSalon,
@@ -193,7 +209,7 @@ export default function ConfirmacionBachilleresPage() {
       setError("Error de conexión. Verifica tu internet e intenta nuevamente.");
       setSubmitting(false);
     }
-  }, [participant, selectedDia, selectedTurno, selectedSalon]);
+  }, [participant, selectedDia, selectedTurno, selectedSalon, nacionalidad, cedulaInput]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // Helpers de visualización
@@ -205,14 +221,8 @@ export default function ConfirmacionBachilleresPage() {
   const getSalonLabel = (s: SalonId) =>
     s === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)";
 
-  // Filtra los días disponibles: muestra solo los que el participant tiene pre-inscritos
-  // Si no tiene ninguno o son muchos, muestra todos los disponibles.
-  const diasAMostrar =
-    participant?.turnosPreinscritos && participant.turnosPreinscritos.length > 0
-      ? DIAS_DISPONIBLES.filter((d) =>
-          participant.turnosPreinscritos.some((t) => t.diaId === d.id)
-        )
-      : DIAS_DISPONIBLES;
+  // Siempre se muestran todos los días disponibles para que puedan seleccionar libremente
+  const diasAMostrar = DIAS_DISPONIBLES;
 
   // ─────────────────────────────────────────────────────────────────────────
   // Render por pasos
@@ -306,24 +316,32 @@ export default function ConfirmacionBachilleresPage() {
               >
                 Número de Cédula de Identidad
               </label>
-              <div className="flex gap-3">
+              <div className="flex gap-2 sm:gap-3">
+                {/* Selector Nacionalidad V / E */}
+                <select
+                  value={nacionalidad}
+                  onChange={(e) => {
+                    setNacionalidad(e.target.value as "V" | "E");
+                    setError(null);
+                  }}
+                  className="rounded-xl border border-slate-300 bg-slate-50 px-3 py-3 text-sm font-bold text-ink focus:outline-none focus:ring-2 focus:ring-brand-500 transition cursor-pointer shrink-0"
+                  aria-label="Nacionalidad"
+                >
+                  <option value="V">V-</option>
+                  <option value="E">E-</option>
+                </select>
+
                 <div className="relative flex-1">
-                  <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 font-mono text-sm font-bold select-none pointer-events-none">
-                    V-
-                  </span>
                   <input
                     id="cedula"
                     type="text"
                     inputMode="numeric"
-                    placeholder="12345678"
+                    placeholder="Ej. 31930086 o V-31930086"
                     value={cedulaInput}
-                    onChange={(e) => {
-                      setCedulaInput(e.target.value.replace(/\D/g, ""));
-                      setError(null);
-                    }}
+                    onChange={(e) => handleCedulaChange(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                    maxLength={9}
-                    className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-4 py-3 text-base font-mono font-bold text-ink focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                    maxLength={14}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-mono font-bold text-ink focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
                     autoComplete="off"
                   />
                 </div>
@@ -331,7 +349,7 @@ export default function ConfirmacionBachilleresPage() {
                   type="button"
                   onClick={handleBuscar}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-brand-700 active:scale-95 transition disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-md hover:bg-brand-700 active:scale-95 transition disabled:opacity-60 shrink-0"
                 >
                   {loading ? (
                     <span className="inline-block size-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
@@ -537,6 +555,9 @@ export default function ConfirmacionBachilleresPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {diasAMostrar.map((dia) => {
                     const isSelected = selectedDia === dia.id;
+                    const isPreinscrito = participant.turnosPreinscritos?.some(
+                      (t) => t.diaId === dia.id
+                    );
                     return (
                       <button
                         key={dia.id}
@@ -547,13 +568,26 @@ export default function ConfirmacionBachilleresPage() {
                           setSelectedSalon(null);
                           setError(null);
                         }}
-                        className={`rounded-2xl p-3.5 text-left transition border text-sm font-bold ${
+                        className={`rounded-2xl p-3.5 text-left transition border text-sm font-bold relative ${
                           isSelected
                             ? "bg-brand-600 text-white border-brand-600 shadow-md ring-2 ring-brand-400/50"
                             : "bg-slate-50 text-ink border-slate-200 hover:bg-slate-100"
                         }`}
                       >
-                        <span className="block text-base">{dia.shortLabel}</span>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="block text-base">{dia.shortLabel}</span>
+                          {isPreinscrito && (
+                            <span
+                              className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full shrink-0 ${
+                                isSelected
+                                  ? "bg-amber-300 text-slate-900"
+                                  : "bg-amber-100 text-amber-800 border border-amber-200"
+                              }`}
+                            >
+                              Pre-inscrito
+                            </span>
+                          )}
+                        </div>
                         <span
                           className={`block text-[11px] font-normal mt-0.5 ${
                             isSelected ? "text-brand-100" : "text-ink-mute"

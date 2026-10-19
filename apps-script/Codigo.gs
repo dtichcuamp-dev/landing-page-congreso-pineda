@@ -125,6 +125,9 @@ function doGet(e) {
     if (action === 'check_registration') {
       return json_(checkExistingRegistration_(p.cedula, p.correo));
     }
+    if (action === 'lookup_bachiller') {
+      return json_(lookupBachiller_(p.cedula, p.sheetName));
+    }
     if (action === 'get_mail_quota') {
       var q = null;
       try { q = MailApp.getRemainingDailyQuota(); } catch (_) {}
@@ -153,6 +156,12 @@ function doPost(e) {
     // Endpoints especiales
     if (body.action === 'lookup_hcuamp') {
       return json_(lookupHcuamp_(body.cedula));
+    }
+    if (body.action === 'lookup_bachiller') {
+      return json_(lookupBachiller_(body.cedula, body.sheetName));
+    }
+    if (body.action === 'confirm_bachiller') {
+      return json_(confirmBachiller_(body));
     }
     if (body.action === 'get_capacities') {
       return json_(getCapacities_());
@@ -1447,6 +1456,391 @@ function validateAccess_(body) {
 // Alias para retrocompatibilidad
 function scanQr_(body) {
   return validateAccess_(body);
+}
+
+// ───────────────────────────── CONFIRMACIÓN BACHILLERES ─────────────────────────────
+
+/**
+ * Busca por cédula en la hoja "Bachilleres - Estudiantes de Pregrado" (o "Inscripciones").
+ * Interpreta tanto formato numérico puro (31930086) como formatos con prefijo (V-31930086, E-...), con puntos o espacios.
+ */
+function lookupBachiller_(rawCedula, preferredSheetName) {
+  if (!rawCedula) return { ok: false, error: 'Cédula no proporcionada.' };
+  var cleanDigits = String(rawCedula).replace(/\D/g, '');
+  if (!cleanDigits) return { ok: false, error: 'Cédula inválida.' };
+
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+  // 1. Buscar la hoja de Bachilleres
+  var targetName = preferredSheetName || 'Bachilleres - Estudiantes de Pregrado';
+  var sh = ss.getSheetByName(targetName);
+  if (!sh) {
+    try { sh = ss.getSheetByName(decodeURIComponent(targetName)); } catch (_) {}
+  }
+  if (!sh) {
+    var all = ss.getSheets();
+    for (var i = 0; i < all.length; i++) {
+      var n = all[i].getName().trim().toLowerCase();
+      if (n.indexOf('bachiller') !== -1) { sh = all[i]; break; }
+    }
+  }
+
+  // Si no existe hoja separada, buscar en la hoja general de Inscripciones
+  var isGeneralSheet = false;
+  if (!sh) {
+    sh = ss.getSheetByName(CONFIG.SHEET_NAME);
+    isGeneralSheet = true;
+  }
+  if (!sh) return { ok: false, error: 'Hoja de datos no disponible.' };
+
+  var data = sh.getDataRange().getValues();
+  if (data.length < 2) return { ok: true, found: false };
+
+  var headers = data[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
+
+  var colCedula = -1, colNombres = -1, colApellidos = -1, colNombreCompleto = -1;
+  var colCorreo = -1, colTelefono = -1, colTipo = -1;
+  var colTurnosJson = -1, colTurnosTexto = -1, colDias = -1;
+  var colConfirmado = -1, colDiaDef = -1, colTurnoDef = -1, colSalonDef = -1;
+
+  for (var c = 0; c < headers.length; c++) {
+    var h = headers[c];
+    if (h.indexOf('CÉDULA') !== -1 || h.indexOf('CEDULA') !== -1 || h === 'C.I.' || h === 'CI' || h.indexOf('IDENTIDAD') !== -1) {
+      if (colCedula === -1) colCedula = c;
+    } else if (h.indexOf('APELLIDOS Y NOMBRES') !== -1 || h.indexOf('NOMBRES Y APELLIDOS') !== -1 || h === 'NOMBRE COMPLETO') {
+      colNombreCompleto = c;
+    } else if (h.indexOf('NOMBRE') !== -1) {
+      if (colNombres === -1) colNombres = c;
+    } else if (h.indexOf('APELLIDO') !== -1) {
+      if (colApellidos === -1) colApellidos = c;
+    } else if (h.indexOf('CORREO') !== -1 || h.indexOf('EMAIL') !== -1) {
+      if (colCorreo === -1) colCorreo = c;
+    } else if (h.indexOf('TELÉFONO') !== -1 || h.indexOf('TELEFONO') !== -1 || h.indexOf('TLF') !== -1 || h.indexOf('CELULAR') !== -1) {
+      if (colTelefono === -1) colTelefono = c;
+    } else if (h.indexOf('TIPO') !== -1) {
+      if (colTipo === -1) colTipo = c;
+    } else if (h.indexOf('TURNOS (JSON)') !== -1 || h.indexOf('JSON') !== -1) {
+      if (colTurnosJson === -1) colTurnosJson = c;
+    } else if (h.indexOf('TURNOS Y SALONES') !== -1 || h.indexOf('TURNOS') !== -1) {
+      if (colTurnosTexto === -1) colTurnosTexto = c;
+    } else if (h.indexOf('DÍAS') !== -1 || h.indexOf('DIAS') !== -1) {
+      if (colDias === -1) colDias = c;
+    } else if (h.indexOf('CONFIRMA') !== -1 || h.indexOf('ESTADO') !== -1) {
+      if (colConfirmado === -1) colConfirmado = c;
+    } else if (h.indexOf('DÍA DEFINITIVO') !== -1 || h.indexOf('DIA DEFINITIVO') !== -1) {
+      if (colDiaDef === -1) colDiaDef = c;
+    } else if (h.indexOf('TURNO DEFINITIVO') !== -1) {
+      if (colTurnoDef === -1) colTurnoDef = c;
+    } else if (h.indexOf('SALÓN DEFINITIVO') !== -1 || h.indexOf('SALON DEFINITIVO') !== -1) {
+      if (colSalonDef === -1) colSalonDef = c;
+    }
+  }
+
+  if (colCedula === -1) colCedula = isGeneralSheet ? 6 : 0;
+
+  var DIAS_META = {
+    '2026-11-02': { label: 'Lunes 02/11/2026', short: 'Lun 02/11' },
+    '2026-11-03': { label: 'Martes 03/11/2026', short: 'Mar 03/11' },
+    '2026-11-04': { label: 'Miércoles 04/11/2026', short: 'Mié 04/11' },
+    '2026-11-05': { label: 'Jueves 05/11/2026', short: 'Jue 05/11' },
+    '2026-11-06': { label: 'Viernes 06/11/2026', short: 'Vie 06/11' }
+  };
+
+  for (var r = 1; r < data.length; r++) {
+    var cellVal = String(data[r][colCedula] || '').trim();
+    var cellDigits = cellVal.replace(/\D/g, '');
+
+    var isMatch = (cellDigits && cellDigits === cleanDigits) ||
+                  (cellVal.toUpperCase() === String(rawCedula).trim().toUpperCase()) ||
+                  (cellVal.toUpperCase() === ('V-' + cleanDigits)) ||
+                  (cellVal.toUpperCase() === ('E-' + cleanDigits));
+
+    if (isMatch) {
+      var row = data[r];
+      var nombres = '';
+      var apellidos = '';
+
+      if (colNombreCompleto !== -1 && row[colNombreCompleto]) {
+        var full = String(row[colNombreCompleto]).trim();
+        var words = full.split(/\s+/);
+        if (words.length >= 2) {
+          nombres = words.slice(0, words.length - 1).join(' ');
+          apellidos = words[words.length - 1];
+        } else {
+          nombres = full;
+        }
+      } else {
+        if (colNombres !== -1 && row[colNombres]) nombres = String(row[colNombres]).trim();
+        if (colApellidos !== -1 && row[colApellidos]) apellidos = String(row[colApellidos]).trim();
+      }
+
+      var correo = colCorreo !== -1 && row[colCorreo] ? String(row[colCorreo]).trim() : '';
+      var telefono = colTelefono !== -1 && row[colTelefono] ? String(row[colTelefono]).trim() : '';
+      var tipo = colTipo !== -1 && row[colTipo] ? String(row[colTipo]).trim() : 'BACHILLER / ESTUDIANTE DE PREGRADO';
+
+      // Parsear turnos pre-inscritos
+      var turnosList = [];
+      var seenMap = {};
+      var rawJson = colTurnosJson !== -1 ? row[colTurnosJson] : null;
+
+      if (rawJson) {
+        try {
+          var parsed = typeof rawJson === 'string' ? JSON.parse(rawJson) : rawJson;
+          for (var diaId in parsed) {
+            var diaObj = DIAS_META[diaId] || { label: diaId, short: diaId };
+            var dInfo = parsed[diaId];
+            if (dInfo.manana) {
+              var km = diaId + '_m_' + dInfo.manana;
+              if (!seenMap[km]) {
+                seenMap[km] = true;
+                turnosList.push({
+                  diaId: diaId,
+                  diaLabel: diaObj.label,
+                  turno: 'manana',
+                  turnoLabel: 'Mañana (08:00 – 12:45)',
+                  salon: dInfo.manana === 'alterno' ? 'alterno' : 'principal',
+                  salonLabel: dInfo.manana === 'alterno' ? 'Salón Alterno (2)' : 'Salón Principal (1)'
+                });
+              }
+            }
+            if (dInfo.tarde) {
+              var kt = diaId + '_t_' + dInfo.tarde;
+              if (!seenMap[kt]) {
+                seenMap[kt] = true;
+                turnosList.push({
+                  diaId: diaId,
+                  diaLabel: diaObj.label,
+                  turno: 'tarde',
+                  turnoLabel: 'Tarde (13:00 – 18:00)',
+                  salon: dInfo.tarde === 'alterno' ? 'alterno' : 'principal',
+                  salonLabel: dInfo.tarde === 'alterno' ? 'Salón Alterno (2)' : 'Salón Principal (1)'
+                });
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      // Si no hay en JSON, revisar texto descriptivo
+      if (turnosList.length === 0 && colTurnosTexto !== -1 && row[colTurnosTexto]) {
+        var txt = String(row[colTurnosTexto]).toLowerCase();
+        for (var dKey in DIAS_META) {
+          var dMeta = DIAS_META[dKey];
+          var subD = dMeta.short.toLowerCase().substring(0, 3);
+          var numD = dKey.substring(8);
+          if (txt.indexOf(subD) !== -1 || txt.indexOf(numD + '/11') !== -1 || txt.indexOf(dKey) !== -1) {
+            var hasMan = txt.indexOf('mañana') !== -1 || txt.indexOf('manana') !== -1;
+            var hasTar = txt.indexOf('tarde') !== -1;
+            var isAlt = txt.indexOf('alterno') !== -1 || txt.indexOf('(2)') !== -1;
+            var sal = isAlt ? 'alterno' : 'principal';
+            var salLab = isAlt ? 'Salón Alterno (2)' : 'Salón Principal (1)';
+
+            if (dKey === '2026-11-02') {
+              turnosList.push({ diaId: dKey, diaLabel: dMeta.label, turno: 'tarde', turnoLabel: 'Tarde (13:00 – 18:00)', salon: sal, salonLabel: salLab });
+            } else {
+              if (hasMan) turnosList.push({ diaId: dKey, diaLabel: dMeta.label, turno: 'manana', turnoLabel: 'Mañana (08:00 – 12:45)', salon: sal, salonLabel: salLab });
+              if (hasTar || !hasMan) turnosList.push({ diaId: dKey, diaLabel: dMeta.label, turno: 'tarde', turnoLabel: 'Tarde (13:00 – 18:00)', salon: sal, salonLabel: salLab });
+            }
+          }
+        }
+      }
+
+      var yaConf = false;
+      var confObj = null;
+      if (colConfirmado !== -1 && row[colConfirmado]) {
+        var cVal = String(row[colConfirmado]).toUpperCase();
+        if (cVal.indexOf('CONFIRM') !== -1) {
+          yaConf = true;
+          if (colDiaDef !== -1 && row[colDiaDef]) {
+            var dDef = String(row[colDiaDef]);
+            var tDef = colTurnoDef !== -1 ? String(row[colTurnoDef] || '') : '';
+            var sDef = colSalonDef !== -1 ? String(row[colSalonDef] || '') : '';
+            confObj = {
+              diaId: dDef,
+              diaLabel: (DIAS_META[dDef] ? DIAS_META[dDef].label : dDef),
+              turno: tDef.toLowerCase().indexOf('mañana') !== -1 ? 'manana' : 'tarde',
+              turnoLabel: tDef || 'Tarde',
+              salon: sDef.toLowerCase().indexOf('alterno') !== -1 ? 'alterno' : 'principal',
+              salonLabel: sDef || 'Salón Principal (1)'
+            };
+          }
+        }
+      }
+
+      return {
+        ok: true,
+        found: true,
+        participant: {
+          nombres: nombres.toUpperCase(),
+          apellidos: apellidos.toUpperCase(),
+          cedula: cellVal || ('V-' + cleanDigits),
+          correo: correo,
+          telefono: telefono,
+          tipoParticipante: tipo,
+          tipoLabel: tipo,
+          turnosPreinscritos: turnosList,
+          yaConfirmado: yaConf,
+          confirmacion: confObj
+        }
+      };
+    }
+  }
+
+  return { ok: true, found: false };
+}
+
+/**
+ * Registra la confirmación definitiva de 1 único día, 1 único turno y 1 único salón.
+ */
+function confirmBachiller_(body) {
+  var rawCed = body.cedula || '';
+  var cleanDigits = String(rawCed).replace(/\D/g, '');
+  if (!cleanDigits) throw new UserError_('Cédula no proporcionada.');
+
+  var diaId = body.diaId;
+  var turno = body.turno;
+  var salon = body.salon;
+
+  if (!diaId || !turno || !salon) {
+    throw new UserError_('Selección incompleta de día, turno o salón.');
+  }
+
+  if (diaId === '2026-11-02' && turno !== 'tarde') {
+    throw new UserError_('El lunes 02/11 únicamente está disponible en el turno Tarde.');
+  }
+
+  var DIAS_META = {
+    '2026-11-02': { label: 'Lunes 02/11/2026', short: 'Lun 02/11' },
+    '2026-11-03': { label: 'Martes 03/11/2026', short: 'Mar 03/11' },
+    '2026-11-04': { label: 'Miércoles 04/11/2026', short: 'Mié 04/11' },
+    '2026-11-05': { label: 'Jueves 05/11/2026', short: 'Jue 05/11' },
+    '2026-11-06': { label: 'Viernes 06/11/2026', short: 'Vie 06/11' }
+  };
+
+  var diaLabel = DIAS_META[diaId] ? DIAS_META[diaId].label : diaId;
+  var diaShort = DIAS_META[diaId] ? DIAS_META[diaId].short : diaId;
+  var turnoLabel = turno === 'manana' ? 'Mañana: ' + (salon === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)') : 'Tarde: ' + (salon === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)');
+  var resumenTexto = diaShort + ' (' + turnoLabel + ')';
+
+  var newJson = {};
+  newJson[diaId] = {};
+  newJson[diaId][turno] = salon;
+  var jsonStr = JSON.stringify(newJson);
+
+  var nowStr = Utilities.formatDate(new Date(), 'America/Caracas', 'yyyy-MM-dd HH:mm:ss');
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+    // 1. Actualizar hoja de Bachilleres si existe
+    var shBach = ss.getSheetByName(body.sheetName || 'Bachilleres - Estudiantes de Pregrado');
+    if (!shBach) {
+      var all = ss.getSheets();
+      for (var s = 0; s < all.length; s++) {
+        if (all[s].getName().trim().toLowerCase().indexOf('bachiller') !== -1) {
+          shBach = all[s];
+          break;
+        }
+      }
+    }
+
+    if (shBach && shBach.getLastRow() >= 2) {
+      var bData = shBach.getDataRange().getValues();
+      var bHeaders = bData[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
+      
+      var colCed = -1;
+      for (var i = 0; i < bHeaders.length; i++) {
+        if (bHeaders[i].indexOf('CÉDULA') !== -1 || bHeaders[i].indexOf('CEDULA') !== -1 || bHeaders[i] === 'C.I.' || bHeaders[i] === 'CI') {
+          colCed = i; break;
+        }
+      }
+      if (colCed === -1) colCed = 0;
+
+      // Asegurar columnas de confirmación
+      var colEstadoConf = bHeaders.indexOf('ESTADO CONFIRMACIÓN');
+      var colDiaDef = bHeaders.indexOf('DÍA DEFINITIVO');
+      var colTurnoDef = bHeaders.indexOf('TURNO DEFINITIVO');
+      var colSalonDef = bHeaders.indexOf('SALÓN DEFINITIVO');
+      var colFechaConf = bHeaders.indexOf('FECHA CONFIRMACIÓN');
+
+      if (colEstadoConf === -1) {
+        colEstadoConf = bHeaders.length;
+        shBach.getRange(1, colEstadoConf + 1).setValue('ESTADO CONFIRMACIÓN');
+        colDiaDef = colEstadoConf + 1;
+        shBach.getRange(1, colDiaDef + 1).setValue('DÍA DEFINITIVO');
+        colTurnoDef = colDiaDef + 1;
+        shBach.getRange(1, colTurnoDef + 1).setValue('TURNO DEFINITIVO');
+        colSalonDef = colTurnoDef + 1;
+        shBach.getRange(1, colSalonDef + 1).setValue('SALÓN DEFINITIVO');
+        colFechaConf = colSalonDef + 1;
+        shBach.getRange(1, colFechaConf + 1).setValue('FECHA CONFIRMACIÓN');
+      }
+
+      for (var r = 1; r < bData.length; r++) {
+        var cDigits = String(bData[r][colCed] || '').replace(/\D/g, '');
+        if (cDigits && cDigits === cleanDigits) {
+          var rowNum = r + 1;
+          shBach.getRange(rowNum, colEstadoConf + 1).setValue('CONFIRMADO DEFINITIVO');
+          shBach.getRange(rowNum, colDiaDef + 1).setValue(diaLabel);
+          shBach.getRange(rowNum, colTurnoDef + 1).setValue(turno === 'manana' ? 'Mañana' : 'Tarde');
+          shBach.getRange(rowNum, colSalonDef + 1).setValue(salon === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)');
+          shBach.getRange(rowNum, colFechaConf + 1).setValue(nowStr);
+        }
+      }
+    }
+
+    // 2. Actualizar hoja general de Inscripciones
+    var shInsc = ss.getSheetByName(CONFIG.SHEET_NAME);
+    if (shInsc && shInsc.getLastRow() >= 2) {
+      var iData = shInsc.getDataRange().getValues();
+      var iHeaders = iData[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
+      var colCedInsc = 6;
+      for (var c = 0; c < iHeaders.length; c++) {
+        if (iHeaders[c].indexOf('CÉDULA') !== -1 || iHeaders[c].indexOf('CEDULA') !== -1) {
+          colCedInsc = c; break;
+        }
+      }
+
+      var colJson = 20, colTexto = 19, colDias = 17, colNum = 18, colObs = 25;
+      for (var c2 = 0; c2 < iHeaders.length; c2++) {
+        if (iHeaders[c2].indexOf('TURNOS (JSON)') !== -1) colJson = c2;
+        if (iHeaders[c2].indexOf('TURNOS Y SALONES') !== -1) colTexto = c2;
+        if (iHeaders[c2].indexOf('DÍAS ASISTIDOS') !== -1) colDias = c2;
+        if (iHeaders[c2].indexOf('N.º DÍAS') !== -1) colNum = c2;
+        if (iHeaders[c2].indexOf('OBSERVACIONES') !== -1) colObs = c2;
+      }
+
+      for (var rowI = 1; rowI < iData.length; rowI++) {
+        var rowCedDigits = String(iData[rowI][colCedInsc] || '').replace(/\D/g, '');
+        if (rowCedDigits && rowCedDigits === cleanDigits) {
+          var targetRow = rowI + 1;
+          shInsc.getRange(targetRow, colJson + 1).setValue(jsonStr);
+          shInsc.getRange(targetRow, colTexto + 1).setValue(resumenTexto);
+          shInsc.getRange(targetRow, colDias + 1).setValue(diaId);
+          shInsc.getRange(targetRow, colNum + 1).setValue(1);
+          var prevObs = String(iData[rowI][colObs] || '');
+          var newObs = (prevObs ? prevObs + ' | ' : '') + 'CONFIRMADO DEFINITIVO BACHILLER: ' + resumenTexto + ' (' + nowStr + ')';
+          shInsc.getRange(targetRow, colObs + 1).setValue(newObs);
+        }
+      }
+    }
+
+    return {
+      ok: true,
+      success: true,
+      message: 'Tu selección definitiva ha sido guardada exitosamente.',
+      confirmacion: {
+        diaLabel: diaLabel,
+        turnoLabel: turno === 'manana' ? 'Mañana (08:00 – 12:45)' : 'Tarde (13:00 – 18:00)',
+        salonLabel: salon === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)',
+        fecha: nowStr
+      }
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 /**
