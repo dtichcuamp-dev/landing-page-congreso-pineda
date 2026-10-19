@@ -303,11 +303,48 @@ export async function POST(req: Request) {
       return NextResponse.json({
         ok: true,
         message: data.message ?? "Confirmación registrada exitosamente.",
+        confirmacion: data.confirmacion,
+        updatedBachilleres: data.updatedBachilleres,
+        updatedInscripciones: data.updatedInscripciones,
       });
     }
 
     // Si GAS respondió con error específico
     if (data?.error) {
+      if (
+        data.error.includes("institución de origen") ||
+        data.error.includes("institucion de origen")
+      ) {
+        // Intentar fallback vía GET con query params por si doGet está activo
+        try {
+          const getUrl = new URL(GAS_URL);
+          getUrl.searchParams.set("action", "confirm_bachiller");
+          getUrl.searchParams.set("cedula", cleanDigits);
+          getUrl.searchParams.set("diaId", diaId);
+          getUrl.searchParams.set("turno", turno);
+          getUrl.searchParams.set("salon", salon);
+          getUrl.searchParams.set("sheetName", SHEET_NAME);
+          const getRes = await fetch(getUrl.toString(), { method: "GET", cache: "no-store" });
+          const getData = await getRes.json();
+          if (getData && getData.ok && getData.success) {
+            return NextResponse.json({
+              ok: true,
+              message: getData.message ?? "Confirmación registrada exitosamente.",
+              confirmacion: getData.confirmacion,
+            });
+          }
+        } catch (_) {}
+
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Se requiere actualizar la implementación en Google Apps Script (Extensiones > Apps Script > Implementar > Nueva versión) para que la confirmación modifique exclusivamente 'Días asistidos', 'N.º días', 'Turnos y Salones' y 'Turnos (JSON)' sin requerir datos de nueva inscripción.",
+          },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json({ ok: false, error: data.error }, { status: 500 });
     }
 

@@ -128,6 +128,9 @@ function doGet(e) {
     if (action === 'lookup_bachiller') {
       return json_(lookupBachiller_(p.cedula, p.sheetName));
     }
+    if (action === 'confirm_bachiller') {
+      return json_(confirmBachiller_(p));
+    }
     if (action === 'get_mail_quota') {
       var q = null;
       try { q = MailApp.getRemainingDailyQuota(); } catch (_) {}
@@ -1691,6 +1694,12 @@ function lookupBachiller_(rawCedula, preferredSheetName) {
 
 /**
  * Registra la confirmación definitiva de 1 único día, 1 único turno y 1 único salón.
+ * Modifica EXCLUSIVAMENTE:
+ *   1. Días asistidos
+ *   2. N.º días (valor 1)
+ *   3. Turnos y Salones
+ *   4. Turnos (JSON)
+ * Garantiza la integridad de todos los demás datos existentes (nombres, cédula, institución, sexo, etc.)
  */
 function confirmBachiller_(body) {
   var rawCed = body.cedula || '';
@@ -1734,95 +1743,137 @@ function confirmBachiller_(body) {
   try {
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
 
-    // 1. Actualizar hoja de Bachilleres si existe
+    // Función auxiliar para detectar con precisión las 4 columnas requeridas
+    function detectCols(headers) {
+      var colCed = -1, colDias = -1, colNum = -1, colTexto = -1, colJson = -1, colObs = -1;
+      for (var c = 0; c < headers.length; c++) {
+        var raw = String(headers[c] || '').trim();
+        var hNorm = raw.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        
+        // Cédula
+        if (colCed === -1 && (hNorm.indexOf('CEDULA') !== -1 || hNorm === 'CI' || hNorm === 'C.I.' || hNorm.indexOf('IDENTIDAD') !== -1 || hNorm.indexOf('DOCUMENTO') !== -1)) {
+          colCed = c;
+        }
+        // Turnos (JSON) - debe contener JSON
+        if (colJson === -1 && hNorm.indexOf('JSON') !== -1) {
+          colJson = c;
+        }
+        // Turnos y Salones - contiene TURNO o SALON y NO contiene JSON
+        else if (colTexto === -1 && (hNorm.indexOf('TURNO') !== -1 || hNorm.indexOf('SALON') !== -1) && hNorm.indexOf('JSON') === -1) {
+          colTexto = c;
+        }
+        // N.º días - contiene DIAS y especificador de cantidad/número
+        if (colNum === -1 && hNorm.indexOf('DIAS') !== -1 && (hNorm.indexOf('N') !== -1 || hNorm.indexOf('NUM') !== -1 || hNorm.indexOf('CANT') !== -1 || hNorm.indexOf('CANTIDAD') !== -1)) {
+          colNum = c;
+        }
+        // Días asistidos - contiene DIAS y no es de cantidad
+        else if (colDias === -1 && hNorm.indexOf('DIAS') !== -1 && hNorm.indexOf('N') === -1 && hNorm.indexOf('NUM') === -1 && hNorm.indexOf('CANT') === -1) {
+          colDias = c;
+        }
+        // Observaciones
+        if (colObs === -1 && (hNorm.indexOf('OBSERV') !== -1 || hNorm.indexOf('NOTA') !== -1)) {
+          colObs = c;
+        }
+      }
+      return { colCed: colCed, colDias: colDias, colNum: colNum, colTexto: colTexto, colJson: colJson, colObs: colObs };
+    }
+
+    // 1. Actualizar hoja de Bachilleres (Bachilleres - Estudiantes de Pregrado)
     var shBach = ss.getSheetByName(body.sheetName || 'Bachilleres - Estudiantes de Pregrado');
     if (!shBach) {
       var all = ss.getSheets();
       for (var s = 0; s < all.length; s++) {
-        if (all[s].getName().trim().toLowerCase().indexOf('bachiller') !== -1) {
+        var sLower = all[s].getName().trim().toLowerCase();
+        if (sLower.indexOf('bachiller') !== -1 || sLower.indexOf('pregrado') !== -1) {
           shBach = all[s];
           break;
         }
       }
     }
 
+    var updatedBach = 0;
     if (shBach && shBach.getLastRow() >= 2) {
       var bData = shBach.getDataRange().getValues();
-      var bHeaders = bData[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
-      
-      var colCed = -1;
-      for (var i = 0; i < bHeaders.length; i++) {
-        if (bHeaders[i].indexOf('CÉDULA') !== -1 || bHeaders[i].indexOf('CEDULA') !== -1 || bHeaders[i] === 'C.I.' || bHeaders[i] === 'CI') {
-          colCed = i; break;
-        }
+      var bHeaders = bData[0];
+      var bCols = detectCols(bHeaders);
+
+      if (bCols.colCed === -1) bCols.colCed = 0;
+
+      // Asegurar que las 4 columnas existan en la hoja de Bachilleres
+      var numCols = bHeaders.length;
+      if (bCols.colDias === -1) {
+        bCols.colDias = numCols;
+        shBach.getRange(1, bCols.colDias + 1).setValue('Días asistidos');
+        numCols++;
       }
-      if (colCed === -1) colCed = 0;
-
-      // Asegurar columnas de confirmación
-      var colEstadoConf = bHeaders.indexOf('ESTADO CONFIRMACIÓN');
-      var colDiaDef = bHeaders.indexOf('DÍA DEFINITIVO');
-      var colTurnoDef = bHeaders.indexOf('TURNO DEFINITIVO');
-      var colSalonDef = bHeaders.indexOf('SALÓN DEFINITIVO');
-      var colFechaConf = bHeaders.indexOf('FECHA CONFIRMACIÓN');
-
-      if (colEstadoConf === -1) {
-        colEstadoConf = bHeaders.length;
-        shBach.getRange(1, colEstadoConf + 1).setValue('ESTADO CONFIRMACIÓN');
-        colDiaDef = colEstadoConf + 1;
-        shBach.getRange(1, colDiaDef + 1).setValue('DÍA DEFINITIVO');
-        colTurnoDef = colDiaDef + 1;
-        shBach.getRange(1, colTurnoDef + 1).setValue('TURNO DEFINITIVO');
-        colSalonDef = colTurnoDef + 1;
-        shBach.getRange(1, colSalonDef + 1).setValue('SALÓN DEFINITIVO');
-        colFechaConf = colSalonDef + 1;
-        shBach.getRange(1, colFechaConf + 1).setValue('FECHA CONFIRMACIÓN');
+      if (bCols.colNum === -1) {
+        bCols.colNum = numCols;
+        shBach.getRange(1, bCols.colNum + 1).setValue('N.º días');
+        numCols++;
+      }
+      if (bCols.colTexto === -1) {
+        bCols.colTexto = numCols;
+        shBach.getRange(1, bCols.colTexto + 1).setValue('Turnos y Salones');
+        numCols++;
+      }
+      if (bCols.colJson === -1) {
+        bCols.colJson = numCols;
+        shBach.getRange(1, bCols.colJson + 1).setValue('Turnos (JSON)');
+        numCols++;
       }
 
-      for (var r = 1; r < bData.length; r++) {
-        var cDigits = String(bData[r][colCed] || '').replace(/\D/g, '');
-        if (cDigits && cDigits === cleanDigits) {
-          var rowNum = r + 1;
-          shBach.getRange(rowNum, colEstadoConf + 1).setValue('CONFIRMADO DEFINITIVO');
-          shBach.getRange(rowNum, colDiaDef + 1).setValue(diaLabel);
-          shBach.getRange(rowNum, colTurnoDef + 1).setValue(turno === 'manana' ? 'Mañana' : 'Tarde');
-          shBach.getRange(rowNum, colSalonDef + 1).setValue(salon === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)');
-          shBach.getRange(rowNum, colFechaConf + 1).setValue(nowStr);
+      for (var br = 1; br < bData.length; br++) {
+        var cellValB = String(bData[br][bCols.colCed] || '').trim().toUpperCase();
+        var bDigits = cellValB.replace(/\D/g, '');
+        if (bDigits && (bDigits === cleanDigits || cellValB === ('V-' + cleanDigits) || cellValB === ('E-' + cleanDigits))) {
+          var bRowNum = br + 1;
+          // Actualización directa de las 4 columnas en la hoja Bachilleres
+          shBach.getRange(bRowNum, bCols.colDias + 1).setValue(diaShort);
+          shBach.getRange(bRowNum, bCols.colNum + 1).setValue(1);
+          shBach.getRange(bRowNum, bCols.colTexto + 1).setValue(resumenTexto);
+          shBach.getRange(bRowNum, bCols.colJson + 1).setValue(jsonStr);
+          updatedBach++;
+
+          if (bCols.colObs !== -1) {
+            var prevObsB = String(bData[br][bCols.colObs] || '');
+            shBach.getRange(bRowNum, bCols.colObs + 1).setValue((prevObsB ? prevObsB + ' | ' : '') + 'CONFIRMADO: ' + resumenTexto + ' (' + nowStr + ')');
+          }
         }
       }
     }
 
     // 2. Actualizar hoja general de Inscripciones
     var shInsc = ss.getSheetByName(CONFIG.SHEET_NAME);
+    var updatedInsc = 0;
     if (shInsc && shInsc.getLastRow() >= 2) {
       var iData = shInsc.getDataRange().getValues();
-      var iHeaders = iData[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
-      var colCedInsc = 6;
-      for (var c = 0; c < iHeaders.length; c++) {
-        if (iHeaders[c].indexOf('CÉDULA') !== -1 || iHeaders[c].indexOf('CEDULA') !== -1) {
-          colCedInsc = c; break;
-        }
-      }
+      var iHeaders = iData[0];
+      var iCols = detectCols(iHeaders);
 
-      var colJson = 20, colTexto = 19, colDias = 17, colNum = 18, colObs = 25;
-      for (var c2 = 0; c2 < iHeaders.length; c2++) {
-        if (iHeaders[c2].indexOf('TURNOS (JSON)') !== -1) colJson = c2;
-        if (iHeaders[c2].indexOf('TURNOS Y SALONES') !== -1) colTexto = c2;
-        if (iHeaders[c2].indexOf('DÍAS ASISTIDOS') !== -1) colDias = c2;
-        if (iHeaders[c2].indexOf('N.º DÍAS') !== -1) colNum = c2;
-        if (iHeaders[c2].indexOf('OBSERVACIONES') !== -1) colObs = c2;
-      }
+      if (iCols.colCed === -1) iCols.colCed = 6;
+      if (iCols.colDias === -1) iCols.colDias = 17;
+      if (iCols.colNum === -1) iCols.colNum = 18;
+      if (iCols.colTexto === -1) iCols.colTexto = 19;
+      if (iCols.colJson === -1) iCols.colJson = 20;
+      if (iCols.colObs === -1) iCols.colObs = 25;
 
       for (var rowI = 1; rowI < iData.length; rowI++) {
-        var rowCedDigits = String(iData[rowI][colCedInsc] || '').replace(/\D/g, '');
-        if (rowCedDigits && rowCedDigits === cleanDigits) {
+        var cellValI = String(iData[rowI][iCols.colCed] || '').trim().toUpperCase();
+        var rowCedDigits = cellValI.replace(/\D/g, '');
+        if (rowCedDigits && (rowCedDigits === cleanDigits || cellValI === ('V-' + cleanDigits) || cellValI === ('E-' + cleanDigits))) {
           var targetRow = rowI + 1;
-          shInsc.getRange(targetRow, colJson + 1).setValue(jsonStr);
-          shInsc.getRange(targetRow, colTexto + 1).setValue(resumenTexto);
-          shInsc.getRange(targetRow, colDias + 1).setValue(diaId);
-          shInsc.getRange(targetRow, colNum + 1).setValue(1);
-          var prevObs = String(iData[rowI][colObs] || '');
-          var newObs = (prevObs ? prevObs + ' | ' : '') + 'CONFIRMADO DEFINITIVO BACHILLER: ' + resumenTexto + ' (' + nowStr + ')';
-          shInsc.getRange(targetRow, colObs + 1).setValue(newObs);
+          // Actualización atómica de las 4 columnas sin alterar otros datos
+          shInsc.getRange(targetRow, iCols.colDias + 1).setValue(diaShort);
+          shInsc.getRange(targetRow, iCols.colNum + 1).setValue(1);
+          shInsc.getRange(targetRow, iCols.colTexto + 1).setValue(resumenTexto);
+          shInsc.getRange(targetRow, iCols.colJson + 1).setValue(jsonStr);
+          updatedInsc++;
+
+          if (iCols.colObs !== -1) {
+            var prevObs = String(iData[rowI][iCols.colObs] || '');
+            var newObs = (prevObs ? prevObs + ' | ' : '') + 'CONFIRMADO DEFINITIVO BACHILLER: ' + resumenTexto + ' (' + nowStr + ')';
+            shInsc.getRange(targetRow, iCols.colObs + 1).setValue(newObs);
+          }
         }
       }
     }
@@ -1830,7 +1881,9 @@ function confirmBachiller_(body) {
     return {
       ok: true,
       success: true,
-      message: 'Tu selección definitiva ha sido guardada exitosamente.',
+      updatedBachilleres: updatedBach,
+      updatedInscripciones: updatedInsc,
+      message: 'Tu selección definitiva ha sido guardada exitosamente en la base de datos.',
       confirmacion: {
         diaLabel: diaLabel,
         turnoLabel: turno === 'manana' ? 'Mañana (08:00 – 12:45)' : 'Tarde (13:00 – 18:00)',
