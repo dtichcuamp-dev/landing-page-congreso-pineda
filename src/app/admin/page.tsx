@@ -26,6 +26,9 @@ import {
   ChevronRight,
   ShieldAlert,
   Filter,
+  Power,
+  PowerOff,
+  PauseCircle,
 } from "lucide-react";
 import {
   usd,
@@ -132,6 +135,10 @@ export default function AdminDashboard() {
   } | null>(null);
 
   // Filtros de búsqueda para la tabla
+  // Estado para activación/desactivación del formulario de registro principal
+  const [registrationEnabled, setRegistrationEnabled] = useState<boolean>(true);
+  const [togglingStatus, setTogglingStatus] = useState<boolean>(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dayFilter, setDayFilter] = useState<string>("all");
@@ -165,6 +172,9 @@ export default function AdminDashboard() {
       if (!res.ok || !json.ok) throw new Error(json.error || "Error al autenticar");
 
       setData(json.data);
+      if (json.registrationEnabled !== undefined) {
+        setRegistrationEnabled(json.registrationEnabled);
+      }
       if (typeof json.mailQuota === "number") {
         setMailQuota(json.mailQuota);
       }
@@ -188,6 +198,46 @@ export default function AdminDashboard() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     fetchData(password);
+  };
+
+  const handleToggleRegistration = async () => {
+    const nextStatus = !registrationEnabled;
+    const confirmMsg = nextStatus
+      ? "¿Deseas ACTIVAR el formulario de inscripción principal al público general?"
+      : "¿Deseas DESACTIVAR el formulario de inscripción principal al público general? Al pausarlo, los usuarios verán un mensaje amigable indicando labores técnicas de mejoras y disfrute. (El módulo de confirmación de bachilleres seguirá 100% activo).";
+
+    if (!confirm(confirmMsg)) return;
+
+    setTogglingStatus(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "set_form_status",
+          password,
+          enabled: nextStatus,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || "No se pudo cambiar el estado del formulario.");
+      }
+      setRegistrationEnabled(nextStatus);
+      setNotification({
+        type: nextStatus ? "success" : "warning",
+        message: nextStatus
+          ? "✓ Formulario de inscripción ACTIVADO para el público general."
+          : "⏸ Formulario de inscripción DESACTIVADO. Se muestra el mensaje amigable de labores técnicas para mejoras y disfrute.",
+      });
+    } catch (err: any) {
+      setNotification({
+        type: "error",
+        message: `Error al cambiar estado del formulario: ${err.message}`,
+      });
+    } finally {
+      setTogglingStatus(false);
+    }
   };
 
   const handleLogout = () => {
@@ -791,6 +841,85 @@ export default function AdminDashboard() {
               className="inline-flex items-center gap-1.5 bg-red-50 border border-red-200 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-red-600 shadow-sm hover:bg-red-100 transition"
             >
               <LogOut className="size-4" /> Salir
+            </button>
+          </div>
+        </div>
+
+        {/* Control Maestro: Activación / Desactivación del Formulario de Ingreso */}
+        <div
+          className={`flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border transition shadow-sm ${
+            registrationEnabled
+              ? "bg-white border-emerald-200 ring-1 ring-emerald-100"
+              : "bg-amber-50/90 border-amber-300 ring-1 ring-amber-200"
+          }`}
+        >
+          <div className="flex items-start sm:items-center gap-3.5">
+            <span
+              className={`inline-flex p-3 rounded-2xl shrink-0 shadow-sm ${
+                registrationEnabled
+                  ? "bg-emerald-600 text-white"
+                  : "bg-amber-600 text-white"
+              }`}
+            >
+              {registrationEnabled ? (
+                <CheckCircle className="size-6" />
+              ) : (
+                <PauseCircle className="size-6" />
+              )}
+            </span>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-sm sm:text-base font-black text-ink">
+                  Formulario de Ingreso Público (Web Principal)
+                </h2>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider ${
+                    registrationEnabled
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-amber-100 text-amber-900 border border-amber-300"
+                  }`}
+                >
+                  <span
+                    className={`size-2 rounded-full ${
+                      registrationEnabled
+                        ? "bg-emerald-500 animate-pulse"
+                        : "bg-amber-500"
+                    }`}
+                  />
+                  {registrationEnabled ? "ACTIVO / RECIBIENDO REGISTROS" : "PAUSADO / EN MEJORAS TÉCNICAS"}
+                </span>
+              </div>
+              <p className="text-xs text-ink-soft">
+                {registrationEnabled
+                  ? "El formulario en https://congresopineda.vercel.app/ está abierto para nuevas inscripciones (con exclusión de categorías cerradas: Acompañante, Bachiller y Conferencista)."
+                  : "El formulario principal está temporalmente desactivado mostrando el mensaje amigable de labores técnicas. La confirmación de bachilleres (/confirmacion-bachilleres) se mantiene 100% activa."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
+            <button
+              onClick={handleToggleRegistration}
+              disabled={togglingStatus}
+              className={`w-full md:w-auto inline-flex items-center justify-center gap-2 font-bold px-4 py-2.5 rounded-xl text-xs sm:text-sm shadow-sm transition disabled:opacity-50 ${
+                registrationEnabled
+                  ? "bg-amber-600 hover:bg-amber-700 text-white hover:shadow-amber-500/25 shadow-md"
+                  : "bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-emerald-500/25 shadow-md"
+              }`}
+              title={
+                registrationEnabled
+                  ? "Pausar recepción de registros y mostrar aviso amigable"
+                  : "Habilitar nuevamente la recepción de registros"
+              }
+            >
+              {togglingStatus ? (
+                <RefreshCw className="size-4 animate-spin" />
+              ) : registrationEnabled ? (
+                <PowerOff className="size-4" />
+              ) : (
+                <Power className="size-4" />
+              )}
+              {registrationEnabled ? "Desactivar Formulario" : "Activar Formulario"}
             </button>
           </div>
         </div>

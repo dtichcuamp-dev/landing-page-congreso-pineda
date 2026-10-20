@@ -101,6 +101,12 @@ export interface RegistrationResult {
   id: string;
   total: number;
   exonerated: boolean;
+  nombres?: string;
+  apellidos?: string;
+  cedula?: string;
+  tipoLabel?: string;
+  resumenTurnos?: string;
+  turnos?: SeleccionTurnos;
 }
 
 /** Payload JSON que recibe `doPost` en Google Apps Script. */

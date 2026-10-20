@@ -7,8 +7,9 @@ export async function POST(req: Request) {
 
     const correctPassword = process.env.ADMIN_PASSWORD || "congreso2026admin";
     const scannerPassword = process.env.SCANNER_PASSWORD || correctPassword;
-    
-    const isScannerAction = action === "scan_qr" || action === "validate_access" || action === "get_occupancy";
+
+    const isScannerAction =
+      action === "scan_qr" || action === "validate_access" || action === "get_occupancy";
     if (isScannerAction) {
       if (!scannerPassword || (password !== scannerPassword && password !== correctPassword)) {
         return NextResponse.json({ ok: false, error: "Contraseña incorrecta." }, { status: 401 });
@@ -21,11 +22,14 @@ export async function POST(req: Request) {
 
     const gasUrl = process.env.NEXT_PUBLIC_GAS_URL;
     if (!gasUrl) {
-      return NextResponse.json({ ok: false, error: "Falta configurar NEXT_PUBLIC_GAS_URL." }, { status: 500 });
+      return NextResponse.json(
+        { ok: false, error: "Falta configurar NEXT_PUBLIC_GAS_URL." },
+        { status: 500 }
+      );
     }
 
     // El token secreto compartido entre Next.js y Apps Script
-    const adminToken = process.env.GAS_ADMIN_TOKEN || 'token-secreto-admin-1234';
+    const adminToken = process.env.GAS_ADMIN_TOKEN || "token-secreto-admin-1234";
 
     let payload: any;
     if (action === "approve") {
@@ -54,6 +58,17 @@ export async function POST(req: Request) {
         jornada: body.jornada,
         turno: body.turno,
       };
+    } else if (action === "set_form_status" || action === "toggle_form_status") {
+      payload = {
+        action: "set_form_status",
+        token: adminToken,
+        enabled: !!body.enabled,
+      };
+    } else if (action === "get_form_status") {
+      payload = {
+        action: "get_form_status",
+        token: adminToken,
+      };
     } else {
       payload = { action: "get_dashboard", token: adminToken };
     }
@@ -75,15 +90,23 @@ export async function POST(req: Request) {
       });
     }
 
+    const regEnabled =
+      data.registrationEnabled !== undefined
+        ? data.registrationEnabled
+        : data.data?.registrationEnabled !== undefined
+        ? data.data.registrationEnabled
+        : true;
+
     return NextResponse.json({
       ok: true,
       data: data.data,
+      registrationEnabled: regEnabled,
       mailQuota:
         data.mailQuota !== undefined
           ? data.mailQuota
           : data.data?.quotaRemaining !== undefined
-            ? data.data.quotaRemaining
-            : null,
+          ? data.data.quotaRemaining
+          : null,
       stoppedByQuota: data.data?.stoppedByQuota || data.stoppedByQuota,
       quotaExceeded: data.data?.quotaExceeded || data.quotaExceeded,
     });

@@ -26,9 +26,13 @@ import {
   Sparkles,
   Stethoscope,
   UserRound,
+  Wrench,
+  GraduationCap,
   X,
 } from "lucide-react";
 import {
+  ACTIVE_PARTICIPANT_TYPES_HCUAMP,
+  ACTIVE_PARTICIPANT_TYPES_OTRA,
   CAPACIDADES_SALON,
   DAYS_CONGRESO,
   ESPECIALIDADES_CONGRESO,
@@ -42,6 +46,7 @@ import {
   ApiError,
   checkExistingRegistration,
   getCapacities,
+  getRegistrationFormStatus,
   lookupHcuamp,
   submitRegistration,
   type ExistingRegistrationInfo,
@@ -73,6 +78,7 @@ export function RegistrationForm() {
     message?: string;
   }>({ status: "idle" });
   const [capacities, setCapacities] = useState<Record<string, number>>({});
+  const [formEnabled, setFormEnabled] = useState<boolean | null>(null);
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState<ExistingRegistrationInfo | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -81,8 +87,11 @@ export function RegistrationForm() {
   const [generatingQr, setGeneratingQr] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
 
-  // Cargar disponibilidad de aforo al montar
+  // Cargar estado del formulario y aforos al montar
   useEffect(() => {
+    getRegistrationFormStatus()
+      .then((enabled) => setFormEnabled(enabled))
+      .catch(() => setFormEnabled(true));
     getCapacities().then((data) => setCapacities(data)).catch(() => {});
   }, []);
 
@@ -324,6 +333,11 @@ export function RegistrationForm() {
 
   const submit = async (ev: React.FormEvent) => {
     ev.preventDefault();
+
+    if (formEnabled === false) {
+      setServerError("El formulario de registro se encuentra temporalmente en pausa por labores técnicas para optimizar su experiencia y disfrute.");
+      return;
+    }
 
     // Si aún no estamos en el paso final, avanzamos
     if (step < maxSteps - 1) {
@@ -658,6 +672,71 @@ export function RegistrationForm() {
           >
             Registrar a otra persona
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────── VISTA CUANDO EL FORMULARIO ESTÁ EN PAUSA / MANTENIMIENTO ───────────────────
+  if (formEnabled === false) {
+    return (
+      <div
+        ref={topRef}
+        className="rounded-3xl border-2 border-brand-200/80 bg-white/95 p-6 sm:p-10 shadow-xl backdrop-blur text-center space-y-6 animate-in fade-in duration-300"
+      >
+        <div className="mx-auto inline-flex size-20 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 ring-8 ring-brand-50/50 shadow-inner">
+          <Sparkles className="size-10 text-brand-600 animate-pulse" />
+        </div>
+
+        <div className="max-w-xl mx-auto space-y-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-brand-100 text-brand-900 border border-brand-300">
+            <Wrench className="size-3.5 text-brand-700" /> Acciones Técnicas en Proceso
+          </span>
+          <h3 className="text-2xl sm:text-3xl font-black text-ink tracking-tight">
+            Optimizando la plataforma para su disfrute
+          </h3>
+          <p className="text-sm sm:text-base text-ink-soft leading-relaxed">
+            Estimada comunidad médica, profesional y académica: estamos ejecutando labores técnicas y optimizaciones en la plataforma para garantizarles la mejor experiencia, fluidez y máximo disfrute durante todas las jornadas del congreso.
+          </p>
+          <p className="text-xs sm:text-sm text-ink-mute">
+            Agradecemos su gentil comprensión e interés. En breve habilitaremos nuevamente la recepción de nuevos registros.
+          </p>
+        </div>
+
+        {/* Acceso prioritario al formulario de Bachilleres */}
+        <div className="max-w-xl mx-auto rounded-2xl bg-clinic-50 border border-clinic-200 p-5 text-left space-y-3">
+          <div className="flex items-start gap-3">
+            <div className="size-10 rounded-xl bg-clinic-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <GraduationCap className="size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-ink">
+                ¿Eres Bachiller o Estudiante de Pregrado ya preinscrito?
+              </h4>
+              <p className="text-xs text-ink-soft mt-0.5 leading-relaxed">
+                El módulo de <b>Confirmación e Inscripción Definitiva de Bachilleres</b> se mantiene <b>100% activo y operativo</b> para la selección o cambio de tu turno y salón asignado.
+              </p>
+            </div>
+          </div>
+          <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+            <a
+              href="/confirmacion-bachilleres"
+              className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-clinic-600 hover:bg-clinic-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 shadow-sm transition"
+            >
+              <GraduationCap className="size-4" /> Ir a Confirmación de Bachilleres
+              <ArrowRight className="size-4" />
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                getRegistrationFormStatus().then((en) => setFormEnabled(en)).catch(() => {});
+              }}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-ink-soft font-bold text-xs px-3.5 py-2.5 transition"
+              title="Verificar si ya concluyeron las labores técnicas"
+            >
+              <RefreshCw className="size-3.5" /> Comprobar estado
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1190,12 +1269,12 @@ export function RegistrationForm() {
               >
                 <option value="">Selecciona tu categoría...</option>
                 {isHcuamp
-                  ? PARTICIPANT_TYPES_HCUAMP.map((p) => (
+                  ? ACTIVE_PARTICIPANT_TYPES_HCUAMP.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.label}
                       </option>
                     ))
-                  : PARTICIPANT_TYPES_OTRA.map((p) => (
+                  : ACTIVE_PARTICIPANT_TYPES_OTRA.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.label} — {p.rate === 0 ? "Exonerado 100% (0$)" : `${usd(p.rate)} por día`}
                       </option>

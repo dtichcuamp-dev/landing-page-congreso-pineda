@@ -40,6 +40,30 @@ export const PARTICIPANT_TYPES_OTRA: ParticipantTypeInfo[] = [
   { id: "acompanante_otra", label: "Acompañante", rate: 15 },
 ];
 
+/** Categorías de participantes cuyo registro ha sido cerrado oficialmente */
+export const CLOSED_PARTICIPANT_TYPE_IDS = [
+  "bachiller",
+  "acompanante",
+  "conferencista",
+  "estudiante_pregrado_otra",
+  "acompanante_otra",
+] as const;
+
+export const CLOSED_PARTICIPANT_TYPES = new Set<string>(CLOSED_PARTICIPANT_TYPE_IDS);
+
+export const isParticipantTypeClosed = (id: string): boolean =>
+  CLOSED_PARTICIPANT_TYPES.has(id);
+
+/** Tipos de participantes para personal del HCUAMP habilitados para registro público */
+export const ACTIVE_PARTICIPANT_TYPES_HCUAMP = PARTICIPANT_TYPES_HCUAMP.filter(
+  (p) => !CLOSED_PARTICIPANT_TYPES.has(p.id)
+);
+
+/** Tipos de participantes para Otras Instituciones habilitados para registro público */
+export const ACTIVE_PARTICIPANT_TYPES_OTRA = PARTICIPANT_TYPES_OTRA.filter(
+  (p) => !CLOSED_PARTICIPANT_TYPES.has(p.id)
+);
+
 export const ALL_PARTICIPANT_TYPES: ParticipantTypeInfo[] = [
   ...PARTICIPANT_TYPES_HCUAMP,
   ...PARTICIPANT_TYPES_OTRA,

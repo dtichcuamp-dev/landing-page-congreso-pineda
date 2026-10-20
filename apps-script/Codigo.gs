@@ -119,6 +119,9 @@ function doGet(e) {
     if (action === 'lookup_hcuamp') {
       return json_(lookupHcuamp_(p.cedula));
     }
+    if (action === 'get_form_status') {
+      return json_({ ok: true, registrationEnabled: isRegistrationFormEnabled_() });
+    }
     if (action === 'get_capacities') {
       return json_(getCapacities_());
     }
@@ -172,11 +175,18 @@ function doPost(e) {
     if (body.action === 'check_registration') {
       return json_(checkExistingRegistration_(body.cedula, body.correo));
     }
+    if (body.action === 'get_form_status') {
+      return json_({ ok: true, registrationEnabled: isRegistrationFormEnabled_() });
+    }
+    if (body.action === 'set_form_status' || body.action === 'toggle_form_status') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_(setRegistrationFormEnabled_(!!body.enabled));
+    }
     if (body.action === 'get_dashboard') {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
       var qDashboard = null;
       try { qDashboard = MailApp.getRemainingDailyQuota(); } catch (_) {}
-      return json_({ ok: true, data: getDashboardData_(), mailQuota: qDashboard });
+      return json_({ ok: true, data: getDashboardData_(), mailQuota: qDashboard, registrationEnabled: isRegistrationFormEnabled_() });
     }
     if (body.action === 'approve_payment') {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
@@ -201,6 +211,11 @@ function doPost(e) {
 
     // Honeypot anti-spam
     if (body.website) return json_({ ok: true, id: 'CP26-0000', total: 0 });
+
+    // 0. Comprobar si el formulario de registro está habilitado
+    if (!isRegistrationFormEnabled_()) {
+      throw new UserError_('El formulario de registro se encuentra temporalmente en pausa por labores técnicas para optimizar su experiencia y disfrute.');
+    }
 
     // 1. Validación de datos, tarifas y aforo en el servidor
     var data = validate_(body);
@@ -525,6 +540,10 @@ function validate_(b) {
 
   // 3. Tipo de participante y tarifa (ALMACENAR EN MAYÚSCULAS)
   var tipoId = b.tipoParticipante;
+  var closedTypes = ['bachiller', 'acompanante', 'conferencista', 'estudiante_pregrado_otra', 'acompanante_otra'];
+  if (closedTypes.indexOf(tipoId) !== -1 || closedTypes.indexOf(b.tipoParticipante) !== -1) {
+    throw new UserError_('El registro para la categoría seleccionada (Acompañante, Bachiller, Estudiante de Pregrado, Conferencista) ya no se encuentra disponible.');
+  }
   if (tipoId === 'terapeutas' || tipoId === 'terapeutas_otra' || tipoId === 'fisioterapeuta' || tipoId === 'terapeuta') {
     tipoId = origenInstitucion === 'HCUAMP' ? 'terapeutas' : 'terapeutas_otra';
   } else if (tipoId === 'estudiante_pregrado_otra' || tipoId === 'bachiller_otra' || tipoId === 'bachiller_pregrado_otra') {
@@ -1907,4 +1926,18 @@ function setup() {
   if (CONFIG.SEND_CONFIRMATION_EMAIL) MailApp.getRemainingDailyQuota();
   Logger.log('Hoja de inscripciones lista: ' + sh.getParent().getUrl());
   Logger.log('Carpeta de comprobantes en Drive: ' + folder.getUrl() + ' (ID: ' + folder.getId() + ')');
+}
+
+
+/**
+ * Consulta y modifica el estado del formulario de registro principal.
+ */
+function isRegistrationFormEnabled_() {
+  var prop = PropertiesService.getScriptProperties().getProperty('REGISTRATION_FORM_ENABLED');
+  return prop !== 'false';
+}
+
+function setRegistrationFormEnabled_(enabled) {
+  PropertiesService.getScriptProperties().setProperty('REGISTRATION_FORM_ENABLED', enabled ? 'true' : 'false');
+  return { ok: true, registrationEnabled: enabled };
 }

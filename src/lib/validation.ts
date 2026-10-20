@@ -1,4 +1,4 @@
-import { calcTotal } from "@/data/pricing";
+import { calcTotal, isParticipantTypeClosed } from "@/data/pricing";
 import type { FieldErrors, RegistrationValues } from "@/types/registration";
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // Se comprime en cliente
@@ -59,6 +59,9 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
   if (step === 1) {
     if (!v.tipoParticipante) {
       e.tipoParticipante = "Selecciona tu tipo de participante.";
+    } else if (isParticipantTypeClosed(v.tipoParticipante)) {
+      e.tipoParticipante =
+        "El registro para esta categoría (Acompañante, Bachiller, Estudiante de Pregrado, Conferencista) ya no se encuentra disponible.";
     }
 
     if (v.origenInstitucion === "HCUAMP") {

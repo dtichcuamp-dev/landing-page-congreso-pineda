@@ -158,6 +158,23 @@ export async function checkExistingRegistration(
 }
 
 /**
+ * Consulta el estado de activación del formulario de registro principal.
+ */
+export async function getRegistrationFormStatus(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/registration-status", {
+      method: "GET",
+      cache: "no-store",
+    });
+    const data = await res.json();
+    return data?.registrationEnabled !== false;
+  } catch (err) {
+    console.warn("Error consultando estado del formulario:", err);
+    return true; // Por defecto activo ante error de red
+  }
+}
+
+/**
  * Consulta la disponibilidad de aforo en tiempo real.
  */
 export async function getCapacities(): Promise<Record<string, number>> {
@@ -230,10 +247,6 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     fechaNacimiento: v.fechaNacimiento,
     telefono: normalizePhone(v.telefono),
     correo: v.correo.trim().toLowerCase(),
-    // Para garantizar compatibilidad inmediata con la versión actualmente desplegada en Google Apps Script:
-    // - Para terapeutas: 'otro_personal_afin' (15$ para otras instituciones, 0$ para HCUAMP)
-    // - Para pregrado: 'bachiller' (0$ exonerado total)
-    // En ambos casos adjuntamos 'tipoLabel' con el nombre exacto para la hoja, correos y pases.
     tipoParticipante: isTerapeuta
       ? ("otro_personal_afin" as RegistrationPayload["tipoParticipante"])
       : isPregradoOtra
@@ -266,7 +279,17 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     });
     const data = await res.json();
     if (!data?.ok) throw new ApiError(data?.error ?? "No se pudo completar la inscripción.");
-    return { id: data.id, total: data.total, exonerated: data.total === 0 };
+    return {
+      id: data.id,
+      total: data.total,
+      exonerated: data.total === 0,
+      nombres: v.nombres,
+      apellidos: v.apellidos,
+      cedula: `${v.nacionalidad}-${cleanCedula(v.cedula)}`,
+      tipoLabel: tipoLabel.toUpperCase(),
+      resumenTurnos: partes.join("; "),
+      turnos: v.turnos,
+    };
   } catch (err) {
     if (err instanceof ApiError) throw err;
     if (err instanceof DOMException && err.name === "AbortError")
