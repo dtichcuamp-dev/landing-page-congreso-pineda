@@ -1125,7 +1125,7 @@ async function buildBrochure() {
         afternoon: [
           {
             salon: 'Salón Principal (1):',
-            text: 'Traumatología y Ortopedia (2:00 – 5:50 p. m. · Nervio radial, cadera en politrauma, LCA, pilón tibial, osteotomía, dolor crónico, fisiatría) & Solemne Clausura del Congreso (6:00 – 7:00 p. m. · Premiación científica).'
+            text: 'Traumatología y Ortopedia (2:00 – 5:50 p. m. · Nervio radial, cadera en politrauma, LCA, pilón tibial, osteotomía, dolor crónico, valoración preanestésica, fisiatría) & Solemne Clausura del Congreso (6:00 – 7:00 p. m. · Premiación científica).'
           },
           {
             salon: 'Salón Alterno (2):',
