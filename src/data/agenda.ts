@@ -386,7 +386,7 @@ const TRAUMATOLOGIA: Session = {
     brk("3:35 – 4:05 p. m.", "Coffee Break · Receso"),
     t("4:10 – 4:25 p. m.", "Osteotomía alrededor de la rodilla, cómo la planificamos y cómo la realizamos", "Dr. José Pulido"),
     t("4:30 – 4:45 p. m.", "Persistencia del dolor en el trauma vial: Del evento agudo al desarrollo de dolor crónico", "Dra. Verónica Rodríguez"),
-    t("4:50 – 5:05 p. m.", "La importancia de la valoración preanestésica en pacientes de cirugía traumatológica", "Dr. Rafael Agüero"),
+    t("4:50 – 5:05 p. m.", "La importancia de la valoración preanestésica en pacientes de cirugía traumatológica", "Dr. Rafael Eloy Agüero"),
     t("5:10 – 5:25 p. m.", "Rehabilitar en la Emergencia: abordaje precoz del Médico Fisiatra en el manejo del paciente politraumatizado", "Dra. Carlana Chapón"),
     cer("5:30 – 5:50 p. m.", "Palabras de Cierre y Clausura del Bloque de Traumatología", "Comité Organizador"),
   ],
