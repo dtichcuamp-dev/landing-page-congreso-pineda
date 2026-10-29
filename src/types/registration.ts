@@ -10,6 +10,7 @@ export type ParticipantTypeHCUAMP =
   | "optometrista"
   | "especialista"
   | "terapeutas"
+  | "psicologo_psiquiatra"
   | "conferencista"
   | "residente_ultimo_anio";
 
@@ -19,6 +20,7 @@ export type ParticipantTypeOtra =
   | "medico_residente"
   | "enfermero_otra"
   | "terapeutas_otra"
+  | "psicologo_psiquiatra_otra"
   | "otro_personal_afin"
   | "acompanante_otra";
 

@@ -67,6 +67,7 @@ var RATES = {
   optometrista: { label: 'Optometrista (HCUAMP)', rate: 0, hcuamp: true },
   especialista: { label: 'Médico especialista (HCUAMP)', rate: 0, hcuamp: true },
   terapeutas: { label: 'Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas (HCUAMP)', rate: 0, hcuamp: true },
+  psicologo_psiquiatra: { label: 'Psicólogo/Psiquiatra (HCUAMP)', rate: 0, hcuamp: true },
   conferencista: { label: 'Conferencista (HCUAMP)', rate: 0, hcuamp: true },
   residente_ultimo_anio: { label: 'Residente de último año (HCUAMP)', rate: 0, hcuamp: true },
 
@@ -76,6 +77,7 @@ var RATES = {
   medico_residente: { label: 'Médico residente', rate: 15, hcuamp: false },
   enfermero_otra: { label: 'Enfermera/o', rate: 10, hcuamp: false },
   terapeutas_otra: { label: 'Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas', rate: 15, hcuamp: false },
+  psicologo_psiquiatra_otra: { label: 'Psicólogo/Psiquiatra', rate: 15, hcuamp: false },
   otro_personal_afin: { label: 'Otro personal afín', rate: 15, hcuamp: false },
   acompanante_otra: { label: 'Acompañante', rate: 15, hcuamp: false }
 };
@@ -548,12 +550,20 @@ function validate_(b) {
     tipoId = origenInstitucion === 'HCUAMP' ? 'terapeutas' : 'terapeutas_otra';
   } else if (tipoId === 'estudiante_pregrado_otra' || tipoId === 'bachiller_otra' || tipoId === 'bachiller_pregrado_otra') {
     tipoId = origenInstitucion === 'HCUAMP' ? 'bachiller' : 'estudiante_pregrado_otra';
+  } else if (tipoId === 'psicologo_psiquiatra' || tipoId === 'psicologo_psiquiatra_otra' || tipoId === 'psicologo' || tipoId === 'psiquiatra') {
+    tipoId = origenInstitucion === 'HCUAMP' ? 'psicologo_psiquiatra' : 'psicologo_psiquiatra_otra';
   }
   var tipo = RATES[tipoId];
   if (!tipo) {
     if (tipoId === 'otro_personal_afin' || String(b.tipoLabel || '').toLowerCase().indexOf('terapeuta') !== -1) {
       tipo = {
         label: b.tipoLabel || 'Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas',
+        rate: origenInstitucion === 'HCUAMP' ? 0 : 15,
+        hcuamp: origenInstitucion === 'HCUAMP'
+      };
+    } else if (String(b.tipoLabel || '').toLowerCase().indexOf('psic') !== -1 || String(b.tipoLabel || '').toLowerCase().indexOf('psiquiat') !== -1) {
+      tipo = {
+        label: b.tipoLabel || 'Psicólogo/Psiquiatra',
         rate: origenInstitucion === 'HCUAMP' ? 0 : 15,
         hcuamp: origenInstitucion === 'HCUAMP'
       };

@@ -25,6 +25,7 @@ export const PARTICIPANT_TYPES_HCUAMP: ParticipantTypeInfo[] = [
   { id: "optometrista", label: "Optometrista", rate: 0 },
   { id: "especialista", label: "Médico especialista", rate: 0 },
   { id: "terapeutas", label: "Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas", rate: 0 },
+  { id: "psicologo_psiquiatra", label: "Psicólogo/Psiquiatra", rate: 0 },
   { id: "conferencista", label: "Conferencista", rate: 0 },
   { id: "residente_ultimo_anio", label: "Residente de último año", rate: 0 },
 ];
@@ -36,6 +37,7 @@ export const PARTICIPANT_TYPES_OTRA: ParticipantTypeInfo[] = [
   { id: "medico_residente", label: "Médico residente", rate: 15 },
   { id: "enfermero_otra", label: "Enfermera/o", rate: 10 },
   { id: "terapeutas_otra", label: "Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas", rate: 15 },
+  { id: "psicologo_psiquiatra_otra", label: "Psicólogo/Psiquiatra", rate: 15 },
   { id: "otro_personal_afin", label: "Otro personal afín", rate: 15 },
   { id: "acompanante_otra", label: "Acompañante", rate: 15 },
 ];

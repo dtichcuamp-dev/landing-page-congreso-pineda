@@ -1415,6 +1415,7 @@ async function buildBrochure() {
       { cat: 'Médico Residente de Postgrado', price: '15 USD / día' },
       { cat: 'Licenciados(as) y Técnicos(as) en Enfermería', price: '10 USD / día' },
       { cat: 'Fisioterapeuta / Terapeuta Ocupacional', price: '15 USD / día' },
+      { cat: 'Psicólogo / Psiquiatra', price: '15 USD / día' },
       { cat: 'Otro Personal Afín a la Salud', price: '15 USD / día' },
       { cat: 'Acompañante de Participante', price: '15 USD / día' },
       { cat: 'Bachiller / Estudiante de pregrado', price: '0 USD (Exonerado 100%)', exonerated: true }

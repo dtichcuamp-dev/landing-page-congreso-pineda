@@ -223,13 +223,16 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
 
   const isTerapeuta = v.tipoParticipante === "terapeutas" || v.tipoParticipante === "terapeutas_otra";
   const isPregradoOtra = v.tipoParticipante === "estudiante_pregrado_otra";
+  const isPsico = v.tipoParticipante === "psicologo_psiquiatra" || v.tipoParticipante === "psicologo_psiquiatra_otra";
   const tipoLabel =
     PARTICIPANT_BY_ID[v.tipoParticipante as ParticipantTypeId]?.label ||
     (isTerapeuta
       ? "Fisioterapeuta / Terapeuta Ocupacional / Otros Terapeutas"
       : isPregradoOtra
         ? "Bachiller / Estudiante de pregrado"
-        : v.tipoParticipante);
+        : isPsico
+          ? "Psicólogo/Psiquiatra"
+          : v.tipoParticipante);
 
   const institucionUpper = (
     v.origenInstitucion === "HCUAMP"
@@ -251,7 +254,11 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
       ? ("otro_personal_afin" as RegistrationPayload["tipoParticipante"])
       : isPregradoOtra
         ? ("bachiller" as RegistrationPayload["tipoParticipante"])
-        : (v.tipoParticipante as RegistrationPayload["tipoParticipante"]),
+        : isPsico
+          ? (v.origenInstitucion === "HCUAMP"
+              ? ("especialista" as RegistrationPayload["tipoParticipante"])
+              : ("otro_personal_afin" as RegistrationPayload["tipoParticipante"]))
+          : (v.tipoParticipante as RegistrationPayload["tipoParticipante"]),
     tipoLabel: tipoLabel.toUpperCase(),
     nombrePonencia: v.nombrePonencia ? v.nombrePonencia.trim().toUpperCase() : undefined,
     especialidad: v.especialidad ? v.especialidad.trim().toUpperCase() : undefined,
