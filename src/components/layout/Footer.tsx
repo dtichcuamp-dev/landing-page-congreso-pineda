@@ -25,7 +25,8 @@ export function Footer() {
           <p className="max-w-md text-[11px] leading-relaxed text-ink-mute">
             Diseñado y desarrollado por el Departamento de Tecnología, Información y Comunicación (DTIC) del Hospital Central Universitario Dr. Antonio María Pineda RIF G-20011811-3. Todos los Derechos Reservados 2026.
           </p>
-          <div className="flex gap-4 text-xs font-medium text-brand-600">
+          <div className="flex flex-wrap gap-4 text-xs font-medium text-brand-600">
+            <a href="/consulta" className="hover:underline font-bold">Consultar Inscripción</a>
             <a href="/terminos" className="hover:underline">Términos de Uso</a>
             <a href="/privacidad" className="hover:underline">Política de Privacidad</a>
           </div>

@@ -738,6 +738,13 @@ export function RegistrationForm() {
             </button>
           </div>
         </div>
+
+        <div className="pt-1 text-center text-xs text-ink-mute">
+          ¿Deseas consultar tu comprobante o credencial ya emitida?{" "}
+          <a href="/consulta" className="font-bold text-brand-600 hover:text-brand-800 underline">
+            Ir al Portal de Consulta de Inscritos
+          </a>
+        </div>
       </div>
     );
   }
@@ -745,6 +752,20 @@ export function RegistrationForm() {
   return (
     <form onSubmit={submit} noValidate aria-label="Formulario de inscripción al congreso">
       <div ref={topRef} className="scroll-mt-28" />
+
+      {/* Acceso a Consulta de Participantes */}
+      <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-2 rounded-2xl bg-clinic-50/80 border border-clinic-200/90 px-4 py-2.5 text-xs text-ink-soft">
+        <span className="flex items-center gap-1.5 font-medium">
+          <Sparkles className="size-3.5 text-clinic-600 shrink-0" />
+          ¿Ya te registraste y necesitas tu comprobante o pase QR?
+        </span>
+        <a
+          href="/consulta"
+          className="font-bold text-brand-700 hover:text-brand-900 underline inline-flex items-center gap-1 shrink-0"
+        >
+          Consultar y descargar mi ficha oficial →
+        </a>
+      </div>
 
       {/* Indicador de pasos */}
       <ol className="mb-8 flex items-center" aria-label="Progreso de inscripción">

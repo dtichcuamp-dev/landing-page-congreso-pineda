@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
@@ -50,6 +50,13 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <a
+            href="/consulta"
+            className="hidden rounded-xl border border-slate-300 bg-white/90 px-3.5 py-2 text-xs font-semibold text-ink-soft shadow-2xs hover:text-brand-700 hover:border-brand-300 transition sm:inline-flex"
+            title="Consultar tu ficha oficial y pase QR"
+          >
+            Consultar Ficha
+          </a>
+          <a
             href="#inscripciones"
             className="hidden rounded-xl bg-gradient-to-r from-brand-500 to-clinic-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-brand-500/25 transition hover:brightness-110 sm:inline-flex"
           >
@@ -85,7 +92,14 @@ export function Navbar() {
                 </a>
               </li>
             ))}
-            <li className="mt-1">
+            <li className="mt-1 flex flex-col gap-2">
+              <a
+                href="/consulta"
+                onClick={() => setOpen(false)}
+                className="block rounded-xl border border-slate-200 bg-white/90 px-4 py-2.5 text-center text-sm font-bold text-ink hover:bg-slate-50 transition"
+              >
+                🔍 Consultar Ficha de Inscrito
+              </a>
               <a
                 href="#inscripciones"
                 onClick={() => setOpen(false)}

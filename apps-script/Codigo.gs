@@ -127,6 +127,9 @@ function doGet(e) {
     if (action === 'get_capacities') {
       return json_(getCapacities_());
     }
+    if (action === 'lookup_participant') {
+      return json_(lookupParticipant_(p.query || p.cedula || p.id || p.correo));
+    }
     if (action === 'check_registration') {
       return json_(checkExistingRegistration_(p.cedula, p.correo));
     }
@@ -173,6 +176,9 @@ function doPost(e) {
     }
     if (body.action === 'get_capacities') {
       return json_(getCapacities_());
+    }
+    if (body.action === 'lookup_participant') {
+      return json_(lookupParticipant_(body.query || body.cedula || body.id || body.correo));
     }
     if (body.action === 'check_registration') {
       return json_(checkExistingRegistration_(body.cedula, body.correo));
@@ -1950,4 +1956,172 @@ function isRegistrationFormEnabled_() {
 function setRegistrationFormEnabled_(enabled) {
   PropertiesService.getScriptProperties().setProperty('REGISTRATION_FORM_ENABLED', enabled ? 'true' : 'false');
   return { ok: true, registrationEnabled: enabled };
+}
+
+
+// ───────────────────────────── CONSULTA DE PARTICIPANTE ─────────────────────────────
+
+/**
+ * Consulta a un participante por Cédula, ID de comprobante o Correo.
+ * Revisa la hoja general "Inscripciones" y también "Bachilleres - Estudiantes de Pregrado".
+ */
+function lookupParticipant_(rawQuery) {
+  if (!rawQuery) return { ok: false, error: 'Término de búsqueda no proporcionado.' };
+  var q = String(rawQuery).trim();
+  var cleanDigits = q.replace(/\D/g, '');
+  var qUpper = q.toUpperCase();
+  var qLower = q.toLowerCase();
+
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+
+  // 1. Buscar en la hoja "Inscripciones"
+  var shInsc = ss.getSheetByName(CONFIG.SHEET_NAME);
+  if (shInsc && shInsc.getLastRow() >= 2) {
+    var data = shInsc.getDataRange().getValues();
+    var headers = data[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
+
+    var colId = 0, colFecha = 1, colOrigen = 2, colInstitucion = 3, colNombres = 4, colApellidos = 5;
+    var colCedula = 6, colSexo = 7, colFechaNac = 8, colTelefono = 9, colCorreo = 10, colTipo = 11;
+    var colDetalleExtra = 12, colDias = 17, colNumDias = 18, colTurnosTexto = 19, colTurnosJson = 20;
+    var colMonto = 22, colComprobante = 23, colEstadoPago = 24;
+
+    for (var c = 0; c < headers.length; c++) {
+      var h = headers[c];
+      if (h === 'ID' || h === 'CÓDIGO' || h === 'CODIGO') colId = c;
+      else if (h.indexOf('CÉDULA') !== -1 || h.indexOf('CEDULA') !== -1 || h === 'C.I.' || h === 'CI') colCedula = c;
+      else if (h.indexOf('CORREO') !== -1 || h.indexOf('EMAIL') !== -1) colCorreo = c;
+      else if (h.indexOf('NOMBRES') !== -1 && h.indexOf('APELLIDOS') === -1) colNombres = c;
+      else if (h.indexOf('APELLIDOS') !== -1 && h.indexOf('NOMBRES') === -1) colApellidos = c;
+      else if (h.indexOf('TIPO') !== -1) colTipo = c;
+      else if (h.indexOf('ESTADO DEL PAGO') !== -1 || h.indexOf('ESTADO') !== -1) colEstadoPago = c;
+      else if (h.indexOf('TURNOS (JSON)') !== -1 || h.indexOf('JSON') !== -1) colTurnosJson = c;
+      else if (h.indexOf('TURNOS Y SALONES') !== -1) colTurnosTexto = c;
+    }
+
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      var cellId = String(row[colId] || '').trim().toUpperCase();
+      var cellCed = String(row[colCedula] || '').trim();
+      var cellDigits = cellCed.replace(/\D/g, '');
+      var cellEmail = String(row[colCorreo] || '').trim().toLowerCase();
+
+      var match = false;
+      if (cellId && cellId === qUpper) match = true;
+      else if (cleanDigits && cellDigits && cleanDigits === cellDigits) match = true;
+      else if (qLower && cellEmail && qLower === cellEmail) match = true;
+
+      if (match) {
+        var estado = String(row[colEstadoPago] || 'Aprobado').trim();
+        var isHcuamp = String(row[colOrigen] || '').toUpperCase() === 'HCUAMP';
+        var isExonerated = isHcuamp || Number(row[colMonto] || 0) === 0 || estado.toLowerCase().indexOf('exoner') !== -1;
+
+        return {
+          ok: true,
+          found: true,
+          source: 'Inscripciones',
+          participant: {
+            id: cellId || 'CP26-' + (i < 10 ? '000' : i < 100 ? '00' : i < 1000 ? '0' : '') + i,
+            fecha: row[colFecha] ? Utilities.formatDate(new Date(row[colFecha]), 'America/Caracas', 'dd/MM/yyyy HH:mm') : '',
+            origen: isHcuamp ? 'HCUAMP' : 'OTRA',
+            institucion: String(row[colInstitucion] || (isHcuamp ? 'HOSPITAL CENTRAL UNIVERSITARIO DR. ANTONIO MARÍA PINEDA (HCUAMP)' : 'OTRA INSTITUCIÓN')).toUpperCase(),
+            nombres: String(row[colNombres] || '').toUpperCase(),
+            apellidos: String(row[colApellidos] || '').toUpperCase(),
+            cedula: cellCed,
+            sexo: String(row[colSexo] || ''),
+            fechaNacimiento: row[colFechaNac] instanceof Date ? Utilities.formatDate(row[colFechaNac], 'America/Caracas', 'yyyy-MM-dd') : String(row[colFechaNac] || ''),
+            telefono: String(row[colTelefono] || ''),
+            correo: cellEmail,
+            tipo: String(row[colTipo] || '').toUpperCase(),
+            tipoLabel: String(row[colTipo] || '').toUpperCase(),
+            detalleExtra: String(row[colDetalleExtra] || ''),
+            dias: String(row[colDias] || ''),
+            numDias: row[colNumDias] || 1,
+            turnosTexto: String(row[colTurnosTexto] || ''),
+            turnosJson: String(row[colTurnosJson] || ''),
+            monto: row[colMonto] || 0,
+            comprobante: String(row[colComprobante] || ''),
+            estado: estado || (isExonerated ? 'Exonerado 100%' : 'Aprobado'),
+            exonerated: isExonerated
+          }
+        };
+      }
+    }
+  }
+
+  // 2. Buscar en la hoja "Bachilleres - Estudiantes de Pregrado"
+  var shBach = ss.getSheetByName('Bachilleres - Estudiantes de Pregrado');
+  if (shBach && shBach.getLastRow() >= 2) {
+    var bachData = shBach.getDataRange().getValues();
+    var bachHeaders = bachData[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
+    var bColCed = -1, bColNom = -1, bColAp = -1, bColFull = -1, bColMail = -1, bColTlf = -1, bColJson = -1, bColTxt = -1, bColDias = -1, bColId = -1;
+
+    for (var bc = 0; bc < bachHeaders.length; bc++) {
+      var bh = bachHeaders[bc];
+      if (bh === 'ID') bColId = bc;
+      else if (bh.indexOf('CÉDULA') !== -1 || bh.indexOf('CEDULA') !== -1 || bh === 'C.I.' || bh === 'CI') bColCed = bc;
+      else if (bh.indexOf('APELLIDOS Y NOMBRES') !== -1 || bh.indexOf('NOMBRES Y APELLIDOS') !== -1) bColFull = bc;
+      else if (bh.indexOf('NOMBRES') !== -1) bColNom = bc;
+      else if (bh.indexOf('APELLIDOS') !== -1) bColAp = bc;
+      else if (bh.indexOf('CORREO') !== -1 || bh.indexOf('EMAIL') !== -1) bColMail = bc;
+      else if (bh.indexOf('TELÉFONO') !== -1 || bh.indexOf('TELEFONO') !== -1) bColTlf = bc;
+      else if (bh.indexOf('TURNOS (JSON)') !== -1 || bh.indexOf('JSON') !== -1) bColJson = bc;
+      else if (bh.indexOf('TURNOS Y SALONES') !== -1) bColTxt = bc;
+      else if (bh.indexOf('DÍAS') !== -1 || bh.indexOf('DIAS') !== -1) bColDias = bc;
+    }
+
+    if (bColCed !== -1) {
+      for (var bi = 1; bi < bachData.length; bi++) {
+        var bRow = bachData[bi];
+        var bCed = String(bRow[bColCed] || '').trim();
+        var bDigits = bCed.replace(/\D/g, '');
+        var bId = bColId !== -1 ? String(bRow[bColId] || '').trim().toUpperCase() : '';
+        var bEmail = bColMail !== -1 ? String(bRow[bColMail] || '').trim().toLowerCase() : '';
+
+        var bMatch = false;
+        if (bId && bId === qUpper) bMatch = true;
+        else if (cleanDigits && bDigits && cleanDigits === bDigits) bMatch = true;
+        else if (qLower && bEmail && qLower === bEmail) bMatch = true;
+
+        if (bMatch) {
+          var bNombres = bColNom !== -1 ? String(bRow[bColNom] || '').trim() : '';
+          var bApellidos = bColAp !== -1 ? String(bRow[bColAp] || '').trim() : '';
+          if (!bNombres && bColFull !== -1) {
+            bNombres = String(bRow[bColFull] || '').trim();
+          }
+
+          return {
+            ok: true,
+            found: true,
+            source: 'Bachilleres',
+            participant: {
+              id: bId || 'CP26-BACH-' + (bi < 10 ? '00' : bi < 100 ? '0' : '') + bi,
+              fecha: '',
+              origen: 'OTRA',
+              institucion: 'UNIVERSIDAD / PREGRADO',
+              nombres: bNombres.toUpperCase(),
+              apellidos: bApellidos.toUpperCase(),
+              cedula: bCed.indexOf('-') === -1 ? 'V-' + bDigits : bCed,
+              sexo: '',
+              fechaNacimiento: '',
+              telefono: bColTlf !== -1 ? String(bRow[bColTlf] || '') : '',
+              correo: bEmail,
+              tipo: 'BACHILLER / ESTUDIANTE DE PREGRADO',
+              tipoLabel: 'Bachiller / Estudiante de pregrado',
+              detalleExtra: '',
+              dias: bColDias !== -1 ? String(bRow[bColDias] || '') : '',
+              numDias: 1,
+              turnosTexto: bColTxt !== -1 ? String(bRow[bColTxt] || '') : '',
+              turnosJson: bColJson !== -1 ? String(bRow[bColJson] || '') : '',
+              monto: 0,
+              comprobante: '',
+              estado: 'Exonerado 100%',
+              exonerated: true
+            }
+          };
+        }
+      }
+    }
+  }
+
+  return { ok: true, found: false, message: 'No se encontró registro para: ' + rawQuery };
 }
