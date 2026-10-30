@@ -600,4 +600,17 @@ export const FEATURED_SPEAKERS: FeaturedSpeaker[] = [
     image: "/images/speakers/lcda-maurimar-escalona.jpg",
     bio: "Profesional de enfermería del HCUAMP enfocada en la atención asistencial del paciente crítico y su entorno familiar. Destacada defensora de la empatía, el trato digno y los protocolos de humanización de los servicios de emergencia hospitalaria.",
   },
+  {
+    id: "atagualpa-mejias",
+    name: "Lcdo. Atagualpa Mejías",
+    role: "Licenciado en Nutrición y Dietética · Nutrición Cardiorenohepatometabólica",
+    specialty: "Cardiología / Nutrición Clínica",
+    specialtyId: "cardiologia",
+    talkTitle: "Más allá del fármaco: intervención nutricional integral en el paciente cardiorenohepatometabólico",
+    dayLabel: "Miércoles 04 de noviembre",
+    time: "4:50 – 5:15 p. m.",
+    salon: "Salón Alterno (2)",
+    image: "/images/speakers/lcdo-atagualpa-mejias.jpg",
+    bio: "Licenciado en Nutrición y Dietética con amplia experiencia en nutrición médica y soporte metabólico. Ponente en modulación nutricional de precisión y abordaje no farmacológico integral del paciente con síndrome cardiorenohepatometabólico.",
+  },
 ];

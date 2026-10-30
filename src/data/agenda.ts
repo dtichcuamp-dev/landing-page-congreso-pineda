@@ -369,7 +369,7 @@ const CARDIOLOGIA: Session = {
     brk("3:50 – 4:10 p. m.", "Coffee Break · Receso"),
     t("4:10 p. m.", "Síndrome coronario agudo con elevación del ST, cuando el tiempo apremia", "Dr. Francisco Arias"),
     t("4:30 p. m.", "Trombosis intraventricular, la secuela embólica", "Dr. Endher Castillo"),
-    t("4:50 p. m.", "Más allá del fármaco: intervención nutricional integral en el paciente cardiorenohepatometabólico", "Lic. Atagualpa Mejías"),
+    t("4:50 p. m.", "Más allá del fármaco: intervención nutricional integral en el paciente cardiorenohepatometabólico", "Lcdo. Atagualpa Mejías"),
   ],
 };
 
