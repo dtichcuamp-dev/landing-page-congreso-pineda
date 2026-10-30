@@ -1,96 +1,70 @@
-# XIV Congreso Pineda 2026 · Landing + Sistema de Inscripciones
+# Sistema Institucional de Control - Bienes Tecnológicos, Redes y Ofimática
+### Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)
+**Departamento de Tecnología, Información y Comunicación (TIC)**
 
-Next.js (App Router) + Tailwind CSS v4 · Backend en Google Apps Script (Sheets + Drive) · Hosting en Vercel.
+---
 
-## Estructura del proyecto
+## 📌 Resumen de Arquitectura
 
-```
-congreso-pineda/
-├─ apps-script/
-│  ├─ Codigo.gs            ← Backend (doPost/doGet). Pegar en el editor de Apps Script
-│  └─ appsscript.json      ← Manifiesto (zona horaria, acceso, scopes)
-├─ public/images/
-│  └─ logo-congreso-pineda.png
-├─ src/
-│  ├─ app/
-│  │  ├─ layout.tsx        ← Fuente, metadatos SEO, fondo aurora
-│  │  ├─ page.tsx          ← SPA: compone todas las secciones
-│  │  └─ globals.css       ← Tokens + utilidades glass (glassmorfismo)
-│  ├─ components/
-│  │  ├─ layout/           Navbar · Footer · FloatingCTA
-│  │  ├─ sections/         Hero · About · Highlights · Specialties · Agenda · Registration · Countdown
-│  │  ├─ registration/     RegistrationForm · Field · JornadaPicker · PriceSummary · FileDrop
-│  │  └─ ui/               Reveal · SectionHeading
-│  ├─ data/                ← Contenido editable (sin tocar componentes)
-│  │  ├─ event.ts          Textos institucionales, atractivos
-│  │  ├─ specialties.ts    17 especialidades + nº de ponencias
-│  │  ├─ agenda.ts         Programa por día/salón/turno + ponencias
-│  │  └─ pricing.ts        Tarifas, jornadas y datos de pago
-│  ├─ lib/                 validation · api (POST a Apps Script) · agendaEvents · useBcvRate
-│  └─ types/registration.ts
-└─ .env.example
-```
+El sistema opera bajo un esquema desacoplado y de alta disponibilidad:
 
-## Desarrollo local
+1. **Frontend (Plataforma Web)**:
+   - Interfaz web institucional responsiva adaptada a dispositivos móviles y ordenadores de escritorio.
+   - Forzado de datos en **MAYÚSCULAS** a nivel de interfaz de usuario y capa de transporte.
+   - Compresión client-side integrada (Canvas) para optimizar fotografías capturadas desde smartphones.
+   - Proxy de API interno mediante función serverless (`/api/service`) para proteger las URLs y credenciales del servidor central.
+   - Exportación de reportes de auditoría en formato CSV/Excel con codificación UTF-8 BOM.
 
-```bash
-npm install
-cp .env.example .env.local     # y pega la URL /exec de tu Apps Script
-npm run dev                    # http://localhost:3000
-```
+2. **Backend & Base de Datos (Servidor Central)**:
+   - Persistencia estructurada en la Base de Datos Institucional.
+   - Endpoint seguro con funciones de sincronización unificada, registro, actualización y borrado lógico.
+   - Repositorio seguro para almacenamiento de fotografías con visualización directa.
 
-## 1) Desplegar el backend (Google Apps Script)
+---
 
-1. Entra a <https://script.google.com> → **Nuevo proyecto** (usa la misma cuenta dueña de la hoja y del Drive).
-2. Pega el contenido de `apps-script/Codigo.gs` en `Código.gs`.
-   - (Opcional) *Configuración del proyecto → Mostrar archivo de manifiesto* y pega `appsscript.json`.
-3. Revisa `CONFIG` arriba del archivo:
-   - `SPREADSHEET_ID` ya apunta a `1cXFd-gwbyeyw2ME3KA_z_KeMQLj4VEk5Q_7_UpEUQG4`.
-   - `DRIVE_FOLDER_ID`: ID de una carpeta existente (la parte final de su URL). Si lo dejas vacío se crea
-     «Comprobantes - Congreso Pineda 2026» en *Mi unidad*.
-4. Selecciona la función **`setup`** → **Ejecutar** y acepta los permisos. Crea la hoja `Inscripciones` y la carpeta.
-5. **Implementar → Nueva implementación → Aplicación web**
-   - Ejecutar como: **Yo**
-   - Quién tiene acceso: **Cualquier usuario**
-6. Copia la URL `https://script.google.com/macros/s/…/exec`. Ábrela en el navegador: debe responder `{"ok":true,…}`.
+## 🔐 Variables de Entorno
 
-> Cada vez que modifiques `Codigo.gs` debes crear una **nueva versión** (Implementar → Administrar implementaciones → ✏️ → Nueva versión). La URL `/exec` se mantiene.
+Para desacoplar la URL del servidor central del frontend público, se utiliza la siguiente variable de entorno:
 
-## 2) Subir a GitHub
+| Variable | Descripción | Valor |
+| :--- | :--- | :--- |
+| **`BACKEND_API_URL`** | URL del Endpoint del Servidor Central | `https://script.google.com/macros/s/AKfycbyzY0V73VNkkrrHRwxCu_z2bSwmnEEDnEbjQwu81R4GYZLYHp3uo66vYgWDICAPinLR/exec` |
 
-```bash
-git add .
-git commit -m "Landing y sistema de inscripciones Congreso Pineda 2026"
-git branch -M main
-git remote add origin https://github.com/<usuario>/<repo>.git
-git push -u origin main
-```
+### Configuración en la Plataforma de Despliegue:
+1. Dirígete a **Project Settings** > **Environment Variables**.
+2. Añade la clave `BACKEND_API_URL` con la URL de tu servidor central.
+3. Guarda y redespliega el proyecto. El proxy `/api/service` la leerá de forma automática y transparente.
 
-## 3) Desplegar en Vercel
+---
 
-1. <https://vercel.com/new> → **Import Git Repository** → elige el repo. Framework: *Next.js* (autodetectado).
-2. **Environment Variables**:
-   | Nombre | Valor |
-   |---|---|
-   | `NEXT_PUBLIC_GAS_URL` | URL `/exec` de Apps Script |
-   | `NEXT_PUBLIC_SITE_URL` | `https://<tu-dominio>.vercel.app` |
-3. **Deploy**.
-4. Despliegue manual posterior: `git push` a `main` (o *Deployments → Redeploy*). Si cambias variables de entorno, haz **Redeploy**.
-5. (Opcional) *Settings → Domains* para un dominio propio.
+## 🗄️ Estructura de la Base de Datos
 
-## Cómo editar contenido
+El sistema almacena toda la información de texto en **MAYÚSCULAS**:
 
-| Quiero cambiar… | Archivo |
-|---|---|
-| Tarifas / tipos de participante | `src/data/pricing.ts` **y** `RATES` en `apps-script/Codigo.gs` |
-| Datos de pago (banco, pago móvil) | `PAYMENT_INFO` en `src/data/pricing.ts` |
-| Agenda y ponentes | `src/data/agenda.ts` |
-| N.º de ponencias por especialidad | `src/data/specialties.ts` |
-| Textos de misión/visión/objetivos | `src/data/event.ts` |
+### 1. Hoja `bienes` (Inventario de Bienes Tecnológicos)
+- **Campos**: `ID`, `FECHA`, `DEPARTAMENTO`, `GRUPO`, `SUBGRUPO`, `SECCIÓN`, `NRO. DE BIEN`, `DESCRIPCIÓN`, `CARACTERÍSTICAS`, `MODELO`, `COLOR`, `SERIAL`, `ESTADO` (BUENO, REGULAR, INOPERATIVO), `URL`, `ESTATUS` (ACTIVO, INACTIVO).
 
-## Seguridad y buenas prácticas incluidas
+### 2. Hoja `redes` (Infraestructura de Conectividad)
+- **Campos**: `ID`, `DEPARTAMENTO` inspeccionado, `MODEM (CANT)`, `ROUTER (CANT)`, `SWITCH (CANT)`, `PUNTO DE ACCESO (CANT)`, `TIPO DE CABLEADO`, `CANALIZACIÓN` (SÍ, NO), `SSID WI-FI`, `BANDA WI-FI`, `PROVEEDOR`, `VELOCIDAD`, `RESPONSABLE DE PAGOS`, `ESTATUS` (ACTIVO, INACTIVO).
 
-- El servidor **valida todo y recalcula el monto**; el valor del cliente es solo informativo.
-- Honeypot anti-spam, `LockService` (IDs sin colisiones), saneamiento contra inyección de fórmulas en Sheets.
-- Comprobantes privados por defecto (`SHARE_LINK_PUBLIC: false`). Solo ven el enlace quienes tengan acceso a la carpeta/hoja.
-- Imágenes comprimidas en el navegador (≤1600 px, JPEG) antes de enviarse.
+### 3. Hoja `cuestionario_ofimatica` (Diagnóstico Institucional)
+- **Campos**: `FECHA / HORA`, `NOMBRE COMPLETO`, `CORREO / DEPARTAMENTO`, `PROCESADOR TEXTO FRECUENCIA / NIVEL`, `HOJAS CÁLCULO FRECUENCIA / NIVEL`, `PRESENTACIONES FRECUENCIA / NIVEL`, `CORREO FRECUENCIA / NIVEL`, `NUBE FRECUENCIA / NIVEL`, `ESTATUS` (ACTIVO, INACTIVO).
+
+---
+
+## 🚀 Despliegue Manual en GitHub
+
+Para subir manualmente los archivos al repositorio:
+
+1. Abre el repositorio en GitHub y haz clic en **Add file** > **Upload files**.
+2. Arrastra los archivos de la raíz del proyecto:
+   - `index.html`
+   - `vercel.json`
+   - `package.json`
+   - `api/service.js`
+   - `README.md`
+   - `Code.gs`
+   - `appsscript.json`
+   - `404.html`
+   - `.env.example`
+3. Confirma los cambios (**Commit changes**). La plataforma web desplegará la versión actualizada de forma automática.

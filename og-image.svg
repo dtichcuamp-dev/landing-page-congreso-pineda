@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#172554;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.03" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)" />
+
+  <!-- Decorative Tech Grid & Nodes -->
+  <g opacity="0.12" stroke="#38bdf8" stroke-width="1.5">
+    <line x1="100" y1="0" x2="100" y2="630" />
+    <line x1="300" y1="0" x2="300" y2="630" />
+    <line x1="500" y1="0" x2="500" y2="630" />
+    <line x1="700" y1="0" x2="700" y2="630" />
+    <line x1="900" y1="0" x2="900" y2="630" />
+    <line x1="1100" y1="0" x2="1100" y2="630" />
+    <line x1="0" y1="120" x2="1200" y2="120" />
+    <line x1="0" y1="260" x2="1200" y2="260" />
+    <line x1="0" y1="400" x2="1200" y2="400" />
+    <line x1="0" y1="540" x2="1200" y2="540" />
+  </g>
+
+  <!-- Header Accent Line -->
+  <rect x="80" y="70" width="8" height="490" rx="4" fill="url(#accent)" />
+
+  <!-- Content Container -->
+  <g transform="translate(120, 0)">
+    <!-- Category Tag -->
+    <rect x="0" y="80" width="340" height="38" rx="19" fill="#38bdf8" fill-opacity="0.2" stroke="#38bdf8" stroke-width="1" />
+    <text x="20" y="105" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#38bdf8" letter-spacing="1.5">SISTEMA INSTITUCIONAL DE CONTROL</text>
+
+    <!-- Main Title -->
+    <text x="0" y="185" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="800" fill="#ffffff" letter-spacing="-1">
+      Bienes Tecnológicos,
+    </text>
+    <text x="0" y="245" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="800" fill="#38bdf8" letter-spacing="-1">
+      Redes y Ofimática
+    </text>
+
+    <!-- Institution Details -->
+    <text x="0" y="315" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="600" fill="#cbd5e1">
+      Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)
+    </text>
+    <text x="0" y="350" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="500" fill="#94a3b8">
+      Departamento de Tecnología, Información y Comunicación (DTIC) &bull; Barquisimeto, Lara
+    </text>
+
+    <!-- Feature Cards -->
+    <g transform="translate(0, 395)">
+      <!-- Card 1 -->
+      <rect x="0" y="0" width="220" height="85" rx="12" fill="url(#cardGrad)" stroke="#ffffff" stroke-opacity="0.15" />
+      <text x="20" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#38bdf8">INVENTARIO TIC</text>
+      <text x="20" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">Bienes BN / BE / BT</text>
+
+      <!-- Card 2 -->
+      <rect x="240" y="0" width="220" height="85" rx="12" fill="url(#cardGrad)" stroke="#ffffff" stroke-opacity="0.15" />
+      <text x="260" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#10b981">CONECTIVIDAD</text>
+      <text x="260" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">Infraestructura de Red</text>
+
+      <!-- Card 3 -->
+      <rect x="480" y="0" width="240" height="85" rx="12" fill="url(#cardGrad)" stroke="#ffffff" stroke-opacity="0.15" />
+      <text x="500" y="35" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="700" fill="#fbbf24">DIAGNÓSTICO</text>
+      <text x="500" y="60" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#cbd5e1">Evaluación de Ofimática</text>
+    </g>
+
+    <!-- Footer Attribution -->
+    <line x1="0" y1="520" x2="980" y2="520" stroke="#ffffff" stroke-opacity="0.15" />
+    <text x="0" y="555" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="500" fill="#94a3b8">
+      Diseñado y desarrollado por Pasantes de Ingeniería de Sistemas UNEFA Lara 2-2026 y supervisado por Jefatura de DTIC HCUAMP 2026
+    </text>
+  </g>
+</svg>

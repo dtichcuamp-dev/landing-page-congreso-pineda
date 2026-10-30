@@ -1,0 +1,3461 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sistema Institucional - Inventario, Redes y Ofimática | HCUAMP</title>
+
+  <!-- Favicon Institucional -->
+  <link rel="icon" type="image/svg+xml" href="https://bienestecnologicoshcuamp.vercel.app/favicon.svg">
+  <link rel="alternate icon" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/favicon.svg">
+
+  <!-- Metadatos de Redes Sociales (Open Graph / WhatsApp / Telegram) -->
+  <meta name="description" content="Sistema Institucional de Control de Bienes Tecnológicos, Infraestructura de Redes y Diagnóstico de Ofimática del Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP).">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="author" content="Departamento TIC - HCUAMP">
+  
+  <!-- Open Graph / Facebook / WhatsApp / Telegram -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bienestecnologicoshcuamp.vercel.app/">
+  <meta property="og:site_name" content="Sistema TIC HCUAMP">
+  <meta property="og:title" content="Sistema Institucional de Control de Bienes Tecnológicos | HCUAMP">
+  <meta property="og:description" content="Gestión integral de inventario tecnológico, auditoría de redes y diagnóstico de competencias ofimáticas del Hospital Central Universitario Dr. Antonio María Pineda.">
+  <meta property="og:image" content="https://bienestecnologicoshcuamp.vercel.app/og-image.png">
+  <meta property="og:image:secure_url" content="https://bienestecnologicoshcuamp.vercel.app/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Plataforma Institucional HCUAMP - Bienes Tecnológicos">
+  <meta property="og:locale" content="es_VE">
+
+  <!-- Twitter / Telegram Cards -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://bienestecnologicoshcuamp.vercel.app/">
+  <meta name="twitter:title" content="Sistema Institucional de Control de Bienes Tecnológicos | HCUAMP">
+  <meta name="twitter:description" content="Gestión integral de inventario tecnológico, auditoría de redes y diagnóstico de competencias ofimáticas del Hospital Central Universitario Dr. Antonio María Pineda.">
+  <meta name="twitter:image" content="https://bienestecnologicoshcuamp.vercel.app/og-image.png">
+  
+  <!-- CSS Frameworks -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #1e3a8a;
+      --primary-light: #2563eb;
+      --primary-dark: #172554;
+      --secondary-color: #0ea5e9;
+      --accent-color: #10b981;
+      --bg-color: #f8fafc;
+      --surface-color: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --radius: 12px;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 10px 25px -3px rgba(15, 23, 42, 0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text-main);
+      padding-top: 10px;
+      padding-bottom: 50px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Forzar visualización de texto en mayúsculas en campos de entrada */
+    input[type="text"], textarea, .uppercase-input {
+      text-transform: uppercase;
+    }
+
+    /* Header & Branding */
+    .app-header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      color: white;
+      border-radius: var(--radius);
+      padding: 18px 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-md);
+    }
+    .app-header h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 2px;
+    }
+    .app-header p {
+      font-size: 0.825rem;
+      opacity: 0.9;
+      margin-bottom: 0;
+    }
+    .badge-status {
+      font-size: 0.75rem;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+      display: inline-block;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.2); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* Cards */
+    .card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      background-color: var(--surface-color);
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease-in-out;
+    }
+    .card-header {
+      background-color: transparent;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 700;
+      color: var(--primary-color);
+      padding: 14px 20px;
+    }
+    .kpi-card {
+      padding: 16px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-left: 4px solid var(--primary-color);
+    }
+    .kpi-card.bn { border-left-color: #0284c7; }
+    .kpi-card.be { border-left-color: #10b981; }
+    .kpi-card.bt { border-left-color: #f59e0b; }
+
+    /* Tabs */
+    .nav-pills .nav-link {
+      color: var(--primary-color);
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: 1px solid var(--border-color);
+      background: white;
+      margin-right: 8px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      padding: 10px 18px;
+      transition: all 0.2s ease;
+    }
+    .nav-pills .nav-link.active {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+      box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
+    }
+    .nav-pills .nav-link:hover:not(.active) {
+      background-color: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    /* Forms */
+    .form-label {
+      font-size: 0.825rem;
+      font-weight: 700;
+      color: #334155;
+      margin-bottom: 4px;
+    }
+    .form-control, .form-select {
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      padding: 9px 12px;
+      font-size: 0.875rem;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    /* Tables */
+    .table-container {
+      background: white;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .table th {
+      background-color: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      vertical-align: middle;
+      white-space: nowrap;
+      padding: 12px 14px;
+      border-bottom: 2px solid var(--border-color);
+    }
+    .table td {
+      font-size: 0.85rem;
+      vertical-align: middle;
+      padding: 10px 14px;
+      white-space: nowrap;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .badge-bueno { background-color: #10b981; }
+    .badge-regular { background-color: #f59e0b; }
+    .badge-inoperativo { background-color: #ef4444; }
+
+    /* Loading Overlay */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      color: white;
+    }
+    .loading-card {
+      background: rgba(30, 41, 59, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 30px 40px;
+      text-align: center;
+      max-width: 90%;
+      width: 360px;
+      box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Print Styles */
+    @media print {
+      body { background: white !important; font-size: 9pt; padding: 0; }
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      .top-institutional-banner { display: block !important; background: white !important; padding: 4px 0 !important; margin-bottom: 12px !important; border-bottom: 2px solid #334155 !important; }
+      .institutional-banner-img { max-width: 100% !important; max-height: 55px !important; }
+      .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+      .table-container { box-shadow: none !important; border: none !important; }
+      .table th { background-color: #eee !important; color: black !important; }
+      .app-header { background: white !important; color: black !important; border: 1px solid #ccc; padding: 10px; }
+    }
+    .print-only { display: none; }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .app-header { padding: 14px 16px; border-radius: 8px; }
+      .app-header h1 { font-size: 1.15rem; }
+      .nav-pills .nav-link { font-size: 0.8rem; padding: 8px 12px; }
+      .kpi-card { padding: 12px; }
+      .kpi-card h3 { font-size: 1.4rem; }
+    }
+
+    /* Contención de Seguridad & Portal de Autenticación */
+    .auth-gateway-wrapper {
+      min-height: calc(100vh - 74px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 30%, #1e3a8a 0%, #0f172a 100%);
+      padding: 25px 15px;
+      position: relative;
+    }
+    .auth-card {
+      background: #ffffff;
+      border-radius: 18px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      animation: fadeInCard 0.4s ease-out;
+    }
+    @keyframes fadeInCard {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .captcha-box {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 5px;
+      background: #e2e8f0;
+      color: #1e3a8a;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px dashed #94a3b8;
+      user-select: none;
+      text-shadow: 1px 1px 1px rgba(0,0,0,0.15);
+      display: inline-block;
+      min-width: 110px;
+      text-align: center;
+      text-decoration: line-through;
+    }
+
+    /* Servidor Central Conectado Status Badge */
+    .status-badge-connected {
+      background-color: #ecfdf5 !important;
+      color: #065f46 !important;
+      border: 1.5px solid #10b981 !important;
+      font-weight: 700 !important;
+      padding: 6px 14px !important;
+      border-radius: 50px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2) !important;
+      font-size: 0.85rem !important;
+      letter-spacing: 0.3px !important;
+      transition: all 0.3s ease !important;
+    }
+    .status-badge-reconnecting {
+      background-color: #fffbeb !important;
+      color: #b45309 !important;
+      border-color: #f59e0b !important;
+      box-shadow: 0 2px 6px rgba(245, 158, 11, 0.2) !important;
+    }
+    .status-badge-header {
+      background: rgba(16, 185, 129, 0.2) !important;
+      color: #ffffff !important;
+      border: 1.5px solid rgba(52, 211, 153, 0.6) !important;
+      font-weight: 700 !important;
+      padding: 5px 12px !important;
+      border-radius: 50px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      font-size: 0.8rem !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+    }
+    .status-indicator-dot {
+      width: 9px;
+      height: 9px;
+      background-color: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse-green 2s infinite;
+    }
+    .status-indicator-dot.reconnecting {
+      background-color: #f59e0b;
+      box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      animation: pulse-orange 2s infinite;
+    }
+    @keyframes pulse-green {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 7px rgba(16, 185, 129, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+      }
+    }
+    @keyframes pulse-orange {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 7px rgba(245, 158, 11, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+      }
+    }
+
+    /* Banner Superior Institucional (Cintillo Oficial Adaptativo) */
+    .top-institutional-banner {
+      background-color: #ffffff;
+      border-bottom: 2px solid #e2e8f0;
+      width: 100%;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+      position: relative;
+      z-index: 1000;
+    }
+    .institutional-banner-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 6px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .institutional-banner-img {
+      width: 100%;
+      max-width: 1350px;
+      height: auto;
+      max-height: 72px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) {
+      .institutional-banner-container {
+        padding: 4px 8px;
+      }
+      .institutional-banner-img {
+        max-height: 50px;
+      }
+    }
+    @media (max-width: 480px) {
+      .institutional-banner-container {
+        padding: 3px 6px;
+      }
+      .institutional-banner-img {
+        max-height: 38px;
+      }
+    }
+
+    /* Tarjeta de Perfil de Usuario en Cabecera (Alto Contraste y Legibilidad) */
+    .user-profile-card {
+      background-color: #ffffff !important;
+      border: 2px solid #93c5fd !important;
+      border-radius: 12px !important;
+      padding: 8px 16px !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18) !important;
+      min-width: 290px;
+      max-width: 100%;
+      transition: all 0.2s ease-in-out;
+    }
+    .user-profile-card:hover {
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25) !important;
+      border-color: #60a5fa !important;
+    }
+    .user-profile-name {
+      color: #0f172a !important; /* Azul marino oscuro de máxima legibilidad */
+      font-weight: 800 !important;
+      font-size: 0.88rem !important;
+      letter-spacing: 0.3px !important;
+      line-height: 1.25 !important;
+    }
+    .user-profile-role {
+      background-color: #1e3a8a !important; /* Azul institucional */
+      color: #ffffff !important;
+      font-size: 0.7rem !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.5px !important;
+      padding: 3px 8px !important;
+      border-radius: 6px !important;
+      display: inline-block !important;
+    }
+    .user-profile-depto {
+      color: #334155 !important; /* Gris pizarra oscuro contrastado */
+      font-size: 0.72rem !important;
+      font-weight: 600 !important;
+      line-height: 1.2 !important;
+      margin-top: 2px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Overlay de Carga -->
+  <div id="loadingOverlay">
+    <div class="loading-card">
+      <div class="spinner-border text-info mb-3" style="width: 3.2rem; height: 3.2rem;" role="status"></div>
+      <h5 id="loadingText" class="fw-bold mb-1">Sincronizando con el Servidor Central...</h5>
+      <p id="loadingSubtext" class="text-white-50 small mb-0">Por favor, espere un momento.</p>
+    </div>
+  </div>
+
+  <!-- Toast Notificación -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3 no-print" style="z-index: 1100;">
+    <div id="appToast" class="toast align-items-center text-white bg-success border-0 shadow-lg" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body d-flex align-items-center gap-2" id="toastMessage">
+          <i class="fa-solid fa-circle-check"></i> <span>Operación realizada con éxito.</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= BANNER SUPERIOR INSTITUCIONAL (CINTILLO ADAPTATIVO) ================= -->
+  <header class="top-institutional-banner" role="banner">
+    <div class="institutional-banner-container">
+      <img src="banner-superior.png" alt="Gobierno Bolivariano de Venezuela - Ministerio del Poder Popular para la Salud - Gobernación de Lara - Hospital Central Universitario Dr. Antonio María Pineda" class="institutional-banner-img">
+    </div>
+  </header>
+
+  <!-- ================= PORTAL DE ACCESO Y CONTENCIÓN DE SEGURIDAD ================= -->
+  <div id="authGatewayContainer" class="auth-gateway-wrapper">
+    <div class="auth-card">
+      <!-- Cabecera de la Tarjeta de Acceso -->
+      <div class="bg-primary text-white p-4 text-center">
+        <div class="mb-2">
+          <i class="fa-solid fa-hospital-user fa-3x text-info"></i>
+        </div>
+        <h4 class="fw-bold mb-1">Sistema Institucional de Control TIC</h4>
+        <p class="small text-white-90 mb-2 fw-medium">Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP) &bull; Dpto. de Tecnología, Información y Comunicación</p>
+        <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap mt-2">
+          <span class="badge text-white px-3 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-2" style="font-size: 0.75rem; background-color: #059669; border: 1px solid #34d399;">
+            <span class="status-indicator-dot" style="width: 7px; height: 7px; background-color: #ffffff; box-shadow: 0 0 0 0 rgba(255,255,255,0.7);"></span>
+            <span>Servidor Central Conectado</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Cuerpo del Formulario de Login -->
+      <div class="p-4">
+        <!-- Alerta de Notificación de Login -->
+        <div id="loginAlert" class="alert d-none py-2 small" role="alert"></div>
+
+        <form id="loginForm" autocomplete="on">
+          <div class="mb-3">
+            <label for="loginUsuario" class="form-label text-dark fw-bold small">Usuario Institucional *</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-user"></i></span>
+              <input type="text" class="form-control uppercase-input" id="loginUsuario" placeholder="EJ. ADMIN_TIC" required autocomplete="username" autofocus>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <label for="loginPassword" class="form-label text-dark fw-bold small mb-0">Contraseña *</label>
+              <button type="button" class="btn btn-link p-0 text-muted small text-decoration-none" onclick="togglePasswordVisibility('loginPassword', 'eyeIconLogin')">
+                <i class="fa-solid fa-eye me-1" id="eyeIconLogin"></i> Mostrar
+              </button>
+            </div>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-primary"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" class="form-control" id="loginPassword" placeholder="Contraseña (máx. 16 caracteres)" maxlength="16" required autocomplete="current-password">
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+              <small class="text-muted" style="font-size: 0.72rem;"><i class="fa-solid fa-shield-halved me-1 text-primary"></i>Alfanumérico y caracteres especiales</small>
+              <small class="text-muted" style="font-size: 0.72rem;">Máx. 16 caracteres (Aa-Zz, 0-9)</small>
+            </div>
+          </div>
+
+          <!-- Desafío de Verificación de Operador Humano (Captcha) -->
+          <div class="mb-3">
+            <label class="form-label text-dark fw-bold small d-block">Verificación de Operador *</label>
+            <div class="d-flex align-items-center gap-2">
+              <div id="captchaBox" class="captcha-box">7X9K</div>
+              <button type="button" class="btn btn-outline-secondary btn-sm py-2 px-3" onclick="generarNuevoCaptcha()" title="Generar nuevo código"><i class="fa-solid fa-rotate-right"></i></button>
+              <input type="text" class="form-control uppercase-input" id="loginCaptcha" placeholder="Código de 4 caracteres" maxlength="4" required autocomplete="off">
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="chkRecordarSesion" checked>
+              <label class="form-check-label text-muted small" for="chkRecordarSesion">Recordar sesión</label>
+            </div>
+            <a href="#basesLegalesModal" data-bs-toggle="modal" class="text-decoration-none small text-primary fw-semibold"><i class="fa-solid fa-scale-balanced me-1"></i>Bases Legales</a>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm" id="btnLoginSubmit">
+            <i class="fa-solid fa-right-to-bracket me-2"></i> Ingresar al Sistema
+          </button>
+        </form>
+
+        <p class="text-center text-muted mt-4 mb-0" style="font-size: 0.725rem;">
+          <i class="fa-solid fa-lock me-1"></i> Transmisión protegida mediante protocolos criptográficos TLS.<br>
+          Acceso exclusivo para personal autorizado &bull; HCUAMP 2026
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= LAYOUT PRINCIPAL DEL SISTEMA (Protegido por Autenticación) ================= -->
+  <div id="mainAppLayout" style="display: none;">
+
+    <main class="container-fluid px-3 px-md-4 max-w-7xl" style="max-width: 1400px; margin: 0 auto;">
+
+      <!-- CABECERA INSTITUCIONAL -->
+      <header class="app-header no-print">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="fa-solid fa-hospital-user fa-lg"></i>
+              <h1>Sistema Institucional de Control TIC</h1>
+            </div>
+            <p class="mb-0 fw-semibold text-white" style="font-size: 0.88rem; letter-spacing: 0.2px;">Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP) &bull; Dpto. de Tecnología, Información y Comunicación</p>
+          </div>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Perfil de Usuario Activo (Alto Contraste y Máxima Legibilidad) -->
+            <div class="user-profile-card d-flex align-items-center gap-3">
+              <i class="fa-solid fa-circle-user fa-2x text-primary flex-shrink-0"></i>
+              <div class="text-start" style="line-height: 1.25;">
+                <div class="user-profile-name text-uppercase" id="headerUserDisplay">ADMINISTRADOR GENERAL DTIC</div>
+                <div class="my-1">
+                  <span class="user-profile-role text-uppercase" id="headerRoleBadge">ADMINISTRADOR</span>
+                </div>
+                <div class="user-profile-depto text-uppercase" id="headerDeptoDisplay">DEPARTAMENTO DE TECNOLOGÍA, INFORMACIÓN Y COMUNICACIÓN (TIC)</div>
+              </div>
+            </div>
+
+            <!-- Indicador Servidor Central Conectado en Cabecera -->
+            <div class="status-badge-header d-none d-md-inline-flex" title="Conexión activa con el almacenamiento y base de datos institucional">
+              <span class="status-indicator-dot"></span>
+              <i class="fa-solid fa-server text-light"></i>
+              <span>Servidor Central Conectado</span>
+            </div>
+
+            <button class="btn btn-sm btn-outline-light fw-bold px-2 px-md-3" data-bs-toggle="modal" data-bs-target="#manualUsuarioModal" title="Abrir Manual de Usuario Interactivo">
+              <i class="fa-solid fa-book-open-reader me-1"></i> Manual
+            </button>
+            <button class="btn btn-sm btn-outline-light fw-bold px-2 px-md-3" data-bs-toggle="modal" data-bs-target="#basesLegalesModal" title="Consultar Bases Legales, Términos y Privacidad">
+              <i class="fa-solid fa-scale-balanced me-1"></i> Bases Legales
+            </button>
+            <button class="btn btn-sm btn-outline-warning fw-bold px-2 px-md-3" id="btnAuditoriaHeader" onclick="abrirModalAuditoria()" title="Ver Bitácora de Auditoría y Trazabilidad">
+              <i class="fa-solid fa-clock-rotate-left me-1"></i> Bitácora Logs
+            </button>
+            <button class="btn btn-sm btn-outline-info fw-bold px-2 px-md-3 d-none" id="btnUsuariosHeader" onclick="abrirModalUsuarios()" title="Administración de Usuarios">
+              <i class="fa-solid fa-users-gear me-1"></i> Usuarios
+            </button>
+            <button class="btn btn-sm btn-light fw-bold text-primary px-2 px-md-3" onclick="cargarTodoElSistema(true)" title="Sincronizar datos con el servidor central">
+              <i class="fa-solid fa-arrows-rotate me-1"></i> Sincronizar
+            </button>
+            <button class="btn btn-sm btn-danger fw-bold px-3" onclick="cerrarSesion()" title="Cerrar sesión de forma segura">
+              <i class="fa-solid fa-right-from-bracket me-1"></i> Salir
+            </button>
+          </div>
+        </div>
+      </header>
+
+    <!-- BARRA SUPERIOR CON PESTAÑAS -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 no-print">
+      <ul class="nav nav-pills" id="systemTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="bienes-tab" data-bs-toggle="pill" data-bs-target="#bienesContent" type="button" role="tab">
+            <i class="fa-solid fa-boxes-stacked me-2"></i>Inventario de Bienes
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="redes-tab" data-bs-toggle="pill" data-bs-target="#redesContent" type="button" role="tab">
+            <i class="fa-solid fa-network-wired me-2"></i>Infraestructura de Red
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="ofimatica-tab" data-bs-toggle="pill" data-bs-target="#ofimaticaContent" type="button" role="tab">
+            <i class="fa-solid fa-clipboard-check me-2"></i>Diagnóstico de Ofimática
+          </button>
+        </li>
+      </ul>
+      <div class="mb-2 d-flex align-items-center">
+        <div class="status-badge-connected" id="serverStatusBadge" title="Servidor Central Conectado - Base de Datos Institucional en Línea">
+          <span class="status-indicator-dot"></span>
+          <i class="fa-solid fa-server text-success"></i>
+          <span>Servidor Central Conectado</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="systemTabsContent">
+
+      <!-- ================= PESTAÑA 1: INVENTARIO DE BIENES ================= -->
+      <div class="tab-pane fade show active" id="bienesContent" role="tabpanel">
+        
+        <!-- Tarjetas de Métricas -->
+        <div class="row g-3 mb-4 no-print">
+          <div class="col-6 col-md-3">
+            <div class="card kpi-card">
+              <div>
+                <span class="text-muted small fw-bold">TOTAL REGISTROS</span>
+                <h3 class="mb-0 fw-bold mt-1 text-dark" id="totalItems">0</h3>
+              </div>
+              <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle"><i class="fa-solid fa-layer-group fa-lg"></i></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card kpi-card bn">
+              <div>
+                <span class="text-muted small fw-bold">BIENES NACIONALES</span>
+                <h3 class="mb-0 fw-bold mt-1 text-primary" id="totalBN">0</h3>
+              </div>
+              <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle"><i class="fa-solid fa-landmark fa-lg"></i></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card kpi-card be">
+              <div>
+                <span class="text-muted small fw-bold">BIENES ESTADALES</span>
+                <h3 class="mb-0 fw-bold mt-1 text-success" id="totalBE">0</h3>
+              </div>
+              <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle"><i class="fa-solid fa-building-flag fa-lg"></i></div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="card kpi-card bt">
+              <div>
+                <span class="text-muted small fw-bold">BIENES TERCEROS</span>
+                <h3 class="mb-0 fw-bold mt-1 text-warning" id="totalBT">0</h3>
+              </div>
+              <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle"><i class="fa-solid fa-handshake fa-lg"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulario de Bienes -->
+        <div class="card mb-4 no-print">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span id="bienFormTitle"><i class="fa-solid fa-pen-to-square me-2"></i>Captura de Datos del Bien Tecnológico</span>
+            <button class="btn btn-sm btn-outline-secondary" type="button" onclick="limpiarFormularioBienes()"><i class="fa-solid fa-eraser me-1"></i>Limpiar Formulario</button>
+          </div>
+          <div class="card-body p-3 p-md-4">
+            <form id="inventoryForm" class="needs-validation" novalidate>
+              <div class="row g-3">
+                
+                <!-- Departamento / Ubicación HCUAMP -->
+                <div class="col-12 col-md-4">
+                  <label for="departamentoBien" class="form-label">Departamento / Ubicación * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Seleccione el departamento, servicio médico o área administrativa donde está físicamente ubicado el bien."></i></label>
+                  <select class="form-select uppercase-input" id="departamentoBien" required>
+                    <option value="" selected disabled>Seleccione departamento o servicio...</option>
+                    <optgroup label="DIRECCIÓN Y DEPARTAMENTOS">
+                      <option value="DIRECCIÓN GENERAL">DIRECCIÓN GENERAL</option>
+                      <option value="SUBDIRECCIÓN">SUBDIRECCIÓN</option>
+                      <option value="DIRECCIÓN ADJUNTA DE ATENCIÓN MÉDICA">DIRECCIÓN ADJUNTA DE ATENCIÓN MÉDICA</option>
+                      <option value="DIRECCIÓN ADJUNTA DE DOCENCIA E INVESTIGACIÓN">DIRECCIÓN ADJUNTA DE DOCENCIA E INVESTIGACIÓN</option>
+                      <option value="ADMINISTRACIÓN">ADMINISTRACIÓN</option>
+                      <option value="CONSULTORÍA JURÍDICA">CONSULTORÍA JURÍDICA</option>
+                      <option value="DEPARTAMENTO DE CIRUGÍA">DEPARTAMENTO DE CIRUGÍA</option>
+                      <option value="DEPARTAMENTO DE ENFERMERÍA">DEPARTAMENTO DE ENFERMERÍA</option>
+                      <option value="DEPARTAMENTO DE EPIDEMIOLOGÍA">DEPARTAMENTO DE EPIDEMIOLOGÍA</option>
+                      <option value="DEPARTAMENTO DE GINECOLOGÍA Y OBSTETRICIA">DEPARTAMENTO DE GINECOLOGÍA Y OBSTETRICIA</option>
+                      <option value="DEPARTAMENTO DE INGENIERÍA Y MANTENIMIENTO">DEPARTAMENTO DE INGENIERÍA Y MANTENIMIENTO</option>
+                      <option value="DEPARTAMENTO DE MEDICINA CRÍTICA Y ANESTESIOLOGÍA">DEPARTAMENTO DE MEDICINA CRÍTICA Y ANESTESIOLOGÍA</option>
+                      <option value="DEPARTAMENTO DE MEDICINA INTERNA">DEPARTAMENTO DE MEDICINA INTERNA</option>
+                      <option value="DEPARTAMENTO DE NEONATOLOGÍA">DEPARTAMENTO DE NEONATOLOGÍA</option>
+                      <option value="DEPARTAMENTO DE NUTRICIÓN Y DIETÉTICA">DEPARTAMENTO DE NUTRICIÓN Y DIETÉTICA</option>
+                      <option value="DEPARTAMENTO DE OBSTETRICIA Y GINECOLOGÍA">DEPARTAMENTO DE OBSTETRICIA Y GINECOLOGÍA</option>
+                      <option value="DEPARTAMENTO DE PLANIFICACIÓN Y CONTROL DE GESTIÓN">DEPARTAMENTO DE PLANIFICACIÓN Y CONTROL DE GESTIÓN</option>
+                      <option value="DEPARTAMENTO DE PROMOCIÓN SOCIAL">DEPARTAMENTO DE PROMOCIÓN SOCIAL</option>
+                      <option value="DEPARTAMENTO DE RADIACIONES">DEPARTAMENTO DE RADIACIONES</option>
+                      <option value="DEPARTAMENTO DE REGISTRO Y ESTADÍSTICAS DE SALUD">DEPARTAMENTO DE REGISTRO Y ESTADÍSTICAS DE SALUD</option>
+                      <option value="DEPARTAMENTO DE SANEAMIENTO AMBIENTAL">DEPARTAMENTO DE SANEAMIENTO AMBIENTAL</option>
+                      <option value="DEPARTAMENTO DE SEGURIDAD Y VIGILANCIA">DEPARTAMENTO DE SEGURIDAD Y VIGILANCIA</option>
+                      <option value="DEPARTAMENTO DE TECNOLOGÍA, INFORMACIÓN Y COMUNICACIÓN (TIC)">DEPARTAMENTO DE TECNOLOGÍA, INFORMACIÓN Y COMUNICACIÓN (TIC)</option>
+                      <option value="OFICINA DE GESTIÓN HUMANA">OFICINA DE GESTIÓN HUMANA</option>
+                    </optgroup>
+                    <optgroup label="SERVICIOS Y ÁREAS ESPECIALES">
+                      <option value="ALMACÉN">ALMACÉN</option>
+                      <option value="ASCENSORES">ASCENSORES</option>
+                      <option value="BANCO DE SANGRE">BANCO DE SANGRE</option>
+                      <option value="BIENES PÚBLICOS">BIENES PÚBLICOS</option>
+                      <option value="CALDERAS">CALDERAS</option>
+                      <option value="CAPILLA HOSPITALARIA">CAPILLA HOSPITALARIA</option>
+                      <option value="CENTRAL DE SUMINISTROS">CENTRAL DE SUMINISTROS</option>
+                      <option value="COMPRAS">COMPRAS</option>
+                      <option value="CONTABILIDAD">CONTABILIDAD</option>
+                      <option value="COORDINACIÓN DE MISIONES ESPECIALES">COORDINACIÓN DE MISIONES ESPECIALES</option>
+                      <option value="DESPACHO DE DIRECCIÓN">DESPACHO DE DIRECCIÓN</option>
+                      <option value="ELECTRICIDAD">ELECTRICIDAD</option>
+                      <option value="ELECTROMEDICINA">ELECTROMEDICINA</option>
+                      <option value="EMERGENCIA">EMERGENCIA</option>
+                      <option value="FARMACIA">FARMACIA</option>
+                      <option value="KÁRDEX">KÁRDEX</option>
+                      <option value="MANTENIMIENTO GENERAL">MANTENIMIENTO GENERAL</option>
+                      <option value="MEDICINA FÍSICA Y REHABILITACIÓN">MEDICINA FÍSICA Y REHABILITACIÓN</option>
+                      <option value="MEDICINA INTERNA">MEDICINA INTERNA</option>
+                      <option value="NÓMINA">NÓMINA</option>
+                      <option value="OFICINA DE ATENCIÓN AL CIUDADANO">OFICINA DE ATENCIÓN AL CIUDADANO</option>
+                      <option value="PABELLÓN CENTRAL">PABELLÓN CENTRAL</option>
+                      <option value="PLANIFICACIÓN">PLANIFICACIÓN</option>
+                      <option value="PLOMERÍA">PLOMERÍA</option>
+                      <option value="PRESUPUESTO">PRESUPUESTO</option>
+                      <option value="RECLUTAMIENTO Y SELECCIÓN">RECLUTAMIENTO Y SELECCIÓN</option>
+                      <option value="RECURSOS HUMANOS">RECURSOS HUMANOS</option>
+                      <option value="REFRIGERACIÓN">REFRIGERACIÓN</option>
+                      <option value="RELACIONES LABORALES">RELACIONES LABORALES</option>
+                      <option value="RENDICIONES">RENDICIONES</option>
+                      <option value="REPRODUCCIÓN">REPRODUCCIÓN</option>
+                      <option value="SALA DE DIÁLISIS">SALA DE DIÁLISIS</option>
+                      <option value="SALA DE PARTOS">SALA DE PARTOS</option>
+                      <option value="SALA DE YESO">SALA DE YESO</option>
+                      <option value="SERVICIO ANESTESIA Y RECUPERACIÓN">SERVICIO ANESTESIA Y RECUPERACIÓN</option>
+                      <option value="SERVICIO DE ANATOMÍA PATOLÓGICA">SERVICIO DE ANATOMÍA PATOLÓGICA</option>
+                      <option value="SERVICIO DE BANCO DE SANGRE">SERVICIO DE BANCO DE SANGRE</option>
+                      <option value="SERVICIO DE CARDIOLOGÍA">SERVICIO DE CARDIOLOGÍA</option>
+                      <option value="SERVICIO DE CIRUGÍA DE HOMBRES">SERVICIO DE CIRUGÍA DE HOMBRES</option>
+                      <option value="SERVICIO DE CIRUGÍA DE MUJERES">SERVICIO DE CIRUGÍA DE MUJERES</option>
+                      <option value="SERVICIO DE CIRUGÍA GENERAL">SERVICIO DE CIRUGÍA GENERAL</option>
+                      <option value="SERVICIO DE CIRUGÍA PLÁSTICA Y CAUMATOLOGÍA">SERVICIO DE CIRUGÍA PLÁSTICA Y CAUMATOLOGÍA</option>
+                      <option value="SERVICIO DE CONSULTA EXTERNA">SERVICIO DE CONSULTA EXTERNA</option>
+                      <option value="SERVICIO DE CUIDADOS INTERMEDIOS">SERVICIO DE CUIDADOS INTERMEDIOS</option>
+                      <option value="SERVICIO DE DERMATOLOGÍA">SERVICIO DE DERMATOLOGÍA</option>
+                      <option value="SERVICIO DE DIAGNÓSTICO POR IMÁGENES">SERVICIO DE DIAGNÓSTICO POR IMÁGENES</option>
+                      <option value="SERVICIO DE EMERGENCIA GENERAL">SERVICIO DE EMERGENCIA GENERAL</option>
+                      <option value="SERVICIO DE ENDOCRINOLOGÍA">SERVICIO DE ENDOCRINOLOGÍA</option>
+                      <option value="SERVICIO DE EPIDEMIOLOGÍA">SERVICIO DE EPIDEMIOLOGÍA</option>
+                      <option value="SERVICIO DE GASTROENTEROLOGÍA">SERVICIO DE GASTROENTEROLOGÍA</option>
+                      <option value="SERVICIO DE GINECOBSTETRICIA 1 (GO1)">SERVICIO DE GINECOBSTETRICIA 1 (GO1)</option>
+                      <option value="SERVICIO DE GINECOBSTETRICIA 2 (GO2)">SERVICIO DE GINECOBSTETRICIA 2 (GO2)</option>
+                      <option value="SERVICIO DE GINECOBSTETRICIA 3 (GO3)">SERVICIO DE GINECOBSTETRICIA 3 (GO3)</option>
+                      <option value="SERVICIO DE GINECOBSTETRICIA 4 (GO4)">SERVICIO DE GINECOBSTETRICIA 4 (GO4)</option>
+                      <option value="SERVICIO DE GINECOLOGÍA Y OBSTETRICIA">SERVICIO DE GINECOLOGÍA Y OBSTETRICIA</option>
+                      <option value="SERVICIO DE HISTORIAS MÉDICAS">SERVICIO DE HISTORIAS MÉDICAS</option>
+                      <option value="SERVICIO DE LABORATORIO CENTRAL">SERVICIO DE LABORATORIO CENTRAL</option>
+                      <option value="SERVICIO DE LAVANDERÍA Y LENCERÍA">SERVICIO DE LAVANDERÍA Y LENCERÍA</option>
+                      <option value="SERVICIO DE MATERNIDAD">SERVICIO DE MATERNIDAD</option>
+                      <option value="SERVICIO DE MEDICINA DE HOMBRES">SERVICIO DE MEDICINA DE HOMBRES</option>
+                      <option value="SERVICIO DE MEDICINA DE MUJERES">SERVICIO DE MEDICINA DE MUJERES</option>
+                      <option value="SERVICIO DE MEDICINA FÍSICA Y REHABILITACIÓN">SERVICIO DE MEDICINA FÍSICA Y REHABILITACIÓN</option>
+                      <option value="SERVICIO DE NEFROLOGÍA">SERVICIO DE NEFROLOGÍA</option>
+                      <option value="SERVICIO DE NEUROCIRUGÍA">SERVICIO DE NEUROCIRUGÍA</option>
+                      <option value="SERVICIO DE NEUROLOGÍA">SERVICIO DE NEUROLOGÍA</option>
+                      <option value="SERVICIO DE ODONTOLOGÍA">SERVICIO DE ODONTOLOGÍA</option>
+                      <option value="SERVICIO DE OFTALMOLOGÍA">SERVICIO DE OFTALMOLOGÍA</option>
+                      <option value="SERVICIO DE ONCOLOGÍA">SERVICIO DE ONCOLOGÍA</option>
+                      <option value="SERVICIO DE OSTEOSÍNTESIS">SERVICIO DE OSTEOSÍNTESIS</option>
+                      <option value="SERVICIO DE OTORRINOLARINGOLOGÍA (ORL)">SERVICIO DE OTORRINOLARINGOLOGÍA (ORL)</option>
+                      <option value="SERVICIO DE PATOLOGÍA NEONATAL">SERVICIO DE PATOLOGÍA NEONATAL</option>
+                      <option value="SERVICIO DE RADIOLOGÍA">SERVICIO DE RADIOLOGÍA</option>
+                      <option value="SERVICIO DE REUMATOLOGÍA">SERVICIO DE REUMATOLOGÍA</option>
+                      <option value="SERVICIO DE SALA DE PARTO">SERVICIO DE SALA DE PARTO</option>
+                      <option value="SERVICIO DE SALUD MENTAL (PSICOLOGÍA Y PSIQUIATRÍA)">SERVICIO DE SALUD MENTAL (PSICOLOGÍA Y PSIQUIATRÍA)</option>
+                      <option value="SERVICIO DE SANEAMIENTO AMBIENTAL">SERVICIO DE SANEAMIENTO AMBIENTAL</option>
+                      <option value="SERVICIO DE TRAUMATOLOGÍA">SERVICIO DE TRAUMATOLOGÍA</option>
+                      <option value="SERVICIO DE UROLOGÍA">SERVICIO DE UROLOGÍA</option>
+                      <option value="SERVICIO EMERGENCIA GENERAL">SERVICIO EMERGENCIA GENERAL</option>
+                      <option value="SERVICIO MEDICINA LABORAL">SERVICIO MEDICINA LABORAL</option>
+                      <option value="SERVICIOS GENERALES">SERVICIOS GENERALES</option>
+                      <option value="SERVICIOS INTERNOS">SERVICIOS INTERNOS</option>
+                      <option value="SERVICIO NUTRICIÓN Y DIETÉTICA">SERVICIO NUTRICIÓN Y DIETÉTICA</option>
+                      <option value="SISTEMA DE BOMBEO DE AGUA">SISTEMA DE BOMBEO DE AGUA</option>
+                      <option value="SUPERVISIÓN DE ENFERMERÍA">SUPERVISIÓN DE ENFERMERÍA</option>
+                      <option value="SUPERVISIÓN DE SEGURIDAD">SUPERVISIÓN DE SEGURIDAD</option>
+                      <option value="SUPERVISIÓN DE SERVICIOS INTERNOS">SUPERVISIÓN DE SERVICIOS INTERNOS</option>
+                      <option value="TESORERÍA">TESORERÍA</option>
+                      <option value="TRANSPORTE Y COMUNICACIÓN">TRANSPORTE Y COMUNICACIÓN</option>
+                      <option value="UNIDAD DE ARCHIVO">UNIDAD DE ARCHIVO</option>
+                      <option value="UNIDAD DE COMPRAS">UNIDAD DE COMPRAS</option>
+                      <option value="UNIDAD DE CUIDADOS INTENSIVOS (UCI)">UNIDAD DE CUIDADOS INTENSIVOS (UCI)</option>
+                      <option value="UNIDAD DE CUIDADOS POSTANESTÉSICOS (UCPA)">UNIDAD DE CUIDADOS POSTANESTÉSICOS (UCPA)</option>
+                      <option value="UNIDAD DE LABORATORIO DE EMERGENCIA">UNIDAD DE LABORATORIO DE EMERGENCIA</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <div class="col-6 col-md-2">
+                  <label for="grupo" class="form-label">Grupo * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Grupo clasificatorio según el catálogo oficial de bienes públicos (Ej: 04, 44 para computación)."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="grupo" placeholder="EJ. 04" required>
+                </div>
+                <div class="col-6 col-md-2">
+                  <label for="subgrupo" class="form-label">Subgrupo * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Subgrupo correspondiente a la categoría del bien tecnológico según SUDEBIP."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="subgrupo" placeholder="EJ. 13" required>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label for="seccion" class="form-label">Nro. Identificación / Sección <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Identificador secundario o sección interna dentro del servicio (Opcional)."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="seccion" placeholder="EJ. SEC-01 (OPCIONAL)">
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4">
+                  <label for="nroBien" class="form-label">Nro. de Bien * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Seleccione la clasificación patrimonial (BN: Bien Nacional, BE: Bien Estadal, BT: Bien Tercero) e introduzca el código de inventario."></i></label>
+                  <div class="input-group">
+                    <select class="form-select flex-grow-0 uppercase-input" id="tipoBien" style="width: 85px;">
+                      <option value="BN" selected>BN</option>
+                      <option value="BE">BE</option>
+                      <option value="BT">BT</option>
+                    </select>
+                    <input type="text" class="form-control uppercase-input" id="nroBien" placeholder="3374738383" required>
+                  </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-md-4">
+                  <label for="estadoBien" class="form-label">Estado del Bien * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Condición operativa: BUENO (totalmente funcional), REGULAR (requiere mantenimiento leve), INOPERATIVO (averiado / para desincorporación)."></i></label>
+                  <select class="form-select uppercase-input" id="estadoBien" required>
+                    <option value="" selected disabled>Seleccione...</option>
+                    <option value="BUENO">BUENO</option>
+                    <option value="REGULAR">REGULAR</option>
+                    <option value="INOPERATIVO">INOPERATIVO</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label for="caracteristicas" class="form-label">Características * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Categoría funcional o técnica a la que corresponde el activo."></i></label>
+                  <select class="form-select uppercase-input" id="caracteristicas" required>
+                    <option value="" selected disabled>Seleccione característica...</option>
+                    <option value="EQUIPO ELECTRÓNICO">EQUIPO ELECTRÓNICO</option>
+                    <option value="MUEBLES DE OFICINA">MUEBLES DE OFICINA</option>
+                    <option value="EQUIPOS DE COMPUTACIÓN">EQUIPOS DE COMPUTACIÓN</option>
+                    <option value="EQUIPOS DE COMUNICACIÓN">EQUIPOS DE COMUNICACIÓN</option>
+                    <option value="HERRAMIENTAS Y MAQUINARIAS">HERRAMIENTAS Y MAQUINARIAS</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label for="descripcion" class="form-label">Nombre y Descripción del Bien * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Nombre y especificaciones principales del bien (Ej: COMPUTADORA DE ESCRITORIO, MONITOR LED 22')."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="descripcion" placeholder="EJ. COMPUTADORA DE ESCRITORIO ALL-IN-ONE" required>
+                </div>
+
+                <div class="col-12 col-sm-4 col-md-2">
+                  <label for="modelo" class="form-label">Modelo <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Modelo comercial específico dado por el fabricante."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="modelo" placeholder="EJ. PRODESK 400">
+                </div>
+                <div class="col-12 col-sm-4 col-md-2">
+                  <label for="color" class="form-label">Color <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Color predominante del equipo."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="color" placeholder="EJ. NEGRO">
+                </div>
+                <div class="col-12 col-sm-4 col-md-2">
+                  <label for="serial" class="form-label">Serial / Serie <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Número de serie impreso por el fabricante en la etiqueta o placa del equipo."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="serial" placeholder="EJ. 3161649867646">
+                </div>
+
+                <!-- Campo de Fotografía -->
+                <div class="col-12">
+                  <label for="fotoFile" class="form-label"><i class="fa-solid fa-camera me-1 text-primary"></i> Fotografía del Bien (Cámara o Archivo) <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Tome o adjunte una foto clara del equipo, placa o serial. Se optimiza y comprime automáticamente."></i></label>
+                  <input type="file" class="form-control" id="fotoFile" accept="image/*" capture="environment">
+                  <input type="hidden" id="fotoUrlActual" value="">
+                  <div class="d-flex justify-content-between align-items-center mt-1">
+                    <small class="text-muted">Optimización automática de imagen (compresión integrada antes de almacenar en el servidor institucional).</small>
+                    <span id="fotoPreviewStatus" class="small text-primary fw-semibold"></span>
+                  </div>
+                </div>
+
+                <div class="col-12 text-end mt-4">
+                  <button class="btn btn-primary px-4 fw-bold shadow-sm" id="btnSubmitBien" type="submit">
+                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Registrar y Guardar Bien
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Barra de Búsqueda y Filtros -->
+        <div class="row align-items-center mb-3 g-2 no-print">
+          <div class="col-12 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+              <input type="text" id="searchInput" class="form-control border-start-0 uppercase-input" placeholder="Buscar por Nro. de Bien, Departamento o Descripción...">
+            </div>
+          </div>
+          <div class="col-12 col-md-6 text-md-end d-flex gap-2 justify-content-md-end flex-wrap">
+            <button class="btn btn-outline-success btn-sm px-3" onclick="exportarCSVBienes()"><i class="fa-solid fa-file-excel me-1"></i> Exportar CSV/Excel</button>
+            <button class="btn btn-dark btn-sm px-3" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Imprimir Reporte</button>
+          </div>
+        </div>
+
+        <!-- Tabla de Bienes -->
+        <div class="table-container p-2 mb-4">
+          <table class="table table-hover align-middle mb-0" id="inventoryTable">
+            <thead>
+              <tr>
+                <th>Departamento</th>
+                <th>Grupo</th>
+                <th>SubGrupo</th>
+                <th>Sección</th>
+                <th>Nro. de Bien</th>
+                <th>Descripción</th>
+                <th>Características</th>
+                <th>Modelo</th>
+                <th>Color</th>
+                <th>Serial</th>
+                <th>Estado</th>
+                <th class="text-center">Fotografía</th>
+                <th class="text-center no-print">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+          <div id="emptyMessage" class="text-center p-4 text-muted d-none">
+            <i class="fa-solid fa-folder-open fa-2x mb-2 text-secondary"></i>
+            <p class="mb-0">No se encontraron registros de bienes tecnológicos.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PESTAÑA 2: REDES ================= -->
+      <div class="tab-pane fade" id="redesContent" role="tabpanel">
+        <div class="card mb-4">
+          <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-primary" id="networkFormTitle"><i class="fa-solid fa-network-wired me-2"></i>Formulario de Registro de Infraestructura de Red</h5>
+            <small class="text-muted">Gestión de conectividad institucional.</small>
+          </div>
+          <div class="card-body p-3 p-md-4">
+            <form id="networkForm" class="needs-validation" novalidate>
+              <div class="row g-4">
+                <div class="col-12 col-md-4">
+                  <label for="departamentoRed" class="form-label">Departamento inspeccionado * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Departamento o área donde se realizó la inspección de la infraestructura de red."></i></label>
+                  <select class="form-select uppercase-input" id="departamentoRed" required>
+                    <option value="" selected disabled>Seleccione departamento o servicio...</option>
+                  </select>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label fw-bold text-dark mb-2">1. Equipos en Área (Marque y asigne cantidad) <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Indique los dispositivos de red presentes en esta ubicación activando la casilla e ingresando la cantidad."></i></label>
+                  <div class="row g-3">
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <div class="input-group">
+                        <div class="input-group-text bg-white">
+                          <input class="form-check-input mt-0" type="checkbox" id="chk_modem" onchange="toggleCantidad('modem')" data-bs-toggle="tooltip" title="Habilitar cantidad de Módems">
+                          <label class="ms-2 fw-semibold mb-0" for="chk_modem">MODEM</label>
+                        </div>
+                        <input type="number" class="form-control" id="qty_modem" min="0" value="0" disabled>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <div class="input-group">
+                        <div class="input-group-text bg-white">
+                          <input class="form-check-input mt-0" type="checkbox" id="chk_router" onchange="toggleCantidad('router')" data-bs-toggle="tooltip" title="Habilitar cantidad de Routers">
+                          <label class="ms-2 fw-semibold mb-0" for="chk_router">ROUTER</label>
+                        </div>
+                        <input type="number" class="form-control" id="qty_router" min="0" value="0" disabled>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <div class="input-group">
+                        <div class="input-group-text bg-white">
+                          <input class="form-check-input mt-0" type="checkbox" id="chk_switch" onchange="toggleCantidad('switch')" data-bs-toggle="tooltip" title="Habilitar cantidad de Switches">
+                          <label class="ms-2 fw-semibold mb-0" for="chk_switch">SWITCH</label>
+                        </div>
+                        <input type="number" class="form-control" id="qty_switch" min="0" value="0" disabled>
+                      </div>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-3">
+                      <div class="input-group">
+                        <div class="input-group-text bg-white">
+                          <input class="form-check-input mt-0" type="checkbox" id="chk_ap" onchange="toggleCantidad('ap')" data-bs-toggle="tooltip" title="Habilitar cantidad de Puntos de Acceso (AP)">
+                          <label class="ms-2 fw-semibold mb-0" for="chk_ap">PUNTO DE ACCESO</label>
+                        </div>
+                        <input type="number" class="form-control" id="qty_ap" min="0" value="0" disabled>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12"><hr class="text-muted opacity-25"></div>
+
+                <div class="col-12 col-md-6">
+                  <label for="cableado" class="form-label">2. Tipo de Cableado * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Categoría del cableado de red estructurado presente en el departamento."></i></label>
+                  <select class="form-select uppercase-input" id="cableado" required>
+                    <option value="" selected disabled>Seleccione...</option>
+                    <option value="CAT5E">CAT5E</option>
+                    <option value="CAT6">CAT6</option>
+                    <option value="CAT6A">CAT6A</option>
+                    <option value="FIBRA ÓPTICA">FIBRA ÓPTICA</option>
+                    <option value="INALÁMBRICO">INALÁMBRICO</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="form-label d-block">3. Canalización * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Indica si los cables de datos cuentan con canaletas, ductos o tuberías de protección física."></i></label>
+                  <div class="mt-2">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="canalizacion" id="canalizacionSi" value="SÍ" required>
+                      <label class="form-check-label fw-semibold" for="canalizacionSi">SÍ</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="canalizacion" id="canalizacionNo" value="NO" required>
+                      <label class="form-check-label fw-semibold" for="canalizacionNo">NO</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label for="ssid" class="form-label">4. Nombre de Red Wi-Fi (SSID) * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Nombre identificador (SSID) de la señal inalámbrica emitida en la zona."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="ssid" placeholder="EJ. HCUAMP_TIC_WIFI" required>
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label for="bandaWifi" class="form-label">Tipo de Banda Wi-Fi * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Frecuencia de emisión: 2.4 GHz (mayor alcance), 5 GHz (mayor ancho de banda), o Dual Band."></i></label>
+                  <select class="form-select uppercase-input" id="bandaWifi" required>
+                    <option value="" selected disabled>Seleccione banda...</option>
+                    <option value="2.4 GHZ">2.4 GHZ</option>
+                    <option value="5 GHZ">5 GHZ</option>
+                    <option value="DUAL (2.4 / 5 GHZ)">DUAL (2.4 / 5 GHZ)</option>
+                  </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label for="proveedor" class="form-label">5. Proveedor de Internet / Enlace * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Empresa o entidad que suministra el servicio de enlace o telecomunicaciones."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="proveedor" placeholder="EJ. CANTV, FIBEX, INTER" required>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label for="velocidad" class="form-label">6. Velocidad de Enlace * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Capacidad de transferencia estimada o contratada (ej. 50 MBPS, 100 MBPS)."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="velocidad" placeholder="EJ. 100 MBPS" required>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label for="responsable" class="form-label">7. Responsable de Pagos / Gestión * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Funcionario o unidad encargada de supervisar o administrar la conexión."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="responsable" placeholder="EJ. DIRECCIÓN TIC / ADMINISTRACIÓN" required>
+                </div>
+
+                <div class="col-12 text-end mt-4">
+                  <button class="btn btn-success px-5 fw-bold py-2 shadow-sm" id="btnSubmitRed" type="submit">
+                    <i class="fa-solid fa-cloud-arrow-up me-2"></i> Guardar Infraestructura
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="row align-items-center mb-3 g-2 no-print">
+          <div class="col-12 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+              <input type="text" id="searchNetworkInput" class="form-control border-start-0 uppercase-input" placeholder="Buscar por departamento, SSID, proveedor o responsable...">
+            </div>
+          </div>
+          <div class="col-12 col-md-6 text-md-end d-flex gap-2 justify-content-md-end flex-wrap">
+            <button class="btn btn-outline-success btn-sm px-3" onclick="exportarCSVRedes()"><i class="fa-solid fa-file-excel me-1"></i> Exportar CSV/Excel</button>
+            <button class="btn btn-dark btn-sm px-3" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Imprimir</button>
+          </div>
+        </div>
+
+        <div class="table-container p-2 mb-4">
+          <table class="table table-hover align-middle mb-0" id="networkTable">
+            <thead>
+              <tr>
+                <th>Departamento</th>
+                <th>SSID / Banda</th>
+                <th>Equipos (Cant)</th>
+                <th>Cableado / Canaliz.</th>
+                <th>Proveedor / Velocidad</th>
+                <th>Responsable</th>
+                <th class="text-center no-print">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="networkTableBody"></tbody>
+          </table>
+          <div id="emptyNetworkMessage" class="text-center p-4 text-muted d-none">
+            <i class="fa-solid fa-folder-open fa-2x mb-2 text-secondary"></i>
+            <p class="mb-0">No se encontraron registros de red.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= PESTAÑA 3: OFIMÁTICA ================= -->
+      <div class="tab-pane fade" id="ofimaticaContent" role="tabpanel">
+        <div class="card mb-4">
+          <div class="card-header bg-white py-3">
+            <h5 class="mb-0 fw-bold text-primary" id="ofiFormTitle"><i class="fa-solid fa-clipboard-question me-2"></i>Cuestionario y Diagnóstico de Conocimientos en Ofimática</h5>
+            <small class="text-muted">Registro institucional de autoevaluación general de competencias tecnológicas.</small>
+          </div>
+          <div class="card-body p-3 p-md-4">
+            <form id="ofimaticaForm" class="needs-validation" novalidate>
+              <h6 class="text-secondary border-bottom pb-2 mb-3 fw-bold"><i class="fa-solid fa-user-pen me-2"></i>1. Datos Generales del Funcionario</h6>
+              <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                  <label for="evaluadoNombre" class="form-label">Nombre Completo * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Nombres y apellidos completos del personal evaluado."></i></label>
+                  <input type="text" class="form-control uppercase-input" id="evaluadoNombre" placeholder="EJ. LCDO. JUAN PÉREZ" required>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="departamentoOfi" class="form-label">Correo Electrónico o Departamento * <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Seleccione el servicio/departamento de adscripción o indique un correo electrónico institucional."></i></label>
+                  <select class="form-select uppercase-input" id="departamentoOfi" required onchange="actualizarCampoCorreoOfimatica()">
+                    <option value="" selected disabled>Seleccione departamento o servicio...</option>
+                    <option value="__CORREO__">OTRO: CORREO ELECTRÓNICO</option>
+                  </select>
+                  <input type="text" class="form-control uppercase-input mt-2 d-none" id="evaluadoCorreo" placeholder="EJ. JUAN.PEREZ@HCUAMP.GOB.VE" aria-label="Correo electrónico institucional">
+                </div>
+              </div>
+
+              <h6 class="text-secondary border-bottom pb-2 mb-3 fw-bold"><i class="fa-solid fa-table-cells me-2"></i>2. Autoevaluación General (Frecuencia y Nivel Percibido) <i class="fa-solid fa-circle-info text-primary" data-bs-toggle="tooltip" title="Seleccione con qué frecuencia utiliza cada herramienta y el nivel de destreza con el que se identifica."></i></h6>
+              <div class="table-responsive mb-4">
+                <table class="table table-bordered align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Herramienta Ofimática</th>
+                      <th style="width: 30%;">Frecuencia de Uso <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Frecuencia habitual con la que opera la herramienta."></i></th>
+                      <th style="width: 30%;">Nivel Percibido <i class="fa-solid fa-circle-question text-muted" data-bs-toggle="tooltip" title="Autopercepción de dominio: Básico (funciones elementales), Intermedio (fórmulas/tablas), Avanzado (macros/automatización)."></i></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="fw-semibold"><i class="fa-solid fa-file-word text-primary me-2"></i>Procesador de Texto (Writer, Word, WPS, Docs Cloud)</td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="freq_word" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="DIARIO">DIARIO</option>
+                          <option value="SEMANAL">SEMANAL</option>
+                          <option value="RARO">RARO</option>
+                          <option value="NUNCA">NUNCA</option>
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="nivel_word" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="BÁSICO">BÁSICO</option>
+                          <option value="INTERMEDIO">INTERMEDIO</option>
+                          <option value="AVANZADO">AVANZADO</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="fw-semibold"><i class="fa-solid fa-file-excel text-success me-2"></i>Hojas de Cálculo (Calc, Excel, WPS, Planillas Cloud)</td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="freq_excel" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="DIARIO">DIARIO</option>
+                          <option value="SEMANAL">SEMANAL</option>
+                          <option value="RARO">RARO</option>
+                          <option value="NUNCA">NUNCA</option>
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="nivel_excel" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="BÁSICO">BÁSICO</option>
+                          <option value="INTERMEDIO">INTERMEDIO</option>
+                          <option value="AVANZADO">AVANZADO</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="fw-semibold"><i class="fa-solid fa-file-powerpoint text-danger me-2"></i>Presentaciones (Impress, PowerPoint, WPS, Slides Cloud)</td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="freq_slides" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="DIARIO">DIARIO</option>
+                          <option value="SEMANAL">SEMANAL</option>
+                          <option value="RARO">RARO</option>
+                          <option value="NUNCA">NUNCA</option>
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="nivel_slides" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="BÁSICO">BÁSICO</option>
+                          <option value="INTERMEDIO">INTERMEDIO</option>
+                          <option value="AVANZADO">AVANZADO</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="fw-semibold"><i class="fa-solid fa-envelope text-info me-2"></i>Correo y Calendario (Webmail, Outlook)</td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="freq_correo" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="DIARIO">DIARIO</option>
+                          <option value="SEMANAL">SEMANAL</option>
+                          <option value="RARO">RARO</option>
+                          <option value="NUNCA">NUNCA</option>
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="nivel_correo" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="BÁSICO">BÁSICO</option>
+                          <option value="INTERMEDIO">INTERMEDIO</option>
+                          <option value="AVANZADO">AVANZADO</option>
+                        </select>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td class="fw-semibold"><i class="fa-solid fa-cloud text-primary me-2"></i>Almacenamiento en Nube / Colaboración (Cloud Storage, OneDrive, Terabox)</td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="freq_nube" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="DIARIO">DIARIO</option>
+                          <option value="SEMANAL">SEMANAL</option>
+                          <option value="RARO">RARO</option>
+                          <option value="NUNCA">NUNCA</option>
+                        </select>
+                      </td>
+                      <td>
+                        <select class="form-select form-select-sm uppercase-input" id="nivel_nube" required>
+                          <option value="" selected disabled>Seleccione...</option>
+                          <option value="BÁSICO">BÁSICO</option>
+                          <option value="INTERMEDIO">INTERMEDIO</option>
+                          <option value="AVANZADO">AVANZADO</option>
+                        </select>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="col-12 text-end mt-4">
+                <button class="btn btn-primary px-5 fw-bold py-2 shadow-sm" id="btnSubmitOfi" type="submit">
+                  <i class="fa-solid fa-paper-plane me-2"></i> Enviar Diagnóstico
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="row align-items-center mb-3 g-2 no-print">
+          <div class="col-12 col-md-6">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+              <input type="text" id="searchOfimaticaInput" class="form-control border-start-0 uppercase-input" placeholder="Buscar por Nombre o Correo/Dpto...">
+            </div>
+          </div>
+          <div class="col-12 col-md-6 text-md-end d-flex gap-2 justify-content-md-end flex-wrap">
+            <button class="btn btn-outline-success btn-sm px-3" onclick="exportarCSVOfimatica()"><i class="fa-solid fa-file-excel me-1"></i> Exportar CSV/Excel</button>
+            <button class="btn btn-dark btn-sm px-3" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Imprimir</button>
+          </div>
+        </div>
+
+        <div class="table-container p-2 mb-4">
+          <table class="table table-hover align-middle mb-0" id="ofimaticaTable">
+            <thead>
+              <tr>
+                <th>Fecha / Hora</th>
+                <th>Nombre del Evaluado</th>
+                <th>Correo / Departamento</th>
+                <th>Procesador Texto</th>
+                <th>Hojas de Cálculo</th>
+                <th>Presentaciones</th>
+                <th>Correo y Calendario</th>
+                <th>Nube / Colaboración</th>
+                <th class="text-center no-print">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="ofimaticaTableBody"></tbody>
+          </table>
+          <div id="emptyOfimaticaMessage" class="text-center p-4 text-muted d-none">
+            <i class="fa-solid fa-folder-open fa-2x mb-2 text-secondary"></i>
+            <p class="mb-0">No se encontraron diagnósticos registrados.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- PIE DE PÁGINA INSTITUCIONAL -->
+  <footer class="text-center py-4 mt-5 border-top bg-white no-print">
+    <div class="container text-center">
+      <div class="d-flex justify-content-center align-items-center gap-2 gap-md-3 mb-2 flex-wrap">
+        <span class="text-primary fw-bold"><i class="fa-solid fa-hospital-user me-1"></i> HCUAMP</span>
+        <span class="text-muted d-none d-sm-inline">&bull;</span>
+        <span class="text-secondary fw-semibold"><i class="fa-solid fa-microchip me-1"></i> Departamento de Tecnología, Información y Comunicación (DTIC)</span>
+        <span class="text-muted d-none d-sm-inline">&bull;</span>
+        <button type="button" class="btn btn-link text-primary text-decoration-none small fw-semibold p-0" data-bs-toggle="modal" data-bs-target="#manualUsuarioModal">
+          <i class="fa-solid fa-book-open-reader me-1"></i>Manual de Usuario
+        </button>
+        <span class="text-muted d-none d-sm-inline">&bull;</span>
+        <button type="button" class="btn btn-link text-secondary text-decoration-none small fw-semibold p-0" data-bs-toggle="modal" data-bs-target="#basesLegalesModal">
+          <i class="fa-solid fa-scale-balanced me-1"></i>Bases Legales y Términos
+        </button>
+      </div>
+      <p class="mb-1 text-muted small fw-semibold">
+        Diseñado y desarrollado por Pasantes de Ingeniería de Sistemas UNEFA Lara 2-2026 y supervisado por Jefatura de DTIC HCUAMP 2026
+      </p>
+      <p class="text-muted opacity-75 mb-0" style="font-size: 0.75rem;">
+        Hospital Central Universitario Dr. Antonio María Pineda &bull; Barquisimeto, Estado Lara, República Bolivariana de Venezuela &bull; Todos los derechos reservados &copy; 2026
+      </p>
+    </div>
+  </footer>
+
+  <!-- ================= MODAL: MANUAL DE USUARIO INTERACTIVO ================= -->
+  <div class="modal fade" id="manualUsuarioModal" tabindex="-1" aria-labelledby="manualUsuarioModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-primary text-white py-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-book-open-reader fa-lg"></i>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="manualUsuarioModalLabel">Manual de Usuario Interactivo</h5>
+              <small class="text-white-50">Sistema Institucional de Control TIC &bull; HCUAMP</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="row g-0">
+            <!-- Menú lateral interactivo de temas -->
+            <div class="col-12 col-md-3 bg-light border-end p-3">
+              <div class="nav flex-column nav-pills" id="manual-tabs" role="tablist" aria-orientation="vertical">
+                <button class="nav-link active text-start mb-2 py-2" id="man-inicio-tab" data-bs-toggle="pill" data-bs-target="#man-inicio" type="button" role="tab">
+                  <i class="fa-solid fa-house-chimney me-2 text-primary"></i>1. Visión General
+                </button>
+                <button class="nav-link text-start mb-2 py-2" id="man-bienes-tab" data-bs-toggle="pill" data-bs-target="#man-bienes" type="button" role="tab">
+                  <i class="fa-solid fa-boxes-stacked me-2 text-primary"></i>2. Módulo de Bienes
+                </button>
+                <button class="nav-link text-start mb-2 py-2" id="man-redes-tab" data-bs-toggle="pill" data-bs-target="#man-redes" type="button" role="tab">
+                  <i class="fa-solid fa-network-wired me-2 text-primary"></i>3. Módulo de Redes
+                </button>
+                <button class="nav-link text-start mb-2 py-2" id="man-ofimatica-tab" data-bs-toggle="pill" data-bs-target="#man-ofimatica" type="button" role="tab">
+                  <i class="fa-solid fa-clipboard-check me-2 text-primary"></i>4. Diagnóstico Ofimática
+                </button>
+                <button class="nav-link text-start mb-2 py-2" id="man-reportes-tab" data-bs-toggle="pill" data-bs-target="#man-reportes" type="button" role="tab">
+                  <i class="fa-solid fa-file-excel me-2 text-primary"></i>5. Búsqueda y Reportes
+                </button>
+                <button class="nav-link text-start mb-2 py-2" id="man-soporte-tab" data-bs-toggle="pill" data-bs-target="#man-soporte" type="button" role="tab">
+                  <i class="fa-solid fa-headset me-2 text-primary"></i>6. Soporte y Asistencia
+                </button>
+              </div>
+            </div>
+
+            <!-- Contenido detallado del manual -->
+            <div class="col-12 col-md-9 p-4">
+              <div class="tab-content" id="manual-tabsContent">
+                
+                <!-- 1. Visión General -->
+                <div class="tab-pane fade show active" id="man-inicio" role="tabpanel">
+                  <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-house-chimney me-2"></i>Visión General del Sistema</h4>
+                  <p class="text-muted">
+                    El <strong>Sistema Institucional de Control TIC</strong> ha sido concebido para el levantamiento, auditoría, seguimiento y control patrimonial de los activos tecnológicos, infraestructura de telecomunicaciones y diagnóstico de competencias ofimáticas en los diferentes servicios médicos y áreas administrativas del <strong>Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)</strong>.
+                  </p>
+                  <div class="row g-3 my-2">
+                    <div class="col-md-4">
+                      <div class="border rounded p-3 text-center bg-light h-100">
+                        <i class="fa-solid fa-boxes-stacked fa-2x text-primary mb-2"></i>
+                        <h6 class="fw-bold">Inventario de Bienes</h6>
+                        <small class="text-muted">Registro detallado con clasificación SUDEBIP, seriales, estado operativo y registro fotográfico digital.</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="border rounded p-3 text-center bg-light h-100">
+                        <i class="fa-solid fa-network-wired fa-2x text-success mb-2"></i>
+                        <h6 class="fw-bold">Infraestructura de Red</h6>
+                        <small class="text-muted">Control de equipos de comunicaciones, topología de cableado estructurado, bandas Wi-Fi y proveedores.</small>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="border rounded p-3 text-center bg-light h-100">
+                        <i class="fa-solid fa-clipboard-check fa-2x text-warning mb-2"></i>
+                        <h6 class="fw-bold">Diagnóstico Ofimático</h6>
+                        <small class="text-muted">Autoevaluación de conocimientos y uso de procesadores, hojas de cálculo, presentaciones, correo y nube.</small>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="alert alert-info mt-3 d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-circle-info fa-lg flex-shrink-0"></i>
+                    <div>
+                      <strong>Modo de Alta Disponibilidad:</strong> El sistema almacena en memoria local una copia segura de los datos y sincroniza automáticamente con el servidor central ante cada operación.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. Módulo de Bienes -->
+                <div class="tab-pane fade" id="man-bienes" role="tabpanel">
+                  <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-boxes-stacked me-2"></i>Gestión de Inventario de Bienes Tecnológicos</h4>
+                  <ol class="list-group list-group-numbered mb-3">
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div class="fw-bold">Selección de Ubicación / Departamento</div>
+                        Elija del listado desplegable el servicio médico (ej. Emergencia, Quirófano, Cardiología) o dependencia administrativa donde se encuentra físicamente instalado el equipo.
+                      </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div class="fw-bold">Clasificación SUDEBIP (Grupo y Subgrupo)</div>
+                        Indique el Grupo (ej. 04 o 44 para equipos de computación) y el Subgrupo asignado conforme al catálogo patrimonial oficial de bienes públicos.
+                      </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div class="fw-bold">Número de Bien y Tipo Patrimonial</div>
+                        Seleccione el prefijo correspondiente: <strong>BN</strong> (Bien Nacional), <strong>BE</strong> (Bien Estadal) o <strong>BT</strong> (Bien de Terceros / Comodato) y registre el código de la placa o etiqueta de inventario.
+                      </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div class="fw-bold">Descripción, Modelo, Color y Serial</div>
+                        Describa el activo (ej. Computador de Escritorio, Servidor, Monitor), especificando la marca en características, modelo de fábrica, color del chasis y el serial estampado por el fabricante.
+                      </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div class="fw-bold">Estado Operativo del Bien</div>
+                        Clasifique entre <strong>BUENO</strong> (totalmente operativo), <strong>REGULAR</strong> (operativo con mantenimiento preventivo o correctivo menor requerido), o <strong>INOPERATIVO</strong> (averiado, fuera de servicio o propuesto para desincorporación).
+                      </div>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-start">
+                      <div class="ms-2 me-auto">
+                        <div class="fw-bold">Captura y Optimización Fotográfica</div>
+                        Puede adjuntar o tomar directamente una fotografía del bien o su etiqueta desde su dispositivo móvil o PC. El sistema comprime automáticamente la imagen para asegurar velocidad y optimización en el servidor institucional.
+                      </div>
+                    </li>
+                  </ol>
+                  <div class="alert alert-warning small">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i> <strong>Modificación y Desincorporación:</strong> Para modificar un bien registrado, haga clic en el icono azul de edición en la tabla. Para desincorporar o eliminar un bien, presione el icono rojo; se realizará una baja lógica segura en el sistema central.
+                  </div>
+                </div>
+
+                <!-- 3. Módulo de Redes -->
+                <div class="tab-pane fade" id="man-redes" role="tabpanel">
+                  <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-network-wired me-2"></i>Gestión de Infraestructura de Red</h4>
+                  <p class="text-muted">Permite documentar la conectividad, equipamiento activo y cableado presente en cada área hospitalaria:</p>
+                  <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i><strong>Equipos en Área:</strong> Active las casillas de MÓDEM, ROUTER, SWITCH o PUNTO DE ACCESO (AP) e indique la cantidad exacta de unidades activas.</li>
+                    <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i><strong>Tipo de Cableado:</strong> Seleccione la categoría instalada (CAT5E, CAT6, CAT6A, Fibra Óptica o Inalámbrico).</li>
+                    <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i><strong>Canalización:</strong> Marque <em>SÍ</em> si los tendidos poseen canaletas plásticas, ductos o tuberías de resguardo; marque <em>NO</em> si el cableado se encuentra expuesto.</li>
+                    <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i><strong>Identificador de Red (SSID) y Banda:</strong> Nombre de la red Wi-Fi y frecuencia de operación (2.4 GHz, 5 GHz o Dual Band).</li>
+                    <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i><strong>Proveedor y Velocidad:</strong> Empresa proveedora del servicio de Internet (ej. CANTV, Enlace Dedicado HCUAMP) y velocidad en Mbps.</li>
+                    <li class="mb-2"><i class="fa-solid fa-check text-success me-2"></i><strong>Responsable de Gestión:</strong> Nombre del jefe o unidad encargada de supervisar el uso del punto de red.</li>
+                  </ul>
+                </div>
+
+                <!-- 4. Diagnóstico de Ofimática -->
+                <div class="tab-pane fade" id="man-ofimatica" role="tabpanel">
+                  <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-clipboard-check me-2"></i>Diagnóstico de Competencias en Ofimática</h4>
+                  <p class="text-muted">Instrumento de relevamiento institucional para evaluar las destrezas ofimáticas del personal de salud, administrativo y técnico:</p>
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Categoría</th>
+                        <th>Herramientas Evaluadas</th>
+                        <th>Finalidad Institucional</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Procesadores de Texto</strong></td>
+                        <td>Writer, Word, WPS, Suites Web</td>
+                        <td>Elaboración de informes clínicos, actas y correspondencia oficial.</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Hojas de Cálculo</strong></td>
+                        <td>Calc, Excel, WPS, Hojas Web</td>
+                        <td>Manejo de registros estadísticos, censos de pacientes e inventarios.</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Presentaciones</strong></td>
+                        <td>Impress, PowerPoint, WPS, Diapositivas Web</td>
+                        <td>Actividades docentes, ateneos médicos y ponencias hospitalarias.</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Correo y Calendario</strong></td>
+                        <td>Correo Institucional, Webmail, Outlook</td>
+                        <td>Comunicación formal interdepartamental y coordinación de agendas.</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Almacenamiento en Nube</strong></td>
+                        <td>Nube Institucional, OneDrive, Terabox</td>
+                        <td>Resguardo digital colaborativo de expedientes y respaldos autorizados.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p class="small text-muted mb-0">
+                    <i class="fa-solid fa-lightbulb text-warning me-1"></i> Los resultados permiten a la Jefatura del Departamento TIC focalizar talleres y programas de adiestramiento continuo para los trabajadores del hospital.
+                  </p>
+                </div>
+
+                <!-- 5. Búsqueda y Reportes -->
+                <div class="tab-pane fade" id="man-reportes" role="tabpanel">
+                  <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-file-excel me-2"></i>Búsqueda en Tiempo Real y Generación de Reportes</h4>
+                  <div class="card mb-3 border-0 bg-light">
+                    <div class="card-body">
+                      <h6 class="fw-bold text-dark"><i class="fa-solid fa-magnifying-glass me-2 text-primary"></i>Búsqueda Instantánea</h6>
+                      <p class="small text-muted mb-0">Escriba cualquier término en la barra de búsqueda (número de bien, serial, nombre del departamento o descripción). Las tablas filtran al instante sin necesidad de recargar la página.</p>
+                    </div>
+                  </div>
+                  <div class="card mb-3 border-0 bg-light">
+                    <div class="card-body">
+                      <h6 class="fw-bold text-dark"><i class="fa-solid fa-file-csv me-2 text-success"></i>Exportación CSV / Excel Universal</h6>
+                      <p class="small text-muted mb-0">Haga clic en <strong>Exportar CSV/Excel</strong> en cualquiera de los módulos. El archivo descargado incluye codificación universal UTF-8 con BOM, asegurando compatibilidad total con acentos, caracteres especiales y visualización inmediata en Microsoft Excel y LibreOffice.</p>
+                    </div>
+                  </div>
+                  <div class="card border-0 bg-light">
+                    <div class="card-body">
+                      <h6 class="fw-bold text-dark"><i class="fa-solid fa-print me-2 text-dark"></i>Impresión de Actas y Reportes</h6>
+                      <p class="small text-muted mb-0">Presione <strong>Imprimir</strong> para generar una copia física limpia en hojas Carta o A4. La vista de impresión oculta automáticamente botones, formularios e interfaces de navegación para proporcionar un reporte oficial pulcro para firmas y sellos.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 6. Soporte y Asistencia -->
+                <div class="tab-pane fade" id="man-soporte" role="tabpanel">
+                  <h4 class="fw-bold text-primary mb-3"><i class="fa-solid fa-headset me-2"></i>Soporte Técnico y Mesa de Ayuda</h4>
+                  <p class="text-muted">Si presenta incidencias, requiere restablecimiento de datos o necesita asistencia técnica especializada en el uso de la plataforma:</p>
+                  <div class="p-3 border rounded bg-white">
+                    <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-hospital-user me-2"></i>Departamento de Tecnología, Información y Comunicación (DTIC)</h6>
+                    <ul class="list-unstyled mb-0 small text-secondary">
+                      <li class="mb-1"><i class="fa-solid fa-location-dot me-2 text-danger"></i>Hospital Central Universitario Dr. Antonio María Pineda &bull; Barquisimeto, Estado Lara</li>
+                      <li class="mb-1"><i class="fa-solid fa-user-tie me-2 text-primary"></i>Supervisado por: Jefatura de DTIC HCUAMP 2026</li>
+                      <li class="mb-1"><i class="fa-solid fa-graduation-cap me-2 text-success"></i>Desarrollo y Soporte: Pasantes de Ingeniería de Sistemas UNEFA Lara (Periodo 2-2026)</li>
+                    </ul>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer py-2 bg-light">
+          <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Entendido, Cerrar Manual</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BASES LEGALES, TÉRMINOS Y PRIVACIDAD ================= -->
+  <div class="modal fade" id="basesLegalesModal" tabindex="-1" aria-labelledby="basesLegalesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-dark text-white py-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-scale-balanced fa-lg text-info"></i>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="basesLegalesModalLabel">Marco Jurídico, Términos de Uso y Política de Privacidad</h5>
+              <small class="text-white-50">Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP)</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-4">
+          
+          <ul class="nav nav-tabs mb-4" id="legalTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active fw-bold" id="tab-bases-tab" data-bs-toggle="tab" data-bs-target="#tab-bases" type="button" role="tab">
+                <i class="fa-solid fa-gavel me-1 text-primary"></i> Marco Legal Venezolano
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-bold" id="tab-terminos-tab" data-bs-toggle="tab" data-bs-target="#tab-terminos" type="button" role="tab">
+                <i class="fa-solid fa-file-contract me-1 text-success"></i> Términos y Condiciones de Uso
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link fw-bold" id="tab-privacidad-tab" data-bs-toggle="tab" data-bs-target="#tab-privacidad" type="button" role="tab">
+                <i class="fa-solid fa-shield-halved me-1 text-info"></i> Política de Privacidad y Seguridad
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content" id="legalTabsContent">
+            
+            <!-- Pestaña 1: Marco Legal Venezolano -->
+            <div class="tab-pane fade show active" id="tab-bases" role="tabpanel">
+              <h5 class="fw-bold text-primary mb-3">Fundamento Jurídico del Sistema en la República Bolivariana de Venezuela</h5>
+              <p class="text-muted">
+                El presente sistema institucional se rige y fundamenta en el ordenamiento jurídico de la República Bolivariana de Venezuela aplicable a la administración pública, inventario patrimonial, soberanía tecnológica y seguridad de la información:
+              </p>
+              
+              <div class="accordion" id="accordionLeyes">
+                
+                <div class="accordion-item border mb-2">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCRBV">
+                      <i class="fa-solid fa-book text-danger me-2"></i> Constitución de la República Bolivariana de Venezuela (CRBV)
+                    </button>
+                  </h2>
+                  <div id="collapseCRBV" class="accordion-collapse collapse show" data-bs-parent="#accordionLeyes">
+                    <div class="accordion-body small text-secondary">
+                      <p><strong>Artículo 110:</strong> Reconoce el interés público de la ciencia, la tecnología, el conocimiento, la innovación y sus aplicaciones y los servicios de información necesarios por ser instrumentos fundamentales para el desarrollo económico, social y político del país, así como para la seguridad y soberanía nacional.</p>
+                      <p class="mb-0"><strong>Artículo 141:</strong> Establece que la Administración Pública está al servicio de los ciudadanos y ciudadanas y se fundamenta en los principios de honestidad, participación, celeridad, eficacia, eficiencia, transparencia, rendición de cuentas y responsabilidad en el ejercicio de la función pública, con sometimiento pleno a la ley y al derecho.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="accordion-item border mb-2">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseBienes">
+                      <i class="fa-solid fa-landmark text-primary me-2"></i> Ley Orgánica de Bienes Públicos y Normativa SUDEBIP
+                    </button>
+                  </h2>
+                  <div id="collapseBienes" class="accordion-collapse collapse" data-bs-parent="#accordionLeyes">
+                    <div class="accordion-body small text-secondary">
+                      <p>Rige el Sistema de Bienes Públicos en todo el territorio nacional, estableciendo las normas y principios relativos a la adquisición, registro, administración, custodia, mantenimiento, desincorporación y disposición de los bienes del sector público.</p>
+                      <p class="mb-0">El sistema da estricto cumplimiento a los lineamientos emanados de la <strong>Superintendencia de Bienes Públicos (SUDEBIP)</strong>, garantizando el levantamiento periódico del inventario físico, la codificación normalizada (Grupos, Subgrupos y Secciones) y la asignación unívoca de números de control patrimonial nacional, estadal y comodato.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="accordion-item border mb-2">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInfogob">
+                      <i class="fa-solid fa-laptop-code text-success me-2"></i> Ley de Infogobierno (Gaceta Oficial N° 40.274)
+                    </button>
+                  </h2>
+                  <div id="collapseInfogob" class="accordion-collapse collapse" data-bs-parent="#accordionLeyes">
+                    <div class="accordion-body small text-secondary">
+                      <p>Tiene por objeto establecer los principios, bases y lineamientos que rigen el uso de las tecnologías de información libres en el Poder Público venezolano para mejorar la gestión pública y los servicios prestados, garantizando la soberanía, la interoperabilidad y el resguardo seguro del patrimonio documental del Estado.</p>
+                      <p class="mb-0">Promueve la digitalización de los procesos de control institucional, la eliminación progresiva del papel en la fase de captura y la conservación fidedigna de los datos públicos en formatos abiertos y compatibles.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="accordion-item border mb-2">
+                  <h2 class="accordion-header">
+                    <button class="accordion-button collapsed fw-bold text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#collapseDelitos">
+                      <i class="fa-solid fa-shield-virus text-warning me-2"></i> Ley Especial contra los Delitos Informáticos (Gaceta Oficial N° 37.313)
+                    </button>
+                  </h2>
+                  <div id="collapseDelitos" class="accordion-collapse collapse" data-bs-parent="#accordionLeyes">
+                    <div class="accordion-body small text-secondary">
+                      <p>Sanciona penalmente el acceso indebido (Art. 6), sabotaje informático (Art. 7), alteración o manipulación de datos (Art. 9) y sustracción o falsificación de documentos electrónicos.</p>
+                      <p class="mb-0">Toda persona o funcionario que manipule indebidamente los registros de inventario de bienes del hospital, adultere seriales o borre información oficial será remitido a las autoridades competentes para la aplicación de las sanciones disciplinarias y penales previstas en la ley.</p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Pestaña 2: Términos y Condiciones de Uso -->
+            <div class="tab-pane fade" id="tab-terminos" role="tabpanel">
+              <h5 class="fw-bold text-success mb-3">Términos y Condiciones Generales de Uso Institucional</h5>
+              <div class="text-secondary small">
+                <p><strong>1. Destino y Uso Exclusivo:</strong> Este sistema es de uso estrictamente institucional y oficial para las dependencias del Hospital Central Universitario Dr. Antonio María Pineda (HCUAMP). Queda terminantemente prohibido su uso para fines comerciales, personales o no vinculados con la gestión hospitalaria.</p>
+                <p><strong>2. Veracidad de la Información Suministrada:</strong> El operador, funcionario o pasante autorizado declara bajo responsabilidad administrativa que los datos consignados en los módulos de inventario, redes y diagnósticos corresponden a una inspección ocular y técnica real y verídica realizada en las instalaciones del centro hospitalario.</p>
+                <p><strong>3. Deber de Custodia:</strong> Es responsabilidad de cada usuario resguardar los accesos y velar por la integridad de los registros consignados. Cualquier anomalía detectada en equipos físicos debe ser informada inmediatamente a la Jefatura del Departamento TIC.</p>
+                <p><strong>4. Procedimiento de Desincorporación:</strong> La baja o eliminación lógica de un bien tecnológico en el sistema sólo procederá cuando exista dictamen técnico fundado o acta oficial de desincorporación refrendada por las autoridades hospitalarias y de bienes públicos competentes.</p>
+                <p class="mb-0"><strong>5. Propiedad Intelectual e Institucional:</strong> El diseño, arquitectura, lógica de funcionamiento y documentación del sistema son de exclusiva titularidad del HCUAMP y la Dirección General, habiendo sido desarrollado bajo la supervisión de la Jefatura del Departamento de Tecnología, Información y Comunicación (DTIC 2026).</p>
+              </div>
+            </div>
+
+            <!-- Pestaña 3: Política de Privacidad y Seguridad -->
+            <div class="tab-pane fade" id="tab-privacidad" role="tabpanel">
+              <h5 class="fw-bold text-info mb-3">Política de Privacidad, Confidencialidad y Seguridad de Datos</h5>
+              <div class="text-secondary small">
+                <p><strong>1. Confidencialidad de la Información Hospitalaria:</strong> Toda la información contenida en este sistema, incluyendo la nómina evaluada en ofimática, la topología de red y los inventarios patrimoniales, reviste carácter de información interna institucional y de acceso restringido.</p>
+                <p><strong>2. Cifrado y Seguridad Criptográfica:</strong> Todas las transacciones e intercambios de datos entre la interfaz de usuario y los repositorios institucionales se ejecutan a través de canales cifrados de alta seguridad mediante protocolos TLS/HTTPS, salvaguardando la información frente a interceptaciones no autorizadas.</p>
+                <p><strong>3. Trazabilidad y Marcas Temporales:</strong> El sistema almacena automáticamente la fecha, hora exacta y datos de operación de cada inserción o modificación, asegurando un registro fidedigno para procesos de auditoría interna y contraloría de gestión.</p>
+                <p><strong>4. Resguardo Centralizado:</strong> Los datos institucionales se almacenan y respaldan en servidores centrales institucionales con redundancia y planes de recuperación ante fallas, bajo la estricta custodia de la Jefatura del Departamento TIC.</p>
+                <p class="mb-0"><strong>5. Normalización y Consistencia de Datos:</strong> Todos los registros de texto son procesados y resguardados en mayúsculas sostenidas conforme a los estándares de catalogación de la administración pública venezolana, garantizando uniformidad en las consultas y actas oficiales.</p>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        <div class="modal-footer py-2 bg-light">
+          <button type="button" class="btn btn-dark btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Aceptar y Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BITÁCORA Y LOGS DE AUDITORÍA ================= -->
+  <div class="modal fade" id="bitacoraModal" tabindex="-1" aria-labelledby="bitacoraModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-dark text-white py-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left fa-lg text-warning"></i>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="bitacoraModalLabel">Bitácora de Auditoría y Trazabilidad de Usuarios</h5>
+              <small class="text-white-50">Registro cronológico inmutable de todas las operaciones realizadas en el sistema HCUAMP</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-3 p-md-4">
+          <!-- Filtros de Bitácora -->
+          <div class="row g-2 align-items-center mb-3">
+            <div class="col-12 col-md-5">
+              <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" id="searchLogInput" class="form-control border-start-0 uppercase-input" placeholder="Buscar por usuario, acción, detalle o IP..." oninput="filtrarLogs()">
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <select class="form-select" id="filterModuloLog" onchange="filtrarLogs()">
+                <option value="">Todos los Módulos</option>
+                <option value="AUTENTICACIÓN">AUTENTICACIÓN</option>
+                <option value="BIENES">BIENES TECNOLÓGICOS</option>
+                <option value="REDES">INFRAESTRUCTURA DE RED</option>
+                <option value="OFIMATICA">DIAGNÓSTICO OFIMÁTICA</option>
+                <option value="USUARIOS">GESTIÓN DE USUARIOS</option>
+                <option value="REPORTES">REPORTES Y EXPORTACIÓN</option>
+                <option value="SISTEMA">SISTEMA GENERAL</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4 text-end d-flex gap-2 justify-content-end">
+              <button class="btn btn-outline-success btn-sm fw-bold" onclick="exportarCSVLogs()"><i class="fa-solid fa-file-excel me-1"></i> Exportar CSV</button>
+              <button class="btn btn-primary btn-sm fw-bold" onclick="cargarLogsAuditoria(true)"><i class="fa-solid fa-rotate me-1"></i> Actualizar</button>
+            </div>
+          </div>
+
+          <!-- Tabla de Logs -->
+          <div class="table-container p-2" style="max-height: 520px; overflow-y: auto;">
+            <table class="table table-hover table-sm align-middle mb-0" id="logsTable">
+              <thead>
+                <tr>
+                  <th>Fecha / Hora</th>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Acción</th>
+                  <th>Módulo</th>
+                  <th>Detalle Operacional</th>
+                  <th>IP Origen</th>
+                  <th>Estatus</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody"></tbody>
+            </table>
+            <div id="emptyLogsMessage" class="text-center p-4 text-muted d-none">
+              <i class="fa-solid fa-clock-rotate-left fa-2x mb-2 text-secondary"></i>
+              <p class="mb-0">No se encontraron registros de auditoría.</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer py-2 bg-light">
+          <small class="text-muted me-auto"><i class="fa-solid fa-shield-halved me-1 text-primary"></i> Todos los registros quedan asegurados bajo la Ley de Infogobierno y SUDEBIP.</small>
+          <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: GESTIÓN DE USUARIOS INSTITUCIONALES ================= -->
+  <div class="modal fade" id="gestionUsuariosModal" tabindex="-1" aria-labelledby="gestionUsuariosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-primary text-white py-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-users-gear fa-lg"></i>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="gestionUsuariosModalLabel">Gestión y Control de Usuarios Institucionales</h5>
+              <small class="text-white-50">Administración de cuentas autorizadas &bull; HCUAMP</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-3 p-md-4">
+          <!-- Formulario de Creación / Edición de Usuario -->
+          <div class="card mb-4 border bg-light">
+            <div class="card-body p-3">
+              <h6 class="fw-bold text-primary mb-3" id="userFormTitle"><i class="fa-solid fa-user-plus me-2"></i>Registrar Nuevo Usuario</h6>
+              <form id="userAdminForm" class="needs-validation" novalidate>
+                <input type="hidden" id="editingUserRow" value="">
+                <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                    <label for="adminNombreCompleto" class="form-label">Nombre y Apellido *</label>
+                    <input type="text" class="form-control uppercase-input" id="adminNombreCompleto" placeholder="EJ. LCDO. JOSÉ HERNÁNDEZ" required>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="adminCorreo" class="form-label">Correo Electrónico Institucional *</label>
+                    <input type="email" class="form-control uppercase-input" id="adminCorreo" placeholder="EJ. JOSE.HERNANDEZ@HCUAMP.GOB.VE" required>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="adminUsuario" class="form-label">Usuario de Acceso *</label>
+                    <input type="text" class="form-control uppercase-input" id="adminUsuario" placeholder="EJ. JHERNANDEZ_TIC" required>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="adminPassword" class="form-label" id="lblAdminPassword">Contraseña Inicial *</label>
+                    <input type="password" class="form-control" id="adminPassword" placeholder="Contraseña (máx. 16 caracteres)" maxlength="16" required>
+                    <small class="text-muted d-block mt-1" style="font-size: 0.72rem;"><i class="fa-solid fa-circle-info me-1"></i>Alfanumérico con caracteres especiales y mayúsculas/minúsculas (máx. 16).</small>
+                    <small class="text-muted d-none" id="hintPasswordEdit">Dejar en blanco si desea conservar la contraseña actual.</small>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="adminRol" class="form-label">Rol y Nivel de Acceso *</label>
+                    <select class="form-select uppercase-input" id="adminRol" required>
+                      <option value="" selected disabled>Seleccione rol...</option>
+                      <option value="ADMINISTRADOR">ADMINISTRADOR (ACCESO TOTAL)</option>
+                      <option value="OPERADOR">OPERADOR (CAPTURA Y EDICIÓN)</option>
+                      <option value="AUDITOR">AUDITOR (SOLO LECTURA Y REPORTES)</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="adminDepartamento" class="form-label">Departamento *</label>
+                    <input type="text" class="form-control uppercase-input" id="adminDepartamento" placeholder="EJ. DEPARTAMENTO DE TECNOLOGÍA (TIC)" value="DEPARTAMENTO DE TECNOLOGÍA, INFORMACIÓN Y COMUNICACIÓN (TIC)" required>
+                  </div>
+                  <div class="col-12 text-end">
+                    <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="limpiarFormularioUsuario()"><i class="fa-solid fa-eraser me-1"></i> Cancelar</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4 fw-bold shadow-sm" id="btnGuardarUsuarioSubmit"><i class="fa-solid fa-floppy-disk me-1"></i> Guardar Usuario</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Tabla de Usuarios Registrados -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2 text-primary"></i>Usuarios Registrados en el Servidor Central</h6>
+            <button class="btn btn-outline-primary btn-sm" onclick="cargarUsuarios(true)"><i class="fa-solid fa-rotate me-1"></i> Actualizar Lista</button>
+          </div>
+          <div class="table-container p-2">
+            <table class="table table-hover align-middle mb-0" id="usersTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre Completo</th>
+                  <th>Usuario</th>
+                  <th>Correo</th>
+                  <th>Rol</th>
+                  <th>Departamento</th>
+                  <th>Estatus</th>
+                  <th>Último Acceso</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer py-2 bg-light">
+          <button type="button" class="btn btn-secondary btn-sm px-4 fw-semibold" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: BLOQUEO POR INACTIVIDAD ================= -->
+  <div class="modal fade" id="sessionLockModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+      <div class="modal-content border-0 shadow-lg text-center p-4">
+        <div class="mb-3">
+          <div class="bg-warning bg-opacity-10 text-warning d-inline-flex p-3 rounded-circle">
+            <i class="fa-solid fa-user-lock fa-2x"></i>
+          </div>
+        </div>
+        <h5 class="fw-bold mb-1">Sesión Bloqueada por Inactividad</h5>
+        <p class="small text-muted mb-3">Por seguridad institucional, su sesión se ha suspendido tras un periodo de inactividad.</p>
+        <form id="unlockForm" onsubmit="desbloquearSesion(event)">
+          <div class="mb-3">
+            <input type="password" class="form-control" id="unlockPassword" placeholder="Ingrese su contraseña (máx. 16 caracteres)" maxlength="16" required autofocus>
+          </div>
+          <div id="unlockAlert" class="alert alert-danger py-2 small d-none mb-3"></div>
+          <button type="submit" class="btn btn-primary w-100 fw-bold mb-2"><i class="fa-solid fa-lock-open me-1"></i> Desbloquear Sesión</button>
+          <button type="button" class="btn btn-link text-danger text-decoration-none small" onclick="cerrarSesion(false)"><i class="fa-solid fa-right-from-bracket me-1"></i> Salir a la Pantalla Principal</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  </div> <!-- FIN DE #mainAppLayout -->
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    /**
+     * CLIENTE API UNIVERSAL HCUAMP
+     * Conexión desacoplada mediante variable de entorno o proxy de API institucional.
+     */
+    // Endpoint de servicio desacoplado del frontend
+    const PROXY_API_ENDPOINT = "/api/service";
+    const DIRECT_API_FALLBACK = atob("aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J5elkwVjczVk5ra3JySFJ3eEN1X3oyYlN3bW5FRURuRWJqUXd1ODFSNEdZUkxZSHAzdW82NnZZZ1dESUNBUGluTFIvZXhlYw==");
+
+    // Variables de Estado
+    let inventory = [];
+    let networks = [];
+    let ofimaticaRecords = [];
+
+    let editingBienRow = null;
+    let editingRedRow = null;
+    let editingOfiRow = null;
+
+    // Estado de Seguridad y Autenticación
+    let currentUser = null;
+    let sessionToken = null;
+    let currentCaptcha = '';
+    let failedLoginAttempts = 0;
+    let inactivityTimer = null;
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutos de inactividad
+
+    let auditLogsCache = [];
+    let userAccountsCache = [];
+    let editingUserRow = null;
+
+    // Helper universal para mayúsculas
+    function toUpper(str) {
+      return (str || '').toString().trim().toUpperCase();
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
+    // Elementos DOM
+    const inventoryForm = document.getElementById('inventoryForm');
+    const networkForm = document.getElementById('networkForm');
+    const ofimaticaForm = document.getElementById('ofimaticaForm');
+    
+    const tableBody = document.getElementById('tableBody');
+    const networkTableBody = document.getElementById('networkTableBody');
+    const ofimaticaTableBody = document.getElementById('ofimaticaTableBody');
+    
+    const emptyMessage = document.getElementById('emptyMessage');
+    const emptyNetworkMessage = document.getElementById('emptyNetworkMessage');
+    const emptyOfimaticaMessage = document.getElementById('emptyOfimaticaMessage');
+    
+    const searchInput = document.getElementById('searchInput');
+    const searchNetworkInput = document.getElementById('searchNetworkInput');
+    const searchOfimaticaInput = document.getElementById('searchOfimaticaInput');
+
+    // ================= FUNCIONES DE SEGURIDAD Y CRIPTOGRAFÍA =================
+    async function hashSHA256Hex(plainText) {
+      if (!plainText) return '';
+      try {
+        const msgBuffer = new TextEncoder().encode(plainText);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+      } catch (e) {
+        let hash = 0;
+        for (let i = 0; i < plainText.length; i++) {
+          hash = ((hash << 5) - hash) + plainText.charCodeAt(i);
+          hash |= 0;
+        }
+        return Math.abs(hash).toString(16).toUpperCase();
+      }
+    }
+
+    function generarNuevoCaptcha() {
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+      let code = '';
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      currentCaptcha = code;
+      const box = document.getElementById('captchaBox');
+      if (box) box.innerText = code;
+      const input = document.getElementById('loginCaptcha');
+      if (input) input.value = '';
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const input = document.getElementById(inputId);
+      const icon = document.getElementById(iconId);
+      if (!input || !icon) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+      }
+    }
+
+    // ================= CAPA DE COMUNICACIÓN CON EL BACKEND =================
+    async function apiRequest(action, payload = null, method = 'POST') {
+      let requestPayload = payload || {};
+      if (typeof requestPayload === 'object' && !Array.isArray(requestPayload)) {
+        if (!requestPayload.solicitante && currentUser) {
+          requestPayload.solicitante = currentUser.usuario;
+        }
+        if (!requestPayload.token && sessionToken) {
+          requestPayload.token = sessionToken;
+        }
+      }
+
+      // 1. Si se ejecuta dentro del contenedor nativo:
+      if (typeof window !== 'undefined' && window['google'] && window['google']['script'] && window['google']['script']['run']) {
+        return new Promise((resolve, reject) => {
+          const runner = window['google']['script']['run']
+            .withSuccessHandler(res => resolve(res))
+            .withFailureHandler(err => reject(err));
+          
+          if (typeof runner[action] === 'function') {
+            if (requestPayload !== null) {
+              if (Array.isArray(requestPayload)) {
+                runner[action](...requestPayload);
+              } else {
+                runner[action](requestPayload);
+              }
+            } else {
+              runner[action]();
+            }
+          } else {
+            reject(new Error("Función no encontrada en el servicio: " + action));
+          }
+        });
+      }
+
+      // 2. Si se ejecuta en la web (Proxy de Servidor o Enlace Directo):
+      const endpointsToTry = [PROXY_API_ENDPOINT, DIRECT_API_FALLBACK];
+
+      for (let i = 0; i < endpointsToTry.length; i++) {
+        const baseEndpoint = endpointsToTry[i];
+        try {
+          let url = baseEndpoint;
+          let options = {
+            redirect: 'follow',
+            mode: 'cors'
+          };
+
+          if (method === 'GET') {
+            url += `?action=${encodeURIComponent(action)}`;
+            if (requestPayload && typeof requestPayload === 'object') {
+              for (const key in requestPayload) {
+                if (requestPayload[key] !== undefined && requestPayload[key] !== null) {
+                  url += `&${encodeURIComponent(key)}=${encodeURIComponent(requestPayload[key])}`;
+                }
+              }
+            }
+            options.method = 'GET';
+          } else {
+            options.method = 'POST';
+            options.headers = { 'Content-Type': 'text/plain;charset=utf-8' };
+            const bodyData = { action: action, ...(requestPayload || {}) };
+            options.body = JSON.stringify(bodyData);
+          }
+
+          const response = await fetch(url, options);
+          if (response.ok) {
+            const data = await response.json();
+            return data;
+          }
+        } catch (fetchErr) {
+          // Si falló el proxy interno y estamos en el primer intento, continúa al fallback
+          if (i === 0 && endpointsToTry.length > 1) {
+            continue;
+          }
+          console.error(`Error en apiRequest [${action}]:`, fetchErr);
+          throw fetchErr;
+        }
+      }
+    }
+
+    // ================= GESTIÓN DE SESIÓN Y AUTENTICACIÓN =================
+    function verificarSesionExistente() {
+      try {
+        const storedUser = localStorage.getItem('hcuamp_user_session') || sessionStorage.getItem('hcuamp_user_session');
+        const storedToken = localStorage.getItem('hcuamp_user_token') || sessionStorage.getItem('hcuamp_user_token');
+        if (storedUser && storedToken) {
+          const userObj = JSON.parse(storedUser);
+          aplicarSesionUsuario(userObj, storedToken, false);
+          return true;
+        }
+      } catch (e) {
+        console.warn("Sesión previa no válida:", e);
+      }
+      mostrarPantallaLogin();
+      return false;
+    }
+
+    function mostrarPantallaLogin() {
+      currentUser = null;
+      sessionToken = null;
+      document.getElementById('authGatewayContainer').classList.remove('d-none');
+      document.getElementById('mainAppLayout').style.display = 'none';
+      generarNuevoCaptcha();
+    }
+
+    function aplicarSesionUsuario(user, token, guardarEnStorage = true, recordar = true) {
+      currentUser = user;
+      sessionToken = token;
+
+      if (guardarEnStorage) {
+        const storage = recordar ? localStorage : sessionStorage;
+        storage.setItem('hcuamp_user_session', JSON.stringify(user));
+        storage.setItem('hcuamp_user_token', token);
+      }
+
+      // Actualizar cabecera con perfil de usuario
+      const displayEl = document.getElementById('headerUserDisplay');
+      const badgeEl = document.getElementById('headerRoleBadge');
+      const deptoEl = document.getElementById('headerDeptoDisplay');
+      let nombreDisplay = user.nombreCompleto;
+      if (!nombreDisplay || nombreDisplay === 'ADMIN_TIC' || nombreDisplay.trim() === '') {
+        nombreDisplay = (user.usuario === 'ADMIN_TIC' || user.rol === 'ADMINISTRADOR') ? 'ADMINISTRADOR GENERAL DTIC' : (user.nombreCompleto || user.usuario);
+      }
+      let deptoDisplay = user.departamento;
+      if (!deptoDisplay || deptoDisplay === 'TIC' || deptoDisplay === 'DTIC' || deptoDisplay.trim() === '') {
+        deptoDisplay = 'DEPARTAMENTO DE TECNOLOGÍA, INFORMACIÓN Y COMUNICACIÓN (TIC)';
+      }
+      if (displayEl) displayEl.innerText = toUpper(nombreDisplay);
+      if (badgeEl) badgeEl.innerText = toUpper(user.rol || 'ADMINISTRADOR');
+      if (deptoEl) deptoEl.innerText = toUpper(deptoDisplay);
+
+      // Botón de Usuarios accesible únicamente por ADMINISTRADOR
+      const btnUsuarios = document.getElementById('btnUsuariosHeader');
+      if (btnUsuarios) {
+        if (toUpper(user.rol) === 'ADMINISTRADOR') {
+          btnUsuarios.classList.remove('d-none');
+        } else {
+          btnUsuarios.classList.add('d-none');
+        }
+      }
+
+      // Ocultar login y mostrar dashboard
+      document.getElementById('authGatewayContainer').classList.add('d-none');
+      document.getElementById('mainAppLayout').style.display = 'block';
+
+      // Activar monitor de inactividad
+      iniciarMonitorInactividad();
+
+      // Cargar datos del sistema
+      cargarTodoElSistema();
+    }
+
+    async function ejecutarLogin(event) {
+      if (event) event.preventDefault();
+      const alertBox = document.getElementById('loginAlert');
+      alertBox.className = 'alert alert-danger py-2 small mb-3';
+      alertBox.classList.add('d-none');
+
+      // Verificación de bloqueo temporal
+      const lockoutStored = localStorage.getItem('hcuamp_lockout_until');
+      if (lockoutStored && parseInt(lockoutStored) > Date.now()) {
+        const remainingSec = Math.ceil((parseInt(lockoutStored) - Date.now()) / 1000);
+        alertBox.innerText = `Acceso bloqueado por intentos fallidos. Espere ${remainingSec} segundos.`;
+        alertBox.classList.remove('d-none');
+        return;
+      }
+
+      const userInput = (document.getElementById('loginUsuario').value || '').trim();
+      const passInput = (document.getElementById('loginPassword').value || '');
+      const captchaInput = (document.getElementById('loginCaptcha').value || '').trim().toUpperCase();
+      const rememberMe = document.getElementById('chkRecordarSesion').checked;
+
+      if (!userInput || !passInput) {
+        alertBox.innerText = "Por favor ingrese su usuario institucional y contraseña.";
+        alertBox.classList.remove('d-none');
+        return;
+      }
+
+      if (passInput.length > 16) {
+        alertBox.innerText = "La contraseña no debe exceder un máximo de 16 caracteres.";
+        alertBox.classList.remove('d-none');
+        return;
+      }
+
+      if (captchaInput !== currentCaptcha) {
+        alertBox.innerText = "Código de seguridad de verificación incorrecto. Intente de nuevo.";
+        alertBox.classList.remove('d-none');
+        generarNuevoCaptcha();
+        return;
+      }
+
+      const loginBtn = document.getElementById('btnLoginSubmit');
+      const originalText = loginBtn.innerHTML;
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Verificando seguridad...`;
+
+      try {
+        const passwordHash = await hashSHA256Hex(passInput);
+        const res = await apiRequest("loginUsuario", {
+          usuario: toUpper(userInput),
+          password: passInput,
+          passwordHash: passwordHash
+        });
+
+        if (res && res.status === 'success' && res.user) {
+          failedLoginAttempts = 0;
+          localStorage.removeItem('hcuamp_lockout_until');
+          aplicarSesionUsuario(res.user, res.token, true, rememberMe);
+          showNotification(`Bienvenido(a), ${res.user.nombreCompleto} (${res.user.rol})`, true);
+        } else {
+          failedLoginAttempts++;
+          if (failedLoginAttempts >= 5) {
+            const lockoutUntil = Date.now() + (3 * 60 * 1000);
+            localStorage.setItem('hcuamp_lockout_until', lockoutUntil.toString());
+            alertBox.innerText = "Demasiados intentos fallidos. Acceso bloqueado por 3 minutos por seguridad institucional.";
+          } else {
+            alertBox.innerText = (res && res.message) || `Credenciales incorrectas. Intentos restantes: ${5 - failedLoginAttempts}`;
+          }
+          alertBox.classList.remove('d-none');
+          generarNuevoCaptcha();
+        }
+      } catch (err) {
+        console.error("Error en autenticación:", err);
+        alertBox.innerText = "Error en la verificación de seguridad. Verifique la conexión con el servidor.";
+        alertBox.classList.remove('d-none');
+        generarNuevoCaptcha();
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = originalText;
+      }
+    }
+
+    async function cerrarSesion(confirmar = true) {
+      if (confirmar && !confirm("¿Está seguro de que desea cerrar la sesión institucional?")) return;
+
+      try {
+        if (currentUser) {
+          await apiRequest("registrarLog", {
+            usuario: currentUser.usuario,
+            rol: currentUser.rol,
+            accion: "CIERRE_SESION",
+            modulo: "AUTENTICACIÓN",
+            detalle: `Sesión finalizada por el usuario ${currentUser.usuario}`
+          });
+        }
+      } catch (e) {}
+
+      localStorage.removeItem('hcuamp_user_session');
+      localStorage.removeItem('hcuamp_user_token');
+      sessionStorage.removeItem('hcuamp_user_session');
+      sessionStorage.removeItem('hcuamp_user_token');
+
+      const lockModalEl = document.getElementById('sessionLockModal');
+      const lockModal = bootstrap.Modal.getInstance(lockModalEl);
+      if (lockModal) lockModal.hide();
+
+      currentUser = null;
+      sessionToken = null;
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginCaptcha').value = '';
+      mostrarPantallaLogin();
+      showNotification("Sesión finalizada de manera segura.", true);
+    }
+
+    function iniciarMonitorInactividad() {
+      const resetInactivity = () => {
+        if (!currentUser) return;
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(bloquearPorInactividad, INACTIVITY_TIMEOUT);
+      };
+
+      ['mousemove', 'keydown', 'mousedown', 'touchstart', 'scroll'].forEach(evt => {
+        window.addEventListener(evt, resetInactivity, { passive: true });
+      });
+
+      resetInactivity();
+    }
+
+    function bloquearPorInactividad() {
+      if (!currentUser) return;
+      document.getElementById('unlockAlert').classList.add('d-none');
+      document.getElementById('unlockPassword').value = '';
+      const lockModal = new bootstrap.Modal(document.getElementById('sessionLockModal'), { backdrop: 'static', keyboard: false });
+      lockModal.show();
+    }
+
+    async function desbloquearSesion(event) {
+      if (event) event.preventDefault();
+      const unlockPass = document.getElementById('unlockPassword').value;
+      const unlockAlert = document.getElementById('unlockAlert');
+      unlockAlert.classList.add('d-none');
+
+      if (!unlockPass) return;
+
+      if (unlockPass.length > 16) {
+        unlockAlert.innerText = "La contraseña no debe exceder un máximo de 16 caracteres.";
+        unlockAlert.classList.remove('d-none');
+        return;
+      }
+
+      const hash = await hashSHA256Hex(unlockPass);
+      try {
+        const res = await apiRequest("loginUsuario", {
+          usuario: currentUser.usuario,
+          password: unlockPass,
+          passwordHash: hash
+        });
+
+        if (res && res.status === 'success') {
+          const lockModalEl = document.getElementById('sessionLockModal');
+          const lockModal = bootstrap.Modal.getInstance(lockModalEl);
+          if (lockModal) lockModal.hide();
+          showNotification("Sesión reanudada satisfactoriamente.", true);
+          iniciarMonitorInactividad();
+        } else {
+          unlockAlert.innerText = "Contraseña incorrecta. Intente nuevamente.";
+          unlockAlert.classList.remove('d-none');
+        }
+      } catch (err) {
+        unlockAlert.innerText = "Error validando credenciales: " + err.message;
+        unlockAlert.classList.remove('d-none');
+      }
+    }
+
+    // ================= BITÁCORA Y LOGS DE AUDITORÍA =================
+    async function abrirModalAuditoria() {
+      const modal = new bootstrap.Modal(document.getElementById('bitacoraModal'));
+      modal.show();
+      await cargarLogsAuditoria();
+    }
+
+    async function cargarLogsAuditoria(esRecarga = false) {
+      const tbody = document.getElementById('logsTableBody');
+      const emptyMsg = document.getElementById('emptyLogsMessage');
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2 text-primary"></span>Consultando bitácora de auditoría institucional...</td></tr>';
+      emptyMsg.classList.add('d-none');
+
+      try {
+        const res = await apiRequest("obtenerLogsAuditoria", { limite: 200 }, "GET");
+        if (res && res.status === 'success' && res.logs) {
+          auditLogsCache = res.logs;
+        } else if (Array.isArray(res)) {
+          auditLogsCache = res;
+        } else {
+          auditLogsCache = [];
+        }
+        renderLogsTable(auditLogsCache);
+        if (esRecarga) showNotification("Bitácora actualizada.", true);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><i class="fa-solid fa-triangle-exclamation me-2"></i>Error al consultar la bitácora: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderLogsTable(logsToRender = auditLogsCache) {
+      const tbody = document.getElementById('logsTableBody');
+      const emptyMsg = document.getElementById('emptyLogsMessage');
+      tbody.innerHTML = '';
+
+      if (!logsToRender || logsToRender.length === 0) {
+        emptyMsg.classList.remove('d-none');
+        return;
+      }
+      emptyMsg.classList.add('d-none');
+
+      logsToRender.forEach(log => {
+        const tr = document.createElement('tr');
+        const accion = toUpper(log.accion || '');
+        let badgeColor = 'bg-secondary';
+        if (accion.includes('LOGIN') || accion.includes('ACCESO')) badgeColor = 'bg-primary';
+        else if (accion.includes('CREAR') || accion.includes('GUARDAR') || accion.includes('REGISTRAR')) badgeColor = 'bg-success';
+        else if (accion.includes('ACTUALIZAR') || accion.includes('MODIFICAR')) badgeColor = 'bg-warning text-dark';
+        else if (accion.includes('ELIMINAR') || accion.includes('BORRAR') || accion.includes('FALLIDO') || accion.includes('DESACTIVAR')) badgeColor = 'bg-danger';
+
+        tr.innerHTML = `
+          <td><small class="text-muted fw-bold">${log.fechaHora || '-'}</small></td>
+          <td class="fw-bold">${toUpper(log.usuario || '-')}</td>
+          <td><span class="badge bg-light text-dark border">${toUpper(log.rol || '-')}</span></td>
+          <td><span class="badge ${badgeColor}">${accion}</span></td>
+          <td class="fw-semibold">${toUpper(log.modulo || '-')}</td>
+          <td><small>${toUpper(log.detalle || '-')}</small></td>
+          <td><small class="text-muted">${log.direccionIp || 'LOCAL'}</small></td>
+          <td><span class="badge ${toUpper(log.estatus) === 'FALLIDO' ? 'bg-danger' : 'bg-success'}">${toUpper(log.estatus || 'EXITOSO')}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filtrarLogs() {
+      const query = toUpper(document.getElementById('searchLogsInput').value);
+      const mod = toUpper(document.getElementById('filterModuloLog').value);
+
+      const filtered = auditLogsCache.filter(item => {
+        const matchesQuery = toUpper(item.usuario).includes(query) ||
+                             toUpper(item.accion).includes(query) ||
+                             toUpper(item.detalle).includes(query) ||
+                             toUpper(item.direccionIp).includes(query);
+        const matchesMod = !mod || toUpper(item.modulo) === mod;
+        return matchesQuery && matchesMod;
+      });
+
+      renderLogsTable(filtered);
+    }
+
+    function exportarCSVLogs() {
+      if (auditLogsCache.length === 0) return showNotification('No hay registros de auditoría para exportar.', false);
+      const headers = ["ID", "FECHA_HORA", "USUARIO", "ROL", "ACCION", "MODULO", "DETALLE", "DIRECCION_IP", "DISPOSITIVO", "ESTATUS"];
+      const rows = auditLogsCache.map(l => [
+        `"${l.id || ''}"`, `"${l.fechaHora || ''}"`, `"${toUpper(l.usuario)}"`, `"${toUpper(l.rol)}"`,
+        `"${toUpper(l.accion)}"`, `"${toUpper(l.modulo)}"`, `"${toUpper(l.detalle)}"`, `"${l.direccionIp || ''}"`,
+        `"${toUpper(l.dispositivo || '')}"`, `"${toUpper(l.estatus || 'EXITOSO')}"`
+      ]);
+      descargarCSV(headers, rows, "BITACORA_AUDITORIA_HCUAMP");
+    }
+
+    // ================= GESTIÓN DE USUARIOS INSTITUCIONALES =================
+    async function abrirModalUsuarios() {
+      if (!currentUser || toUpper(currentUser.rol) !== 'ADMINISTRADOR') {
+        return showNotification("Acceso denegado: solo el Administrador puede gestionar usuarios.", false);
+      }
+      const modal = new bootstrap.Modal(document.getElementById('gestionUsuariosModal'));
+      modal.show();
+      limpiarFormularioUsuario();
+      await cargarUsuarios();
+    }
+
+    async function cargarUsuarios(esRecarga = false) {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '<tr><td colspan="9" class="text-center py-3"><span class="spinner-border spinner-border-sm me-2 text-primary"></span>Consultando usuarios autorizados...</td></tr>';
+
+      try {
+        const res = await apiRequest("obtenerUsuarios", null, "GET");
+        if (res && res.status === 'success' && res.usuarios) {
+          userAccountsCache = res.usuarios;
+        } else if (Array.isArray(res)) {
+          userAccountsCache = res;
+        } else {
+          userAccountsCache = [];
+        }
+        renderUsersTable(userAccountsCache);
+        if (esRecarga) showNotification("Lista de usuarios actualizada.", true);
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-danger py-3">Error al cargar usuarios: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderUsersTable(usersToRender = userAccountsCache) {
+      const tbody = document.getElementById('usersTableBody');
+      tbody.innerHTML = '';
+
+      if (!usersToRender || usersToRender.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No hay usuarios registrados.</td></tr>';
+        return;
+      }
+
+      usersToRender.forEach(u => {
+        const tr = document.createElement('tr');
+        const estado = toUpper(u.estado || 'ACTIVO');
+        const badgeClass = estado === 'ACTIVO' ? 'bg-success' : 'bg-secondary';
+        const isSelf = currentUser && currentUser.usuario === u.usuario;
+
+        tr.innerHTML = `
+          <td><small class="text-muted">#${u.sheetRow || '-'}</small></td>
+          <td class="fw-bold">${toUpper(u.nombreCompleto)}</td>
+          <td><code>${toUpper(u.usuario)}</code></td>
+          <td>${toUpper(u.correo)}</td>
+          <td><span class="badge ${u.rol === 'ADMINISTRADOR' ? 'bg-primary' : (u.rol === 'OPERADOR' ? 'bg-info text-dark' : 'bg-warning text-dark')}">${toUpper(u.rol)}</span></td>
+          <td>${toUpper(u.departamento || 'TIC')}</td>
+          <td><span class="badge ${badgeClass}">${estado}</span></td>
+          <td><small class="text-muted">${u.ultimoAcceso || 'SIN ACCESO'}</small></td>
+          <td class="text-center">
+            <button class="btn btn-sm btn-outline-primary me-1" title="Editar" onclick='modificarUsuario(${JSON.stringify(u)})'><i class="fa-solid fa-user-pen"></i></button>
+            ${!isSelf ? `<button class="btn btn-sm btn-outline-danger" title="Desactivar" onclick="desactivarUsuarioPrompt('${u.usuario}')"><i class="fa-solid fa-user-slash"></i></button>` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function limpiarFormularioUsuario() {
+      editingUserRow = null;
+      const form = document.getElementById('userAdminForm');
+      if (form) {
+        form.reset();
+        form.classList.remove('was-validated');
+      }
+      document.getElementById('editingUserRow').value = '';
+      document.getElementById('userFormTitle').innerHTML = `<i class="fa-solid fa-user-plus me-2 text-primary"></i>Registrar Nuevo Usuario`;
+      document.getElementById('btnGuardarUsuarioSubmit').innerHTML = `<i class="fa-solid fa-floppy-disk me-1"></i> Guardar Usuario`;
+      document.getElementById('adminPassword').required = true;
+      document.getElementById('lblAdminPassword').innerText = "Contraseña Inicial *";
+      document.getElementById('hintPasswordEdit').classList.add('d-none');
+    }
+
+    function modificarUsuario(u) {
+      editingUserRow = u.sheetRow;
+      document.getElementById('editingUserRow').value = u.sheetRow || '';
+      document.getElementById('adminNombreCompleto').value = toUpper(u.nombreCompleto);
+      document.getElementById('adminCorreo').value = toUpper(u.correo);
+      document.getElementById('adminUsuario').value = toUpper(u.usuario);
+      document.getElementById('adminRol').value = toUpper(u.rol);
+      document.getElementById('adminDepartamento').value = toUpper(u.departamento || 'TIC');
+
+      document.getElementById('adminPassword').required = false;
+      document.getElementById('lblAdminPassword').innerText = "Nueva Contraseña (Opcional)";
+      document.getElementById('hintPasswordEdit').classList.remove('d-none');
+
+      document.getElementById('userFormTitle').innerHTML = `<i class="fa-solid fa-user-pen me-2 text-warning"></i>Modificando Usuario (${toUpper(u.usuario)})`;
+      document.getElementById('btnGuardarUsuarioSubmit').innerHTML = `<i class="fa-solid fa-floppy-disk me-1"></i> Actualizar Usuario`;
+      document.getElementById('gestionUsuariosModal').querySelector('.modal-body').scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function guardarUsuarioSubmit(event) {
+      if (event) event.preventDefault();
+      const form = document.getElementById('userAdminForm');
+      if (!form.checkValidity()) {
+        form.classList.add('was-validated');
+        return;
+      }
+
+      const nombre = toUpper(document.getElementById('adminNombreCompleto').value);
+      const correo = toUpper(document.getElementById('adminCorreo').value);
+      const usuario = toUpper(document.getElementById('adminUsuario').value);
+      const rol = toUpper(document.getElementById('adminRol').value);
+      const depto = toUpper(document.getElementById('adminDepartamento').value);
+      const passwordPlain = document.getElementById('adminPassword').value;
+
+      if (passwordPlain && passwordPlain.length > 16) {
+        return alert("La contraseña no puede exceder el límite de 16 caracteres.");
+      }
+
+      showLoading("Procesando usuario...", "Registrando en la base de datos institucional");
+
+      try {
+        let passwordHash = '';
+        if (passwordPlain) {
+          passwordHash = await hashSHA256Hex(passwordPlain);
+        }
+
+        let res;
+        if (editingUserRow) {
+          res = await apiRequest("actualizarUsuario", {
+            sheetRow: editingUserRow,
+            usuario: usuario,
+            data: {
+              nombreCompleto: nombre,
+              correo: correo,
+              rol: rol,
+              departamento: depto,
+              passwordHash: passwordHash
+            }
+          });
+        } else {
+          if (!passwordPlain) {
+            hideLoading();
+            return alert("Debe especificar una contraseña inicial para el nuevo usuario.");
+          }
+          res = await apiRequest("crearUsuario", {
+            data: {
+              nombreCompleto: nombre,
+              correo: correo,
+              usuario: usuario,
+              rol: rol,
+              departamento: depto,
+              passwordHash: passwordHash
+            }
+          });
+        }
+
+        hideLoading();
+        if (res && res.status === 'success') {
+          showNotification(res.message || "Usuario procesado exitosamente.", true);
+          limpiarFormularioUsuario();
+          await cargarUsuarios();
+        } else {
+          showNotification((res && res.message) || "No se pudo procesar el usuario.", false);
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error: " + err.message, false);
+      }
+    }
+
+    async function desactivarUsuarioPrompt(usuario) {
+      if (!confirm(`¿Está seguro de desactivar el acceso del usuario ${toUpper(usuario)}?`)) return;
+      showLoading("Desactivando usuario...", "Modificando estado en el servidor central");
+
+      try {
+        const res = await apiRequest("desactivarUsuario", { usuario: usuario });
+        hideLoading();
+        if (res && res.status === 'success') {
+          showNotification(res.message || "Usuario desactivado.", true);
+          await cargarUsuarios();
+        } else {
+          showNotification((res && res.message) || "Error al desactivar el usuario.", false);
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error: " + err.message, false);
+      }
+    }
+
+    // ================= INICIALIZACIÓN =================
+    function initTooltips() {
+      try {
+        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        [...tooltipTriggerList].map(el => new bootstrap.Tooltip(el, { trigger: 'hover' }));
+      } catch (e) {}
+    }
+
+    function actualizarCampoCorreoOfimatica() {
+      const esCorreo = document.getElementById('departamentoOfi').value === '__CORREO__';
+      const campoCorreo = document.getElementById('evaluadoCorreo');
+      campoCorreo.classList.toggle('d-none', !esCorreo);
+      campoCorreo.required = esCorreo;
+    }
+
+    function seleccionarDepartamentoRed(departamento) {
+      const selector = document.getElementById('departamentoRed');
+      const valor = toUpper(departamento);
+      if (![...selector.options].some(option => option.value === valor)) {
+        const opcionAnterior = document.createElement('option');
+        opcionAnterior.value = valor;
+        opcionAnterior.textContent = `${valor} (REGISTRO ANTERIOR)`;
+        selector.appendChild(opcionAnterior);
+      }
+      selector.value = valor;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Inicializar tooltips de ayuda
+      initTooltips();
+
+      // Reutilizar el catálogo de departamentos y servicios del módulo Bienes.
+      const opcionesDepartamentos = document.querySelectorAll('#departamentoBien > optgroup');
+      ['departamentoRed', 'departamentoOfi'].forEach(id => {
+        const selector = document.getElementById(id);
+        opcionesDepartamentos.forEach(grupo => selector.appendChild(grupo.cloneNode(true)));
+      });
+      actualizarCampoCorreoOfimatica();
+
+      // Control estricto de captura:
+      // La contraseña es el único campo que permite mayúsculas, minúsculas, números y caracteres especiales (máx. 16 caracteres).
+      // Todos los demás campos de texto se convierten estrictamente a MAYÚSCULAS en tiempo real.
+      document.addEventListener('input', (e) => {
+        const target = e.target;
+        if (!target) return;
+        if (target.tagName === 'INPUT' && target.type !== 'password' && target.type !== 'file' && target.type !== 'checkbox' && target.type !== 'radio') {
+          const start = target.selectionStart;
+          const end = target.selectionEnd;
+          target.value = target.value.toUpperCase();
+          if (start !== null && end !== null) {
+            try { target.setSelectionRange(start, end); } catch (err) {}
+          }
+        } else if (target.tagName === 'TEXTAREA') {
+          const start = target.selectionStart;
+          const end = target.selectionEnd;
+          target.value = target.value.toUpperCase();
+          if (start !== null && end !== null) {
+            try { target.setSelectionRange(start, end); } catch (err) {}
+          }
+        }
+      });
+
+      // Listeners de búsqueda
+      if (searchInput) searchInput.addEventListener('input', filterData);
+      if (searchNetworkInput) searchNetworkInput.addEventListener('input', filterNetworkData);
+      if (searchOfimaticaInput) searchOfimaticaInput.addEventListener('input', filterOfimaticaData);
+
+      const searchLogsInput = document.getElementById('searchLogsInput');
+      if (searchLogsInput) searchLogsInput.addEventListener('input', filtrarLogs);
+
+      // Listener de login
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.addEventListener('submit', ejecutarLogin);
+      }
+
+      // Listener de administración de usuarios
+      const userAdminForm = document.getElementById('userAdminForm');
+      if (userAdminForm) {
+        userAdminForm.addEventListener('submit', guardarUsuarioSubmit);
+      }
+
+      // Listeners de formularios operativos
+      if (inventoryForm) {
+        inventoryForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (!inventoryForm.checkValidity()) {
+            e.stopPropagation();
+            inventoryForm.classList.add('was-validated');
+            return;
+          }
+          guardarOActualizarBien();
+        });
+      }
+
+      if (networkForm) {
+        networkForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (!networkForm.checkValidity()) {
+            e.stopPropagation();
+            networkForm.classList.add('was-validated');
+            return;
+          }
+          guardarOActualizarRed();
+        });
+      }
+
+      if (ofimaticaForm) {
+        ofimaticaForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          if (!ofimaticaForm.checkValidity()) {
+            e.stopPropagation();
+            ofimaticaForm.classList.add('was-validated');
+            return;
+          }
+          guardarOActualizarOfimatica();
+        });
+      }
+
+      // Cargar caché previo si existe para acelerar render inicial
+      try {
+        const cachedBienes = localStorage.getItem('hcuamp_bienes');
+        const cachedRedes = localStorage.getItem('hcuamp_redes');
+        const cachedOfi = localStorage.getItem('hcuamp_ofi');
+        if (cachedBienes) { inventory = JSON.parse(cachedBienes); renderTable(); updateMetrics(); }
+        if (cachedRedes) { networks = JSON.parse(cachedRedes); renderNetworkTable(); }
+        if (cachedOfi) { ofimaticaRecords = JSON.parse(cachedOfi); renderOfimaticaTable(); }
+      } catch (e) {}
+
+      // Comprobar sesión activa y contención de seguridad
+      const sesionActiva = verificarSesionExistente();
+      if (!sesionActiva) {
+        mostrarPantallaLogin();
+      }
+    });
+
+    // ================= CARGA GENERAL =================
+    async function cargarTodoElSistema(isManual = false) {
+      showLoading("Sincronizando con el Servidor Central...", "Consultando la base de datos institucional");
+
+      try {
+        // Consulta unificada optimizada
+        const res = await apiRequest("obtenerTodo", null, "GET");
+
+        if (res && res.status === "success") {
+          inventory = res.bienes || [];
+          networks = res.redes || [];
+          ofimaticaRecords = res.ofimatica || [];
+        } else {
+          // Fallback a consultas individuales
+          const [resB, resR, resO] = await Promise.all([
+            apiRequest("obtenerTodosLosBienes", null, "GET"),
+            apiRequest("obtenerTodasLasRedes", null, "GET"),
+            apiRequest("obtenerTodosLosDiagnosticos", null, "GET")
+          ]);
+          inventory = (resB && resB.data) || resB || [];
+          networks = (resR && resR.data) || resR || [];
+          ofimaticaRecords = (resO && resO.data) || resO || [];
+        }
+
+        // Renderizado
+        renderTable();
+        updateMetrics();
+        renderNetworkTable();
+        renderOfimaticaTable();
+
+        // Guardar en caché local
+        try {
+          localStorage.setItem('hcuamp_bienes', JSON.stringify(inventory));
+          localStorage.setItem('hcuamp_redes', JSON.stringify(networks));
+          localStorage.setItem('hcuamp_ofi', JSON.stringify(ofimaticaRecords));
+        } catch (e) {}
+
+        hideLoading();
+        actualizarEstadoConexion(true);
+        if (isManual) showNotification("Datos sincronizados con éxito desde el servidor institucional.", true);
+      } catch (err) {
+        hideLoading();
+        console.warn("Aviso en sincronización:", err);
+        actualizarEstadoConexion(false);
+        showNotification("Conectando con el servidor institucional...", false);
+      }
+    }
+
+    function actualizarEstadoConexion(conectado = true) {
+      const badge = document.getElementById('serverStatusBadge');
+      if (badge) {
+        if (conectado) {
+          badge.className = 'status-badge-connected';
+          badge.innerHTML = `<span class="status-indicator-dot"></span><i class="fa-solid fa-server text-success"></i><span>Servidor Central Conectado</span>`;
+          badge.title = "Servidor Central Conectado - Base de Datos Institucional en Línea";
+        } else {
+          badge.className = 'status-badge-connected status-badge-reconnecting';
+          badge.innerHTML = `<span class="status-indicator-dot reconnecting"></span><i class="fa-solid fa-server text-warning"></i><span>Reconectando Servidor Central...</span>`;
+          badge.title = "Intentando reestablecer enlace con el servidor central institucional";
+        }
+      }
+    }
+
+    function showLoading(text, subtext = "Por favor espere un momento...") {
+      document.getElementById('loadingText').textContent = text;
+      document.getElementById('loadingSubtext').textContent = subtext;
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function showNotification(message, isSuccess = true) {
+      const toastEl = document.getElementById('appToast');
+      const toastMsg = document.getElementById('toastMessage');
+      toastMsg.innerHTML = `<i class="fa-solid ${isSuccess ? 'fa-circle-check text-white' : 'fa-triangle-exclamation text-warning'}"></i> <span>${message}</span>`;
+      toastEl.className = `toast align-items-center text-white border-0 shadow-lg ${isSuccess ? 'bg-success' : 'bg-danger'}`;
+      new bootstrap.Toast(toastEl, { delay: 4500 }).show();
+    }
+
+    function toggleCantidad(tipo) {
+      const chk = document.getElementById(`chk_${tipo}`);
+      const qty = document.getElementById(`qty_${tipo}`);
+      qty.disabled = !chk.checked;
+      if (!chk.checked) qty.value = "0";
+      else if (qty.value == "0") qty.value = "1";
+    }
+
+    // ================= OPTIMIZACIÓN DE IMÁGENES CLIENT-SIDE =================
+    async function compressImageFile(file, maxDimension = 1280, quality = 0.82) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxDimension || height > maxDimension) {
+              if (width > height) {
+                height = Math.round((height * maxDimension) / width);
+                width = maxDimension;
+              } else {
+                width = Math.round((width * maxDimension) / height);
+                height = maxDimension;
+              }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+            resolve(compressedBase64);
+          };
+          img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+      });
+    }
+
+    // ================= 1. MÓDULO BIENES TECNOLÓGICOS =================
+    async function guardarOActualizarBien() {
+      const tipoBien = toUpper(document.getElementById('tipoBien').value);
+      const cifraBien = toUpper(document.getElementById('nroBien').value);
+      const fileInput = document.getElementById('fotoFile');
+
+      // Todos los campos de texto convertidos a MAYÚSCULAS
+      const dataComun = {
+        departamento: toUpper(document.getElementById('departamentoBien').value),
+        grupo: toUpper(document.getElementById('grupo').value),
+        subgrupo: toUpper(document.getElementById('subgrupo').value),
+        seccion: toUpper(document.getElementById('seccion').value),
+        nroBienCompleto: `${tipoBien} ${cifraBien}`,
+        descripcion: toUpper(document.getElementById('descripcion').value),
+        caracteristicas: toUpper(document.getElementById('caracteristicas').value),
+        modelo: toUpper(document.getElementById('modelo').value),
+        color: toUpper(document.getElementById('color').value),
+        serial: toUpper(document.getElementById('serial').value),
+        estado: toUpper(document.getElementById('estadoBien').value || 'BUENO'),
+        fotoUrl: document.getElementById('fotoUrlActual').value.trim()
+      };
+
+      showLoading("Procesando registro de bien...", "Preparando datos");
+
+      // Subida de Foto optimizada
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          showLoading("Optimizando fotografía...", "Comprimiendo imagen");
+          const compressedBase64 = await compressImageFile(fileInput.files[0]);
+
+          showLoading("Almacenando fotografía...", "Guardando en el repositorio institucional");
+          const resUpload = await apiRequest("almacenarFoto", {
+            base64Data: compressedBase64,
+            fileName: `${dataComun.nroBienCompleto.replace(/\s+/g, '_')}_${Date.now()}.jpg`,
+            mimeType: "image/jpeg"
+          });
+
+          if (resUpload && resUpload.status === 'success') {
+            dataComun.fotoUrl = resUpload.url;
+          }
+        } catch (uploadErr) {
+          console.error("Error al procesar foto:", uploadErr);
+        }
+      }
+
+      await ejecutarGuardadoOBien(dataComun);
+    }
+
+    async function ejecutarGuardadoOBien(data) {
+      try {
+        if (editingBienRow === null) {
+          showLoading("Guardando bien tecnológico...", "Registrando en el sistema central");
+          const res = await apiRequest("guardarBien", { data: data });
+          hideLoading();
+          if (res && res.status === 'success') {
+            showNotification(res.message || "Bien guardado con éxito.", true);
+            limpiarFormularioBienes();
+            cargarTodoElSistema();
+          } else {
+            showNotification(res.message || "No se pudo guardar el bien.", false);
+          }
+        } else {
+          showLoading("Actualizando bien tecnológico...", "Modificando en el sistema central");
+          const res = await apiRequest("actualizarBien", { sheetRow: editingBienRow, data: data });
+          hideLoading();
+          if (res && res.status === 'success') {
+            showNotification(res.message || "Bien actualizado correctamente.", true);
+            limpiarFormularioBienes();
+            cargarTodoElSistema();
+          } else {
+            showNotification(res.message || "No se pudo actualizar el bien.", false);
+          }
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error en comunicación: " + err.message, false);
+      }
+    }
+
+    function renderTable(dataToRender = inventory) {
+      tableBody.innerHTML = '';
+      if (dataToRender.length === 0) {
+        emptyMessage.classList.remove('d-none');
+        return;
+      }
+      emptyMessage.classList.add('d-none');
+
+      const isAdmin = currentUser && toUpper(currentUser.rol) === 'ADMINISTRADOR';
+
+      dataToRender.forEach(item => {
+        const tr = document.createElement('tr');
+        const est = toUpper(item.estado);
+        let badgeClass = est === 'REGULAR' ? 'badge-regular' : (est === 'INOPERATIVO' ? 'badge-inoperativo' : 'badge-bueno');
+
+        let fotoHtml = '<span class="text-muted small">SIN FOTO</span>';
+        if (item.fotoUrl && item.fotoUrl.trim() !== '') {
+          fotoHtml = `<a href="${item.fotoUrl}" target="_blank" class="btn btn-xs btn-outline-info py-0 px-2 small" title="Ver Fotografía"><i class="fa-solid fa-image me-1"></i> VER FOTO</a>`;
+        }
+
+        tr.innerHTML = `
+          <td class="fw-semibold">${toUpper(item.departamento)}</td>
+          <td>${toUpper(item.grupo)}</td>
+          <td>${toUpper(item.subgrupo)}</td>
+          <td>${toUpper(item.seccion) || '-'}</td>
+          <td class="fw-bold text-primary">${toUpper(item.nroBienCompleto)}</td>
+          <td>${toUpper(item.descripcion)}</td>
+          <td><span class="badge bg-light text-dark border">${toUpper(item.caracteristicas)}</span></td>
+          <td>${toUpper(item.modelo) || '-'}</td>
+          <td>${toUpper(item.color) || '-'}</td>
+          <td>${toUpper(item.serial) || '-'}</td>
+          <td><span class="badge ${badgeClass} text-white">${toUpper(item.estado)}</span></td>
+          <td class="text-center">${fotoHtml}</td>
+          <td class="text-center no-print">
+            <button class="btn btn-sm btn-outline-primary me-1" title="Modificar" onclick='modificarBien(${JSON.stringify(item)})'><i class="fa-solid fa-pen-to-square"></i></button>
+            ${isAdmin ? `<button class="btn btn-sm btn-outline-danger" title="Borrar" onclick="borrarBien(${item.sheetRow})"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      initTooltips();
+    }
+
+    function modificarBien(item) {
+      editingBienRow = item.sheetRow;
+      document.getElementById('departamentoBien').value = toUpper(item.departamento);
+      document.getElementById('grupo').value = toUpper(item.grupo);
+      document.getElementById('subgrupo').value = toUpper(item.subgrupo);
+      document.getElementById('seccion').value = toUpper(item.seccion);
+
+      const partesBien = toUpper(item.nroBienCompleto).split(' ');
+      if (partesBien.length >= 2) {
+        document.getElementById('tipoBien').value = partesBien[0];
+        document.getElementById('nroBien').value = partesBien.slice(1).join(' ');
+      } else {
+        document.getElementById('nroBien').value = toUpper(item.nroBienCompleto);
+      }
+
+      document.getElementById('descripcion').value = toUpper(item.descripcion);
+      document.getElementById('caracteristicas').value = toUpper(item.caracteristicas);
+      document.getElementById('modelo').value = toUpper(item.modelo);
+      document.getElementById('color').value = toUpper(item.color);
+      document.getElementById('serial').value = toUpper(item.serial);
+      document.getElementById('estadoBien').value = toUpper(item.estado);
+      document.getElementById('fotoUrlActual').value = item.fotoUrl || '';
+
+      document.getElementById('bienFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Modificando Bien (Fila #${item.sheetRow})`;
+      document.getElementById('btnSubmitBien').innerHTML = `<i class="fa-solid fa-floppy-disk me-1"></i> Actualizar Bien`;
+      document.getElementById('btnSubmitBien').className = `btn btn-warning px-4 fw-bold text-dark shadow-sm`;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function borrarBien(sheetRow) {
+      if (!currentUser || toUpper(currentUser.rol) !== 'ADMINISTRADOR') {
+        return showNotification("Acceso denegado: solo el Administrador puede eliminar registros.", false);
+      }
+      if (!confirm('¿Está seguro de eliminar este registro de bien institucional?')) return;
+      showLoading("Eliminando registro...", "Marcando como inactivo en el sistema central");
+
+      try {
+        const res = await apiRequest("desactivarRegistro", { sheetName: "bienes", sheetRow: sheetRow });
+        hideLoading();
+        if (res && res.status === 'success') {
+          showNotification(res.message, true);
+          cargarTodoElSistema();
+        } else {
+          showNotification(res.message || "Error al eliminar", false);
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error: " + err.message, false);
+      }
+    }
+
+    function limpiarFormularioBienes() {
+      editingBienRow = null;
+      inventoryForm.reset();
+      inventoryForm.classList.remove('was-validated');
+      document.getElementById('tipoBien').value = 'BN';
+      document.getElementById('seccion').value = '';
+      document.getElementById('fotoUrlActual').value = '';
+      document.getElementById('fotoFile').value = '';
+      document.getElementById('bienFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square me-2"></i>Captura de Datos del Bien Tecnológico`;
+      document.getElementById('btnSubmitBien').innerHTML = `<i class="fa-solid fa-cloud-arrow-up me-1"></i> Registrar y Guardar Bien`;
+      document.getElementById('btnSubmitBien').className = `btn btn-primary px-4 fw-bold shadow-sm`;
+    }
+
+    function filterData() {
+      const query = toUpper(searchInput.value);
+      const filtered = inventory.filter(item =>
+        toUpper(item.nroBienCompleto).includes(query) ||
+        toUpper(item.departamento).includes(query) ||
+        toUpper(item.descripcion).includes(query) ||
+        toUpper(item.caracteristicas).includes(query) ||
+        toUpper(item.serial).includes(query)
+      );
+      renderTable(filtered);
+    }
+
+    function updateMetrics() {
+      document.getElementById('totalItems').textContent = inventory.length;
+      document.getElementById('totalBN').textContent = inventory.filter(i => toUpper(i.nroBienCompleto).includes('BN')).length;
+      document.getElementById('totalBE').textContent = inventory.filter(i => toUpper(i.nroBienCompleto).includes('BE')).length;
+      document.getElementById('totalBT').textContent = inventory.filter(i => toUpper(i.nroBienCompleto).includes('BT')).length;
+    }
+
+    function exportarCSVBienes() {
+      if (inventory.length === 0) return showNotification('No hay datos para exportar.', false);
+      const headers = ["DEPARTAMENTO", "GRUPO", "SUBGRUPO", "SECCIÓN", "NRO. DE BIEN", "DESCRIPCIÓN", "CARACTERÍSTICAS", "MODELO", "COLOR", "SERIAL", "ESTADO", "FOTO URL"];
+      const rows = inventory.map(i => [
+        `"${toUpper(i.departamento)}"`, `"${toUpper(i.grupo)}"`, `"${toUpper(i.subgrupo)}"`, `"${toUpper(i.seccion)}"`,
+        `"${toUpper(i.nroBienCompleto)}"`, `"${toUpper(i.descripcion)}"`, `"${toUpper(i.caracteristicas)}"`,
+        `"${toUpper(i.modelo)}"`, `"${toUpper(i.color)}"`, `"${toUpper(i.serial)}"`, `"${toUpper(i.estado)}"`, `"${i.fotoUrl || ''}"`
+      ]);
+      descargarCSV(headers, rows, "INVENTARIO_BIENES_HCUAMP");
+    }
+
+    // ================= 2. MÓDULO INFRAESTRUCTURA DE RED =================
+    async function guardarOActualizarRed() {
+      const canalizacionChecked = document.querySelector('input[name="canalizacion"]:checked');
+      const data = {
+        departamento: toUpper(document.getElementById('departamentoRed').value),
+        modem: document.getElementById('chk_modem').checked ? document.getElementById('qty_modem').value : 0,
+        router: document.getElementById('chk_router').checked ? document.getElementById('qty_router').value : 0,
+        switch: document.getElementById('chk_switch').checked ? document.getElementById('qty_switch').value : 0,
+        ap: document.getElementById('chk_ap').checked ? document.getElementById('qty_ap').value : 0,
+        cableado: toUpper(document.getElementById('cableado').value),
+        canalizacion: toUpper(canalizacionChecked ? canalizacionChecked.value : "NO"),
+        ssid: toUpper(document.getElementById('ssid').value),
+        banda: toUpper(document.getElementById('bandaWifi').value),
+        proveedor: toUpper(document.getElementById('proveedor').value),
+        velocidad: toUpper(document.getElementById('velocidad').value),
+        responsable: toUpper(document.getElementById('responsable').value)
+      };
+
+      try {
+        if (editingRedRow === null) {
+          showLoading("Guardando infraestructura de red...", "Escribiendo en el sistema central");
+          const res = await apiRequest("guardarInfraestructuraRed", { data: data });
+          hideLoading();
+          if (res && res.status === 'success') {
+            showNotification(res.message || "Red guardada con éxito.", true);
+            limpiarFormularioRedes();
+            cargarTodoElSistema();
+          } else {
+            showNotification(res.message || "Error al guardar red.", false);
+          }
+        } else {
+          showLoading("Actualizando red...", "Modificando en el sistema central");
+          const res = await apiRequest("actualizarRed", { sheetRow: editingRedRow, data: data });
+          hideLoading();
+          if (res && res.status === 'success') {
+            showNotification(res.message || "Red actualizada con éxito.", true);
+            limpiarFormularioRedes();
+            cargarTodoElSistema();
+          } else {
+            showNotification(res.message || "Error al actualizar red.", false);
+          }
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error: " + err.message, false);
+      }
+    }
+
+    function renderNetworkTable(dataToRender = networks) {
+      networkTableBody.innerHTML = '';
+      if (dataToRender.length === 0) {
+        emptyNetworkMessage.classList.remove('d-none');
+        return;
+      }
+      emptyNetworkMessage.classList.add('d-none');
+
+      const isAdmin = currentUser && toUpper(currentUser.rol) === 'ADMINISTRADOR';
+
+      dataToRender.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHTML(item.departamento)}</td>
+          <td><span class="fw-bold text-primary">${escapeHTML(item.ssid)}</span><br><small class="text-muted">BANDA: ${escapeHTML(item.banda)}</small></td>
+          <td><small>MODEM: <b>${item.modem}</b> | ROUTER: <b>${item.router}</b><br>SWITCH: <b>${item.switch}</b> | AP: <b>${item.ap}</b></small></td>
+          <td><span class="badge bg-secondary">${escapeHTML(item.cableado)}</span><br><small class="text-muted">CANALIZACIÓN: ${escapeHTML(item.canalizacion)}</small></td>
+          <td><div class="fw-semibold">${escapeHTML(item.proveedor)}</div><small class="text-muted">VEL: ${escapeHTML(item.velocidad)}</small></td>
+          <td>${escapeHTML(item.responsable)}</td>
+          <td class="text-center no-print">
+            <button class="btn btn-sm btn-outline-primary me-1" title="Modificar" data-action="edit"><i class="fa-solid fa-pen-to-square"></i></button>
+            ${isAdmin ? `<button class="btn btn-sm btn-outline-danger" title="Borrar" data-action="delete"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+          </td>
+        `;
+        tr.querySelector('[data-action="edit"]').addEventListener('click', () => modificarRed(item));
+        const deleteButton = tr.querySelector('[data-action="delete"]');
+        if (deleteButton) deleteButton.addEventListener('click', () => borrarRed(item.sheetRow));
+        networkTableBody.appendChild(tr);
+      });
+      initTooltips();
+    }
+
+    function modificarRed(item) {
+      editingRedRow = item.sheetRow;
+      seleccionarDepartamentoRed(item.departamento);
+      document.getElementById('chk_modem').checked = item.modem > 0;
+      document.getElementById('qty_modem').disabled = item.modem == 0;
+      document.getElementById('qty_modem').value = item.modem;
+
+      document.getElementById('chk_router').checked = item.router > 0;
+      document.getElementById('qty_router').disabled = item.router == 0;
+      document.getElementById('qty_router').value = item.router;
+
+      document.getElementById('chk_switch').checked = item.switch > 0;
+      document.getElementById('qty_switch').disabled = item.switch == 0;
+      document.getElementById('qty_switch').value = item.switch;
+
+      document.getElementById('chk_ap').checked = item.ap > 0;
+      document.getElementById('qty_ap').disabled = item.ap == 0;
+      document.getElementById('qty_ap').value = item.ap;
+
+      document.getElementById('cableado').value = toUpper(item.cableado);
+      if (toUpper(item.canalizacion) === 'SÍ') {
+        document.getElementById('canalizacionSi').checked = true;
+      } else {
+        document.getElementById('canalizacionNo').checked = true;
+      }
+
+      document.getElementById('ssid').value = toUpper(item.ssid);
+      document.getElementById('bandaWifi').value = toUpper(item.banda);
+      document.getElementById('proveedor').value = toUpper(item.proveedor);
+      document.getElementById('velocidad').value = toUpper(item.velocidad);
+      document.getElementById('responsable').value = toUpper(item.responsable);
+
+      document.getElementById('networkFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Modificando Red (Fila #${item.sheetRow})`;
+      document.getElementById('btnSubmitRed').innerHTML = `<i class="fa-solid fa-floppy-disk me-2"></i> Actualizar Infraestructura`;
+      document.getElementById('btnSubmitRed').className = `btn btn-warning px-5 fw-bold py-2 text-dark shadow-sm`;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function borrarRed(sheetRow) {
+      if (!currentUser || toUpper(currentUser.rol) !== 'ADMINISTRADOR') {
+        return showNotification("Acceso denegado: solo el Administrador puede eliminar registros.", false);
+      }
+      if (!confirm('¿Está seguro de eliminar este registro de red?')) return;
+      showLoading("Eliminando registro...", "Marcando como inactivo en el sistema central");
+
+      try {
+        const res = await apiRequest("desactivarRegistro", { sheetName: "redes", sheetRow: sheetRow });
+        hideLoading();
+        if (res && res.status === 'success') {
+          showNotification(res.message, true);
+          cargarTodoElSistema();
+        } else {
+          showNotification(res.message || "Error al eliminar", false);
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error: " + err.message, false);
+      }
+    }
+
+    function limpiarFormularioRedes() {
+      editingRedRow = null;
+      networkForm.reset();
+      networkForm.classList.remove('was-validated');
+      ['modem', 'router', 'switch', 'ap'].forEach(t => document.getElementById(`qty_${t}`).disabled = true);
+      document.getElementById('networkFormTitle').innerHTML = `<i class="fa-solid fa-network-wired me-2"></i>Formulario de Registro de Infraestructura de Red`;
+      document.getElementById('btnSubmitRed').innerHTML = `<i class="fa-solid fa-cloud-arrow-up me-2"></i> Guardar Infraestructura`;
+      document.getElementById('btnSubmitRed').className = `btn btn-success px-5 fw-bold py-2 shadow-sm`;
+    }
+
+    function filterNetworkData() {
+      const query = toUpper(searchNetworkInput.value);
+      const filtered = networks.filter(item =>
+        toUpper(item.departamento).includes(query) ||
+        toUpper(item.ssid).includes(query) ||
+        toUpper(item.proveedor).includes(query) ||
+        toUpper(item.responsable).includes(query)
+      );
+      renderNetworkTable(filtered);
+    }
+
+    function exportarCSVRedes() {
+      if (networks.length === 0) return showNotification('No hay datos para exportar.', false);
+      const headers = ["DEPARTAMENTO", "SSID", "BANDA", "MODEM", "ROUTER", "SWITCH", "AP", "CABLEADO", "CANALIZACIÓN", "PROVEEDOR", "VELOCIDAD", "RESPONSABLE"];
+      const rows = networks.map(i => [
+        `"${toUpper(i.departamento)}"`, `"${toUpper(i.ssid)}"`, `"${toUpper(i.banda)}"`, i.modem, i.router, i.switch, i.ap,
+        `"${toUpper(i.cableado)}"`, `"${toUpper(i.canalizacion)}"`, `"${toUpper(i.proveedor)}"`, `"${toUpper(i.velocidad)}"`, `"${toUpper(i.responsable)}"`
+      ]);
+      descargarCSV(headers, rows, "INFRAESTRUCTURA_RED_HCUAMP");
+    }
+
+    // ================= 3. MÓDULO DIAGNÓSTICO DE OFIMÁTICA =================
+    async function guardarOActualizarOfimatica() {
+      // Todo en mayúsculas
+      const data = {
+        nombre: toUpper(document.getElementById('evaluadoNombre').value),
+        correo: document.getElementById('departamentoOfi').value === '__CORREO__'
+          ? toUpper(document.getElementById('evaluadoCorreo').value)
+          : toUpper(document.getElementById('departamentoOfi').value),
+        tools: {
+          word: { frecuencia: toUpper(document.getElementById('freq_word').value), nivel: toUpper(document.getElementById('nivel_word').value) },
+          excel: { frecuencia: toUpper(document.getElementById('freq_excel').value), nivel: toUpper(document.getElementById('nivel_excel').value) },
+          slides: { frecuencia: toUpper(document.getElementById('freq_slides').value), nivel: toUpper(document.getElementById('nivel_slides').value) },
+          correo: { frecuencia: toUpper(document.getElementById('freq_correo').value), nivel: toUpper(document.getElementById('nivel_correo').value) },
+          nube: { frecuencia: toUpper(document.getElementById('freq_nube').value), nivel: toUpper(document.getElementById('nivel_nube').value) }
+        }
+      };
+
+      try {
+        if (editingOfiRow === null) {
+          showLoading("Guardando diagnóstico...", "Registrando en el sistema central");
+          const res = await apiRequest("guardarCuestionarioOfimatica", { data: data });
+          hideLoading();
+          if (res && res.status === 'success') {
+            showNotification(res.message || "Diagnóstico guardado con éxito.", true);
+            limpiarFormularioOfimatica();
+            cargarTodoElSistema();
+          } else {
+            showNotification(res.message || "Error al guardar.", false);
+          }
+        } else {
+          showLoading("Actualizando diagnóstico...", "Modificando en el sistema central");
+          const res = await apiRequest("actualizarOfimatica", { sheetRow: editingOfiRow, data: data });
+          hideLoading();
+          if (res && res.status === 'success') {
+            showNotification(res.message || "Diagnóstico actualizado con éxito.", true);
+            limpiarFormularioOfimatica();
+            cargarTodoElSistema();
+          } else {
+            showNotification(res.message || "Error al actualizar.", false);
+          }
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error: " + err.message, false);
+      }
+    }
+
+    function renderOfimaticaTable(dataToRender = ofimaticaRecords) {
+      ofimaticaTableBody.innerHTML = '';
+      if (dataToRender.length === 0) {
+        emptyOfimaticaMessage.classList.remove('d-none');
+        return;
+      }
+      emptyOfimaticaMessage.classList.add('d-none');
+
+      const isAdmin = currentUser && toUpper(currentUser.rol) === 'ADMINISTRADOR';
+
+      dataToRender.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><small class="text-muted">${item.fechaHora || '-'}</small></td>
+          <td class="fw-bold">${toUpper(item.nombre)}</td>
+          <td>${toUpper(item.correo)}</td>
+          <td><span class="badge bg-primary bg-opacity-75">${toUpper(item.tools.word.nivel)}</span></td>
+          <td><span class="badge bg-success bg-opacity-75">${toUpper(item.tools.excel.nivel)}</span></td>
+          <td><span class="badge bg-danger bg-opacity-75">${toUpper(item.tools.slides.nivel)}</span></td>
+          <td><span class="badge bg-info text-dark">${toUpper(item.tools.correo.nivel)}</span></td>
+          <td><span class="badge bg-secondary">${toUpper(item.tools.nube.nivel)}</span></td>
+          <td class="text-center no-print">
+            <button class="btn btn-sm btn-outline-primary me-1" title="Modificar" onclick='modificarOfimatica(${JSON.stringify(item)})'><i class="fa-solid fa-pen-to-square"></i></button>
+            ${isAdmin ? `<button class="btn btn-sm btn-outline-danger" title="Borrar" onclick="borrarOfimatica(${item.sheetRow})"><i class="fa-solid fa-trash-can"></i></button>` : ''}
+          </td>
+        `;
+        ofimaticaTableBody.appendChild(tr);
+      });
+      initTooltips();
+    }
+
+    function modificarOfimatica(item) {
+      editingOfiRow = item.sheetRow;
+      document.getElementById('evaluadoNombre').value = toUpper(item.nombre);
+      const correoOfimatica = toUpper(item.correo);
+      const selectorDepartamentoOfi = document.getElementById('departamentoOfi');
+      if ([...selectorDepartamentoOfi.options].some(option => option.value === correoOfimatica)) {
+        selectorDepartamentoOfi.value = correoOfimatica;
+        document.getElementById('evaluadoCorreo').value = '';
+      } else {
+        selectorDepartamentoOfi.value = '__CORREO__';
+        document.getElementById('evaluadoCorreo').value = correoOfimatica;
+      }
+      actualizarCampoCorreoOfimatica();
+
+      document.getElementById('freq_word').value = toUpper(item.tools.word.frecuencia);
+      document.getElementById('nivel_word').value = toUpper(item.tools.word.nivel);
+
+      document.getElementById('freq_excel').value = toUpper(item.tools.excel.frecuencia);
+      document.getElementById('nivel_excel').value = toUpper(item.tools.excel.nivel);
+
+      document.getElementById('freq_slides').value = toUpper(item.tools.slides.frecuencia);
+      document.getElementById('nivel_slides').value = toUpper(item.tools.slides.nivel);
+
+      document.getElementById('freq_correo').value = toUpper(item.tools.correo.frecuencia);
+      document.getElementById('nivel_correo').value = toUpper(item.tools.correo.nivel);
+
+      document.getElementById('freq_nube').value = toUpper(item.tools.nube.frecuencia);
+      document.getElementById('nivel_nube').value = toUpper(item.tools.nube.nivel);
+
+      document.getElementById('ofiFormTitle').innerHTML = `<i class="fa-solid fa-pen-to-square me-2 text-warning"></i>Modificando Diagnóstico (Fila #${item.sheetRow})`;
+      document.getElementById('btnSubmitOfi').innerHTML = `<i class="fa-solid fa-floppy-disk me-2"></i> Actualizar Diagnóstico`;
+      document.getElementById('btnSubmitOfi').className = `btn btn-warning px-5 fw-bold py-2 text-dark shadow-sm`;
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function borrarOfimatica(sheetRow) {
+      if (!currentUser || toUpper(currentUser.rol) !== 'ADMINISTRADOR') {
+        return showNotification("Acceso denegado: solo el Administrador puede eliminar registros.", false);
+      }
+      if (!confirm('¿Está seguro de eliminar este diagnóstico institucional?')) return;
+      showLoading("Eliminando diagnóstico...", "Marcando como inactivo en el sistema central");
+
+      try {
+        const res = await apiRequest("desactivarRegistro", { sheetName: "cuestionario_ofimatica", sheetRow: sheetRow });
+        hideLoading();
+        if (res && res.status === 'success') {
+          showNotification(res.message, true);
+          cargarTodoElSistema();
+        } else {
+          showNotification(res.message || "Error al eliminar", false);
+        }
+      } catch (err) {
+        hideLoading();
+        showNotification("Error: " + err.message, false);
+      }
+    }
+
+    function limpiarFormularioOfimatica() {
+      editingOfiRow = null;
+      ofimaticaForm.reset();
+      ofimaticaForm.classList.remove('was-validated');
+      document.getElementById('ofiFormTitle').innerHTML = `<i class="fa-solid fa-clipboard-question me-2"></i>Cuestionario y Diagnóstico de Conocimientos en Ofimática`;
+      document.getElementById('btnSubmitOfi').innerHTML = `<i class="fa-solid fa-paper-plane me-2"></i> Enviar Diagnóstico`;
+      document.getElementById('btnSubmitOfi').className = `btn btn-primary px-5 fw-bold py-2 shadow-sm`;
+    }
+
+    function filterOfimaticaData() {
+      const query = toUpper(searchOfimaticaInput.value);
+      const filtered = ofimaticaRecords.filter(item =>
+        toUpper(item.nombre).includes(query) ||
+        toUpper(item.correo).includes(query)
+      );
+      renderOfimaticaTable(filtered);
+    }
+
+    function exportarCSVOfimatica() {
+      if (ofimaticaRecords.length === 0) return showNotification('No hay datos para exportar.', false);
+      const headers = ["NOMBRE", "CORREO/DEPTO", "PROCESADOR (WRITER/WORD) FREC.", "NIVEL", "HOJAS CÁLCULO (CALC/EXCEL) FREC.", "NIVEL", "PRESENTACIONES (IMPRESS/PPT) FREC.", "NIVEL", "CORREO/CAL FREC.", "NIVEL", "NUBE/COLAB FREC.", "NIVEL"];
+      const rows = ofimaticaRecords.map(i => [
+        `"${toUpper(i.nombre)}"`, `"${toUpper(i.correo)}"`, `"${toUpper(i.tools.word.frecuencia)}"`, `"${toUpper(i.tools.word.nivel)}"`,
+        `"${toUpper(i.tools.excel.frecuencia)}"`, `"${toUpper(i.tools.excel.nivel)}"`, `"${toUpper(i.tools.slides.frecuencia)}"`, `"${toUpper(i.tools.slides.nivel)}"`,
+        `"${toUpper(i.tools.correo.frecuencia)}"`, `"${toUpper(i.tools.correo.nivel)}"`, `"${toUpper(i.tools.nube.frecuencia)}"`, `"${toUpper(i.tools.nube.nivel)}"`
+      ]);
+      descargarCSV(headers, rows, "DIAGNOSTICO_OFIMATICA_HCUAMP");
+    }
+
+    // ================= EXPORTADOR CSV UNIVERSAL (UTF-8 con BOM para Excel) =================
+    function descargarCSV(headers, rows, nombreArchivo) {
+      // \uFEFF asegura compatibilidad con tildes y caracteres especiales en Excel
+      let csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `${nombreArchivo}_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
