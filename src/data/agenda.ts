@@ -102,7 +102,7 @@ const ENFERMERIA: Session = {
     t("3:45 – 4:00 p. m.", "Ronda de preguntas y respuestas", "Panel de ponentes"),
     t("4:00 – 4:20 p. m.", "Rol de Enfermería en la Humanización de los usuarios en el área de Emergencia General", "Lcda. Maurimar Escalona"),
     t("4:30 – 4:50 p. m.", "Ronda de preguntas y respuestas", "Panel de ponentes"),
-    t("5:00 – 5:20 p. m.", "Aplicación de los códigos en el área de triaje de Emergencia General", "Lcda. María Celeste Sánchez"),
+    t("5:00 – 5:20 p. m.", "Aplicación de los códigos en el área de triaje de Emergencia General", "MSc. María Celeste Sánchez"),
     cer("5:20 – 5:45 p. m.", "Cierre de la jornada y entrega de reconocimientos", "Departamento de Enfermería"),
   ],
 };
