@@ -75,7 +75,7 @@ const MED_INTERNA: Session = {
   talks: [
     cer("8:30 – 8:50 a. m.", "Palabras de apertura", "Dra. Rosangel Rosario"),
     t("8:50 – 9:10 a. m.", "Historia Clínica como método diagnóstico eficaz", "Dra. Isbel González"),
-    t("9:10 – 9:30 a. m.", "Anticoagulación en casos especiales", "Dra. Yedalith Pernalete"),
+    t("9:10 – 9:30 a. m.", "Anticoagulación en casos especiales", "Dra. Yedalith Pernalete Álvarez"),
     t("9:30 – 9:50 a. m.", "Neuroinfecciones y Encefalitis Autoinmune: Del LCR al Tratamiento Empírico", "Dr. Josmabier Rodríguez"),
     t("9:50 – 10:10 a. m.", "Síndromes Paraneoplásicos: La Pista Sistémica del Cáncer Oculto", "Dra. María Estefanía Fernández Hernández"),
     t("10:10 – 10:20 a. m.", "Sesión de preguntas y respuestas", "Panel de ponentes"),
@@ -283,7 +283,7 @@ const OFTALMOLOGIA: Session = {
     t("8:50 – 9:10 a. m.", "Revelaciones de la Retina: Diagnóstico temprano y salud sistémica", "Dra. Carla Rojas"),
     t("9:15 – 9:35 a. m.", "Glaucoma al día: Avances diagnósticos y abordajes de última generación", "Dra. Aura Álvarez"),
     t("9:40 – 10:00 a. m.", "Agonistas del receptor GLP-1: amigos o enemigos de la visión", "Dr. Edwin Martínez"),
-    t("10:05 – 10:25 a. m.", "Estrabismo infantil: ¿Cuándo intervenir quirúrgicamente frente al tratamiento óptico?", "Dra. Karina Zambrano"),
+    t("10:05 – 10:25 a. m.", "Estrabismo infantil: ¿Cuándo intervenir quirúrgicamente frente al tratamiento óptico?", "Dra. Karina Teresita Zambrano Colina"),
     brk("10:25 – 10:55 a. m.", "Coffee Break · Receso"),
     t("11:00 – 11:20 a. m.", "Avances y Controversias en el manejo quirúrgico del trauma ocular y las fracturas orbitarias", "Dra. Laurent Dumont"),
     t("11:25 – 11:45 a. m.", "Fronteras en la emergencia ocular: De la sospecha al quirófano", "Dra. Daniela Díaz"),
