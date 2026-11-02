@@ -144,6 +144,10 @@ function doGet(e) {
       try { q = MailApp.getRemainingDailyQuota(); } catch (_) {}
       return json_({ ok: true, quota: q });
     }
+    if (action === 'get_occupancy') {
+      if (p.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: getOccupancy_(p.jornada, p.turno, p.salon) });
+    }
     if (action === 'get_asistencias') {
       if (p.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
       return json_({ ok: true, data: getAsistenciasList_(p.jornada, p.turno, p.salon) });
@@ -1365,7 +1369,8 @@ var ASISTENCIAS_HEADERS = [
   'Turno Key',
   'Turno Horario',
   'Validador',
-  'Fecha y Hora'
+  'Fecha y Hora',
+  'Institución'
 ];
 
 function getAsistenciasSheet_(ss) {
@@ -1376,12 +1381,94 @@ function getAsistenciasSheet_(ss) {
       .setFontWeight('bold').setBackground('#0b2545').setFontColor('#ffffff');
     sh.setFrozenRows(1);
     sh.getRange('B:B').setNumberFormat('@'); // Cédula como texto
+    sh.getRange('G:G').setNumberFormat('@'); // Jornada como texto
+  } else {
+    try {
+      var currentCols = sh.getLastColumn();
+      if (currentCols > 0 && currentCols < ASISTENCIAS_HEADERS.length) {
+        sh.getRange(1, 1, 1, ASISTENCIAS_HEADERS.length).setValues([ASISTENCIAS_HEADERS])
+          .setFontWeight('bold').setBackground('#0b2545').setFontColor('#ffffff');
+      }
+    } catch (_) {}
   }
   return sh;
 }
 
+function getAsistenciasColumnMap_(shAsist) {
+  var map = {
+    id: 0,
+    cedula: 1,
+    nombre: 2,
+    tipo: 3,
+    salonKey: 4,
+    salonNombre: 5,
+    jornada: 6,
+    turnoKey: 7,
+    turnoHorario: 8,
+    validador: 9,
+    fechaHora: 10,
+    institucion: 11
+  };
+  if (!shAsist || shAsist.getLastRow() < 1) return map;
+
+  var lastCol = Math.max(shAsist.getLastColumn(), 1);
+  var headerRow = shAsist.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  for (var c = 0; c < headerRow.length; c++) {
+    var h = String(headerRow[c] || '').toLowerCase().trim();
+    if (h === 'id' || h === 'código' || h === 'codigo') map.id = c;
+    else if (h.indexOf('cédula') !== -1 || h.indexOf('cedula') !== -1 || h === 'ci') map.cedula = c;
+    else if (h.indexOf('nombre') !== -1 || h.indexOf('participante') !== -1) map.nombre = c;
+    else if (h.indexOf('tipo') !== -1 || h.indexOf('categoría') !== -1 || h.indexOf('categoria') !== -1) map.tipo = c;
+    else if (h.indexOf('salón key') !== -1 || h.indexOf('salon key') !== -1 || h === 'salon_key') map.salonKey = c;
+    else if (h.indexOf('salón') !== -1 || h.indexOf('salon') !== -1) map.salonNombre = c;
+    else if (h.indexOf('jornada') !== -1 || (h.indexOf('fecha') !== -1 && h.indexOf('hora') === -1)) map.jornada = c;
+    else if (h.indexOf('turno key') !== -1 || h.indexOf('turno_key') !== -1) map.turnoKey = c;
+    else if (h.indexOf('horario') !== -1) map.turnoHorario = c;
+    else if (h.indexOf('turno') !== -1 && h.indexOf('key') === -1) map.turnoKey = c;
+    else if (h.indexOf('validador') !== -1 || h.indexOf('scanner') !== -1 || h.indexOf('usuario') !== -1) map.validador = c;
+    else if (h.indexOf('hora') !== -1 || h.indexOf('fecha y hora') !== -1 || h.indexOf('timestamp') !== -1) map.fechaHora = c;
+    else if (h.indexOf('institución') !== -1 || h.indexOf('institucion') !== -1 || h.indexOf('origen') !== -1) map.institucion = c;
+  }
+  return map;
+}
+
+function normalizeJornada_(val) {
+  if (!val && val !== 0) return '';
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, 'America/Caracas', 'yyyy-MM-dd');
+  }
+  var str = String(val).trim();
+  if (!str) return '';
+
+  var dmy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+  if (dmy) {
+    var d = ('0' + dmy[1]).slice(-2);
+    var m = ('0' + dmy[2]).slice(-2);
+    var y = dmy[3];
+    return y + '-' + m + '-' + d;
+  }
+
+  var ymd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (ymd) {
+    var y2 = ymd[1];
+    var m2 = ('0' + ymd[2]).slice(-2);
+    var d2 = ('0' + ymd[3]).slice(-2);
+    return y2 + '-' + m2 + '-' + d2;
+  }
+
+  var dObj = new Date(str);
+  if (!isNaN(dObj.getTime()) && str.length > 12) {
+    try {
+      return Utilities.formatDate(dObj, 'America/Caracas', 'yyyy-MM-dd');
+    } catch (_) {}
+  }
+
+  return str;
+}
+
 function parseSalonKey_(salon) {
-  var str = String(salon || '').toLowerCase();
+  var str = String(salon || '').toLowerCase().trim();
   if (str.indexOf('alterno') !== -1 || str.indexOf('2') !== -1) {
     return { key: 'alterno', name: 'Salón Alterno (2)', capacity: 60 };
   }
@@ -1389,11 +1476,47 @@ function parseSalonKey_(salon) {
 }
 
 function parseTurnoKey_(turno) {
-  var str = String(turno || '').toLowerCase();
+  var str = String(turno || '').toLowerCase().trim();
   if (str.indexOf('tarde') !== -1 || str.indexOf('13') !== -1 || str.indexOf('18') !== -1) {
     return { key: 'tarde', name: 'Tarde', horario: '13:00 a 18:00', fullLabel: 'Tarde (13:00 a 18:00)' };
   }
   return { key: 'manana', name: 'Mañana', horario: '08:00 a 12:45', fullLabel: 'Mañana (08:00 a 12:45)' };
+}
+
+function parseParticipantQuery_(raw) {
+  var str = String(raw || '').trim();
+  if (!str) return { isId: false, value: '', digits: '' };
+
+  if (str.indexOf('http://') === 0 || str.indexOf('https://') === 0) {
+    var idParam = str.match(/[?&](?:id|code)=([^&#]+)/i);
+    if (idParam) return { isId: true, value: decodeURIComponent(idParam[1]).trim().toUpperCase(), digits: '' };
+    var cedParam = str.match(/[?&](?:cedula|ci)=([^&#]+)/i);
+    if (cedParam) return { isId: false, value: '', digits: decodeURIComponent(cedParam[1]).replace(/\D/g, '') };
+  }
+
+  var cpMatch = str.match(/CP\d{2}-[\w\d]+/i);
+  if (cpMatch) {
+    return { isId: true, value: cpMatch[0].toUpperCase(), digits: '' };
+  }
+
+  if (str.charAt(0) === '{' && str.charAt(str.length - 1) === '}') {
+    try {
+      var j = JSON.parse(str);
+      if (j.id) return { isId: true, value: String(j.id).trim().toUpperCase(), digits: '' };
+      if (j.cedula) return { isId: false, value: '', digits: String(j.cedula).replace(/\D/g, '') };
+    } catch (_) {}
+  }
+
+  var cleanDigits = str.replace(/^[veVE][\-\.\s]?/, '').replace(/\D/g, '');
+  var allDigits = str.replace(/\D/g, '');
+  if (cleanDigits.length >= 5 && /^[veVE]?[\-\.\s]?\d[\d\.\s]*$/.test(str)) {
+    return { isId: false, value: str.toUpperCase(), digits: cleanDigits };
+  }
+  if (allDigits.length >= 5 && !/[a-zA-Z]{2,}/.test(str)) {
+    return { isId: false, value: str.toUpperCase(), digits: allDigits };
+  }
+
+  return { isId: true, value: str.toUpperCase(), digits: allDigits };
 }
 
 function computeAlert_(salonKey, occupancy, remaining) {
@@ -1436,19 +1559,39 @@ function computeAlert_(salonKey, occupancy, remaining) {
 function getOccupancy_(jornada, turno, salon) {
   var salonMeta = parseSalonKey_(salon);
   var turnoMeta = parseTurnoKey_(turno);
-  var targetJornada = String(jornada || '2026-11-02').trim();
+  var targetJornada = normalizeJornada_(jornada || '2026-11-02');
 
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var shAsist = getAsistenciasSheet_(ss);
+  if (!shAsist || shAsist.getLastRow() < 2) {
+    return {
+      salonKey: salonMeta.key,
+      salonName: salonMeta.name,
+      capacity: salonMeta.capacity,
+      turnoKey: turnoMeta.key,
+      turnoLabel: turnoMeta.fullLabel,
+      jornada: targetJornada,
+      occupancy: 0,
+      remaining: salonMeta.capacity,
+      alert: null
+    };
+  }
+
+  var colMap = getAsistenciasColumnMap_(shAsist);
   var data = shAsist.getDataRange().getValues();
 
   var count = 0;
   for (var i = 1; i < data.length; i++) {
     var r = data[i];
-    var rSalon = String(arSalonVal_(r)).toLowerCase();
-    var rJornada = String(r[6] || r[5] || '').trim();
-    var rTurno = String(r[7] || '').toLowerCase();
-    if (rJornada === targetJornada && rTurno === turnoMeta.key && rSalon === salonMeta.key) {
+    var rId = String(r[colMap.id] || '').trim();
+    var rCed = String(r[colMap.cedula] || '').trim();
+    if (!rId && !rCed) continue;
+
+    var rSalonKey = parseSalonKey_(r[colMap.salonKey] || r[colMap.salonNombre]).key;
+    var rJornada = normalizeJornada_(r[colMap.jornada]);
+    var rTurnoKey = parseTurnoKey_(r[colMap.turnoKey]).key;
+
+    if (rJornada === targetJornada && rTurnoKey === turnoMeta.key && rSalonKey === salonMeta.key) {
       count++;
     }
   }
@@ -1474,35 +1617,49 @@ function arSalonVal_(r) {
 }
 
 function validateAccess_(body) {
-  var query = String(body.query || body.id || body.cedula || '').trim();
-  if (!query) throw new UserError_('Por favor ingresa un número de cédula o escanea el código QR.');
+  var rawQuery = String(body.query || body.id || body.cedula || '').trim();
+  if (!rawQuery) throw new UserError_('Por favor ingresa un número de cédula o escanea el código QR.');
 
+  var parsedQuery = parseParticipantQuery_(rawQuery);
   var salonMeta = parseSalonKey_(body.salon);
   var turnoMeta = parseTurnoKey_(body.turno);
-  var targetJornada = String(body.jornada || '2026-11-02').trim();
+  var targetJornada = normalizeJornada_(body.jornada || '2026-11-02');
   var validador = String(body.user || 'Validador').trim();
   var force = !!body.force;
-
-  var cleanQueryDigits = query.replace(/\D/g, '');
 
   var lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
     var shInsc = ss.getSheetByName(CONFIG.SHEET_NAME);
-    var inscData = shInsc.getDataRange().getValues();
+    if (!shInsc || shInsc.getLastRow() < 2) {
+      throw new UserError_('La base de datos de inscripciones no está disponible.');
+    }
+
+    var numCols = Math.min(shInsc.getLastColumn(), 26);
+    var inscData = shInsc.getRange(2, 1, shInsc.getLastRow() - 1, numCols).getValues();
 
     var found = null;
     var cleanFoundCed = '';
 
-    for (var i = 1; i < inscData.length; i++) {
+    for (var i = 0; i < inscData.length; i++) {
       var r = inscData[i];
       var rId = String(r[0] || '').trim().toUpperCase();
       var rCedRaw = String(r[6] || '').trim();
       var rCedDigits = rCedRaw.replace(/\D/g, '');
 
-      // Buscar por ID exacto (ej. CP26-0001) o por Cédula (con o sin V/E/puntos)
-      if (rId === query.toUpperCase() || (cleanQueryDigits.length >= 5 && rCedDigits === cleanQueryDigits)) {
+      var isMatch = false;
+      if (parsedQuery.isId && parsedQuery.value) {
+        if (rId === parsedQuery.value) isMatch = true;
+      } else if (parsedQuery.digits && parsedQuery.digits.length >= 5) {
+        if (rCedDigits === parsedQuery.digits) isMatch = true;
+      } else {
+        if (rId === rawQuery.toUpperCase() || (rCedDigits && rCedDigits === rawQuery.replace(/\D/g, ''))) {
+          isMatch = true;
+        }
+      }
+
+      if (isMatch) {
         found = r;
         cleanFoundCed = rCedRaw;
         break;
@@ -1510,7 +1667,7 @@ function validateAccess_(body) {
     }
 
     if (!found) {
-      throw new UserError_('No se encontró ningún participante con la cédula o código "' + query + '".');
+      throw new UserError_('No se encontró ningún participante con la cédula o código "' + rawQuery + '".');
     }
 
     var participantId = String(found[0]).trim();
@@ -1526,30 +1683,34 @@ function validateAccess_(body) {
 
     // 1. Verificar si ya fue escaneado/ingresado en este mismo turno y salón
     var shAsist = getAsistenciasSheet_(ss);
+    var colMap = getAsistenciasColumnMap_(shAsist);
     var asistData = shAsist.getDataRange().getValues();
     var alreadyCheckedIn = null;
     var currentOccupancy = 0;
+    var cleanFoundCedDigits = cleanFoundCed.replace(/\D/g, '');
 
     for (var a = 1; a < asistData.length; a++) {
       var ar = asistData[a];
-      var aId = String(ar[0] || '').trim();
-      var aSalon = String(arSalonVal_(ar)).toLowerCase();
-      var aJornada = String(ar[6] || ar[5] || '').trim();
-      var aTurno = String(ar[7] || '').toLowerCase();
+      var aId = String(ar[colMap.id] || '').trim().toUpperCase();
+      var aCedDigits = String(ar[colMap.cedula] || '').replace(/\D/g, '');
+      var aSalonKey = parseSalonKey_(ar[colMap.salonKey] || ar[colMap.salonNombre]).key;
+      var aJornada = normalizeJornada_(ar[colMap.jornada]);
+      var aTurnoKey = parseTurnoKey_(ar[colMap.turnoKey]).key;
 
       // Contar aforo
-      if (aJornada === targetJornada && aTurno === turnoMeta.key && aSalon === salonMeta.key) {
+      if (aJornada === targetJornada && aTurnoKey === turnoMeta.key && aSalonKey === salonMeta.key) {
         currentOccupancy++;
       }
 
       // Comprobar si ya ingresó
-      if (aId === participantId && aJornada === targetJornada && aTurno === turnoMeta.key && aSalon === salonMeta.key) {
-        var horaVal = ar[10] || ar[7];
+      var isSamePerson = (aId === participantId.toUpperCase()) || (cleanFoundCedDigits && cleanFoundCedDigits === aCedDigits);
+      if (isSamePerson && aJornada === targetJornada && aTurnoKey === turnoMeta.key && aSalonKey === salonMeta.key) {
+        var horaVal = ar[colMap.fechaHora];
         alreadyCheckedIn = {
           hora: horaVal instanceof Date
             ? Utilities.formatDate(horaVal, 'America/Caracas', 'HH:mm:ss')
             : String(horaVal || ''),
-          validador: String(ar[9] || ar[6] || 'Validador')
+          validador: String(ar[colMap.validador] || 'Validador')
         };
       }
     }
@@ -1663,11 +1824,13 @@ function validateAccess_(body) {
       turnoMeta.key,
       turnoMeta.horario,
       validador,
-      now
+      now,
+      institucion
     ]);
     var lastRow = shAsist.getLastRow();
     shAsist.getRange(lastRow, 11).setNumberFormat('dd/MM/yyyy HH:mm:ss');
     shAsist.getRange(lastRow, 2).setNumberFormat('@');
+    shAsist.getRange(lastRow, 7).setNumberFormat('@');
 
     var newOccupancy = currentOccupancy + 1;
     var newRemaining = Math.max(0, salonMeta.capacity - newOccupancy);
@@ -1709,27 +1872,51 @@ function getAsistenciasList_(jornada, turno, salon) {
   if (!shAsist || shAsist.getLastRow() < 2) {
     return [];
   }
+  var colMap = getAsistenciasColumnMap_(shAsist);
   var data = shAsist.getDataRange().getValues();
   var results = [];
 
-  var filterJornada = (jornada && jornada !== 'all' && jornada !== 'todas') ? String(jornada).trim() : null;
+  var filterJornada = (jornada && jornada !== 'all' && jornada !== 'todas') ? normalizeJornada_(jornada) : null;
   var filterTurno = (turno && turno !== 'all' && turno !== 'todos') ? parseTurnoKey_(turno).key : null;
   var filterSalon = (salon && salon !== 'all' && salon !== 'todos') ? parseSalonKey_(salon).key : null;
 
+  // Mapa auxiliar de ID -> Institución desde Inscripciones si la fila de Asistencias no la tuviese
+  var institucionMap = {};
+  try {
+    var shInsc = ss.getSheetByName(CONFIG.SHEET_NAME);
+    if (shInsc && shInsc.getLastRow() >= 2) {
+      var inscRows = shInsc.getRange(2, 1, shInsc.getLastRow() - 1, 4).getValues();
+      for (var k = 0; k < inscRows.length; k++) {
+        var kId = String(inscRows[k][0] || '').trim().toUpperCase();
+        var kInst = String(inscRows[k][3] || '').trim();
+        if (kId && kInst) institucionMap[kId] = kInst;
+      }
+    }
+  } catch (_) {}
+
   for (var i = 1; i < data.length; i++) {
     var r = data[i];
-    var rId = String(r[0] || '').trim();
+    var rId = String(r[colMap.id] || '').trim();
     if (!rId) continue;
-    var rCedula = String(r[1] || '').trim();
-    var rNombre = String(r[2] || '').trim();
-    var rTipo = String(r[3] || '').trim();
-    var rSalonKey = String(arSalonVal_(r)).toLowerCase();
-    var rSalonNombre = String(r[5] || (rSalonKey === 'alterno' ? 'Salón Alterno (2)' : 'Salón Principal (1)')).trim();
-    var rJornada = String(r[6] || r[5] || '').trim();
-    var rTurnoKey = String(r[7] || '').toLowerCase();
-    var rTurnoHorario = String(r[8] || '').trim();
-    var rValidador = String(r[9] || '').trim();
-    var rFechaHora = r[10] ? (r[10] instanceof Date ? Utilities.formatDate(r[10], 'America/Caracas', 'yyyy-MM-dd HH:mm:ss') : String(r[10])) : '';
+    var rCedula = String(r[colMap.cedula] || '').trim();
+    var rNombre = String(r[colMap.nombre] || '').trim();
+    var rTipo = String(r[colMap.tipo] || '').trim();
+    var rSalonKey = parseSalonKey_(r[colMap.salonKey] || r[colMap.salonNombre]).key;
+    var rSalonNombre = rSalonKey === 'alterno' ? 'Salón Alterno (2)' : 'Salón Principal (1)';
+    var rJornada = normalizeJornada_(r[colMap.jornada]);
+    var rTurnoMeta = parseTurnoKey_(r[colMap.turnoKey]);
+    var rTurnoKey = rTurnoMeta.key;
+    var rTurnoHorario = String(r[colMap.turnoHorario] || rTurnoMeta.horario).trim();
+    var rValidador = String(r[colMap.validador] || '').trim();
+    
+    var rawFechaHora = r[colMap.fechaHora];
+    var rFechaHora = rawFechaHora instanceof Date
+      ? Utilities.formatDate(rawFechaHora, 'America/Caracas', 'yyyy-MM-dd HH:mm:ss')
+      : String(rawFechaHora || '');
+
+    var rInstitucion = (colMap.institucion !== undefined && r[colMap.institucion])
+      ? String(r[colMap.institucion]).trim()
+      : (institucionMap[rId.toUpperCase()] || '');
 
     if (filterJornada && rJornada !== filterJornada) continue;
     if (filterTurno && rTurnoKey !== filterTurno) continue;
@@ -1740,6 +1927,7 @@ function getAsistenciasList_(jornada, turno, salon) {
       cedula: rCedula,
       nombre: rNombre,
       tipo: rTipo,
+      institucion: rInstitucion,
       salonKey: rSalonKey,
       salonNombre: rSalonNombre,
       jornada: rJornada,

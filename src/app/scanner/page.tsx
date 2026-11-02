@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Html5Qrcode } from "html5-qrcode";
 import {
   CheckCircle,
   XCircle,
   Camera,
   Users,
-  Building,
   Calendar,
   Clock,
   Eye,
@@ -18,12 +17,15 @@ import {
   LogOut,
   ShieldCheck,
   UserCheck,
-  AlertCircle,
   Check,
   Download,
   FileSpreadsheet,
   ChevronDown,
   ChevronUp,
+  SwitchCamera,
+  Zap,
+  History,
+  Trash2,
 } from "lucide-react";
 import {
   SALONES_INFO,
@@ -33,7 +35,8 @@ import {
   type SalonKey,
   type TurnoKey,
 } from "@/data/pricing";
-import { getAsistencias, type AsistenciaItem } from "@/lib/api";
+import { getAsistencias } from "@/lib/api";
+import { extractParticipantQuery } from "@/lib/validation";
 
 interface ValidationResult {
   status: "idle" | "loading" | "success" | "warning" | "error";
@@ -56,6 +59,14 @@ interface ValidationResult {
   horaValidacion?: string;
 }
 
+interface ScannedSessionItem {
+  time: string;
+  id: string;
+  nombre: string;
+  tipo: string;
+  salon: string;
+}
+
 export default function ScannerPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -74,15 +85,23 @@ export default function ScannerPage() {
   const [occupancy, setOccupancy] = useState<number>(0);
   const [isRefreshingOccupancy, setIsRefreshingOccupancy] = useState(false);
 
+  // Estado de cámara y controles
+  const [cameraReady, setCameraReady] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [camerasList, setCamerasList] = useState<Array<{ id: string; label: string }>>([]);
+  const [selectedCameraIndex, setSelectedCameraIndex] = useState(0);
+  const [torchOn, setTorchOn] = useState(false);
+  const [hasTorch, setHasTorch] = useState(false);
+
+  // Historial de la sesión actual
+  const [sessionHistory, setSessionHistory] = useState<ScannedSessionItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
   // Resultado de validación
   const [validationResult, setValidationResult] = useState<ValidationResult>({
     status: "idle",
     message: "",
   });
-
-  // Prevenir escaneos dobles rápidos en cámara
-  const [lastScanned, setLastScanned] = useState("");
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   // Descarga y exportación de asistencias
   const [showExportPanel, setShowExportPanel] = useState(false);
@@ -92,75 +111,91 @@ export default function ScannerPage() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccessMsg, setExportSuccessMsg] = useState<string | null>(null);
 
-  const handleDownloadAsistencias = async () => {
-    setIsExporting(true);
-    setExportSuccessMsg(null);
-    try {
-      const items = await getAsistencias({
-        password,
-        salon: exportSalon,
-        jornada: exportJornada,
-        turno: exportTurno,
-      });
+  // Referencias mutables para evitar re-montar la cámara innecesariamente
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isProcessingRef = useRef(false);
+  const lastScannedRef = useRef("");
+  const lastScannedTimeRef = useRef(0);
+  const autoDismissTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-      if (!items || items.length === 0) {
-        alert("No se encontraron asistentes registrados por scanner para los filtros seleccionados.");
-        return;
+  const salonKeyRef = useRef(salonKey);
+  const jornadaRef = useRef(jornada);
+  const turnoKeyRef = useRef(turnoKey);
+  const userRef = useRef(user);
+  const passwordRef = useRef(password);
+
+  useEffect(() => {
+    salonKeyRef.current = salonKey;
+  }, [salonKey]);
+
+  useEffect(() => {
+    jornadaRef.current = jornada;
+  }, [jornada]);
+
+  useEffect(() => {
+    turnoKeyRef.current = turnoKey;
+  }, [turnoKey]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    passwordRef.current = password;
+  }, [password]);
+
+  // Sonidos de feedback con Web Audio API y vibración háptica
+  const playAudioBeep = useCallback((type: "success" | "warning" | "error") => {
+    try {
+      // Vibración en dispositivos móviles soportados
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        if (type === "success") {
+          navigator.vibrate(80);
+        } else if (type === "warning") {
+          navigator.vibrate([100, 50, 100]);
+        } else {
+          navigator.vibrate([200, 80, 200]);
+        }
       }
 
-      const headers = [
-        "ID",
-        "Cédula",
-        "Nombres y Apellidos",
-        "Tipo de Participante",
-        "Salón",
-        "Jornada",
-        "Turno",
-        "Horario",
-        "Validador",
-        "Fecha y Hora de Ingreso",
-      ];
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
 
-      const rows = items.map((a) => [
-        `"${(a.id || "").replace(/"/g, '""')}"`,
-        `"${(a.cedula || "").replace(/"/g, '""')}"`,
-        `"${(a.nombre || "").replace(/"/g, '""')}"`,
-        `"${(a.tipo || "").replace(/"/g, '""')}"`,
-        `"${(a.salonNombre || a.salonKey || "").replace(/"/g, '""')}"`,
-        `"${(a.jornada || "").replace(/"/g, '""')}"`,
-        `"${(a.turnoKey === "tarde" ? "Tarde" : "Mañana").replace(/"/g, '""')}"`,
-        `"${(a.turnoHorario || "").replace(/"/g, '""')}"`,
-        `"${(a.validador || "").replace(/"/g, '""')}"`,
-        `"${(a.fechaHora || "").replace(/"/g, '""')}"`,
-      ]);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      const jStr = exportJornada === "all" ? "TodasLasJornadas" : exportJornada;
-      const tStr = exportTurno === "all" ? "TodosLosTurnos" : exportTurno;
-      const sStr = exportSalon === "all" ? "TodosLosSalones" : exportSalon;
-      link.setAttribute("href", url);
-      link.setAttribute("download", `Asistencias_Scanner_${jStr}_${tStr}_${sStr}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      setExportSuccessMsg(`✓ Se descargaron ${items.length} asistentes validados.`);
-    } catch (err: any) {
-      alert("Error al descargar asistencias: " + (err.message || String(err)));
-    } finally {
-      setIsExporting(false);
+      if (type === "success") {
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } else if (type === "warning") {
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.setValueAtTime(370, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+      } else {
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.setValueAtTime(180, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+      }
+    } catch (_) {
+      // Audio no bloqueante
     }
-  };
-
-  const currentSalon = SALONES_INFO[salonKey];
-  const currentTurno = TURNOS_HORARIOS[turnoKey];
-  const currentCapacity = currentSalon.capacity;
-  const remainingSeats = Math.max(0, currentCapacity - occupancy);
-  const activeAlert = computeAforoAlert(salonKey, occupancy);
+  }, []);
 
   // Cargar credenciales guardadas
   useEffect(() => {
@@ -173,9 +208,9 @@ export default function ScannerPage() {
     }
   }, []);
 
-  // Consultar aforo al cambiar configuración o iniciar sesión
-  const fetchOccupancy = async (sKey = salonKey, j = jornada, tKey = turnoKey) => {
-    if (!isAuthenticated) return;
+  // Consultar aforo en tiempo real
+  const fetchOccupancy = useCallback(async (sKey = salonKeyRef.current, j = jornadaRef.current, tKey = turnoKeyRef.current) => {
+    if (!passwordRef.current) return;
     setIsRefreshingOccupancy(true);
     try {
       const res = await fetch("/api/admin", {
@@ -183,7 +218,7 @@ export default function ScannerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "get_occupancy",
-          password,
+          password: passwordRef.current,
           salon: sKey,
           jornada: j,
           turno: tKey,
@@ -194,61 +229,54 @@ export default function ScannerPage() {
         setOccupancy(Number(json.data.occupancy) || 0);
       }
     } catch (err) {
-      console.error("Error al obtener aforo:", err);
+      console.warn("Error al obtener aforo:", err);
     } finally {
       setIsRefreshingOccupancy(false);
     }
-  };
+  }, []);
 
+  // Consultar aforo al cambiar configuración o autenticarse, y refresco automático periódico
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchOccupancy(salonKey, jornada, turnoKey);
-    }
-  }, [isAuthenticated, salonKey, jornada, turnoKey]);
+    if (!isAuthenticated) return;
+    fetchOccupancy(salonKey, jornada, turnoKey);
 
-  // Sonidos de feedback con Web Audio API
-  const playAudioBeep = (type: "success" | "warning" | "error") => {
-    try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      if (type === "success") {
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.18, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.28);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.28);
-      } else if (type === "warning") {
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.setValueAtTime(370, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.35);
-      } else {
-        osc.frequency.setValueAtTime(220, ctx.currentTime);
-        gain.gain.setValueAtTime(0.25, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.4);
+    // Refresco pasivo cada 25 segundos para mantener aforo sincronizado entre puertas
+    const interval = setInterval(() => {
+      if (!document.hidden && !isProcessingRef.current) {
+        fetchOccupancy(salonKeyRef.current, jornadaRef.current, turnoKeyRef.current);
       }
-    } catch (e) {
-      // Ignorar si el navegador bloquea audio sin interacción previa
+    }, 25000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, salonKey, jornada, turnoKey, fetchOccupancy]);
+
+  // Cierra modal y rehabilita el scanner inmediatamente
+  const dismissModal = useCallback(() => {
+    if (autoDismissTimerRef.current) {
+      clearTimeout(autoDismissTimerRef.current);
+      autoDismissTimerRef.current = null;
     }
-  };
+    setValidationResult({ status: "idle", message: "" });
+    // Pequeño retardo para no volver a capturar el mismo frame inmediatamente
+    setTimeout(() => {
+      isProcessingRef.current = false;
+    }, 350);
+  }, []);
 
   // Ejecutar validación hacia el backend
-  const handleValidate = async (queryToValidate: string, force = false) => {
-    const cleanQuery = queryToValidate.trim();
-    if (!cleanQuery) return;
+  const handleValidate = useCallback(async (queryToValidate: string, force = false) => {
+    const parsed = extractParticipantQuery(queryToValidate);
+    if (!parsed.value) return;
 
+    if (autoDismissTimerRef.current) {
+      clearTimeout(autoDismissTimerRef.current);
+      autoDismissTimerRef.current = null;
+    }
+
+    isProcessingRef.current = true;
     setValidationResult({
       status: "loading",
-      message: `Validando ${cleanQuery}...`,
+      message: `Validando ${parsed.display || parsed.value}...`,
     });
 
     try {
@@ -257,12 +285,12 @@ export default function ScannerPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "validate_access",
-          password,
-          query: cleanQuery,
-          salon: salonKey,
-          jornada,
-          turno: turnoKey,
-          user,
+          password: passwordRef.current,
+          query: parsed.value,
+          salon: salonKeyRef.current,
+          jornada: jornadaRef.current,
+          turno: turnoKeyRef.current,
+          user: userRef.current,
           force,
         }),
       });
@@ -280,7 +308,7 @@ export default function ScannerPage() {
 
       const data = json.data;
 
-      // Actualizar aforo si vino en la respuesta
+      // Actualizar aforo en vivo
       if (typeof data.occupancy === "number") {
         setOccupancy(data.occupancy);
       } else {
@@ -307,6 +335,20 @@ export default function ScannerPage() {
         });
       } else {
         playAudioBeep("success");
+
+        // Agregar al historial de la sesión
+        const horaStr = data.horaValidacion || new Date().toLocaleTimeString("es-VE");
+        setSessionHistory((prev) => [
+          {
+            time: horaStr,
+            id: data.id || parsed.value,
+            nombre: data.nombres || "Participante",
+            tipo: data.tipo || "",
+            salon: data.salon || SALONES_INFO[salonKeyRef.current].name,
+          },
+          ...prev.slice(0, 19),
+        ]);
+
         setValidationResult({
           status: "success",
           message: "¡Ingreso Autorizado con Éxito!",
@@ -318,7 +360,7 @@ export default function ScannerPage() {
           salon: data.salon,
           jornada: data.jornada,
           turno: data.turno,
-          horaValidacion: data.horaValidacion,
+          horaValidacion: horaStr,
           occupancy: data.occupancy,
           remaining: data.remaining,
         });
@@ -326,56 +368,150 @@ export default function ScannerPage() {
         // Limpiar input manual tras éxito
         setCedulaInput("");
 
-        // Cerrar feedback de éxito tras 4 segundos en modo cámara
-        if (activeTab === "camera") {
-          setTimeout(() => {
-            setValidationResult((prev) => (prev.status === "success" ? { status: "idle", message: "" } : prev));
-            setLastScanned("");
-          }, 3800);
-        }
+        // Cierre automático después de 3.5 segundos para continuar escaneando rápido
+        autoDismissTimerRef.current = setTimeout(() => {
+          dismissModal();
+        }, 3500);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       playAudioBeep("error");
+      const errorMsg = err instanceof Error ? err.message : "Error de conexión con el servidor.";
       setValidationResult({
         status: "error",
-        message: err.message || "Error de conexión con el servidor.",
+        message: errorMsg,
       });
+    }
+  }, [playAudioBeep, fetchOccupancy, dismissModal]);
+
+  // Detener cámara de forma segura
+  const stopCameraSafe = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+        await scannerRef.current.clear();
+      } catch (err) {
+        console.warn("Aviso al cerrar cámara:", err);
+      }
+      scannerRef.current = null;
+    }
+    setCameraReady(false);
+    setTorchOn(false);
+  }, []);
+
+  // Iniciar cámara con Html5Qrcode
+  const startCamera = useCallback(async (cameraIdOrFacing?: string | { facingMode: string }) => {
+    await stopCameraSafe();
+    setCameraError(null);
+
+    const readerEl = document.getElementById("qr-reader");
+    if (!readerEl) return;
+
+    try {
+      const cameras = await Html5Qrcode.getCameras();
+      if (cameras && cameras.length > 0) {
+        setCamerasList(cameras);
+      }
+
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      scannerRef.current = html5QrCode;
+
+      // Configuración de escaneo óptima
+      const config = {
+        fps: 12,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const edge = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.floor(edge * 0.72);
+          return { width: Math.max(220, size), height: Math.max(220, size) };
+        },
+        aspectRatio: 1.0,
+      };
+
+      const cameraParam = cameraIdOrFacing || { facingMode: "environment" };
+
+      await html5QrCode.start(
+        cameraParam,
+        config,
+        (decodedText) => {
+          // Si ya estamos procesando una validación o es el mismo código reciente, ignorar
+          if (isProcessingRef.current) return;
+          const now = Date.now();
+          if (decodedText === lastScannedRef.current && now - lastScannedTimeRef.current < 2500) {
+            return;
+          }
+          lastScannedRef.current = decodedText;
+          lastScannedTimeRef.current = now;
+
+          handleValidate(decodedText, false);
+        },
+        () => {
+          // Cuadro sin detección ignorado
+        }
+      );
+
+      setCameraReady(true);
+
+      // Comprobar si la pista de video soporta linterna (torch)
+      try {
+        const capabilities = html5QrCode.getRunningTrackCapabilities();
+        if (capabilities && (capabilities as { torch?: boolean }).torch) {
+          setHasTorch(true);
+        } else {
+          setHasTorch(false);
+        }
+      } catch (_) {
+        setHasTorch(false);
+      }
+    } catch (err: unknown) {
+      console.error("Error al iniciar cámara:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("NotAllowedError") || msg.includes("Permission")) {
+        setCameraError("Permiso de cámara denegado. Habilita los permisos de cámara en tu navegador.");
+      } else if (msg.includes("NotFoundError") || msg.includes("no camera")) {
+        setCameraError("No se encontró ninguna cámara disponible en este dispositivo.");
+      } else {
+        setCameraError("No se pudo iniciar la cámara. Intenta recargar o usa la búsqueda por cédula.");
+      }
+      setCameraReady(false);
+    }
+  }, [stopCameraSafe, handleValidate]);
+
+  // Alternar linterna si está disponible
+  const toggleTorch = async () => {
+    if (!scannerRef.current || !hasTorch) return;
+    try {
+      const nextState = !torchOn;
+      await scannerRef.current.applyVideoConstraints({
+        advanced: [{ torch: nextState } as unknown as MediaTrackConstraintSet],
+      });
+      setTorchOn(nextState);
+    } catch (err) {
+      console.warn("No se pudo cambiar estado de linterna:", err);
     }
   };
 
-  // Inicialización de cámara QR
+  // Alternar entre cámaras disponibles
+  const toggleCamera = () => {
+    if (camerasList.length <= 1) return;
+    const nextIdx = (selectedCameraIndex + 1) % camerasList.length;
+    setSelectedCameraIndex(nextIdx);
+    startCamera(camerasList[nextIdx].id);
+  };
+
+  // Ciclo de vida de la cámara
   useEffect(() => {
     if (!isAuthenticated || activeTab !== "camera") {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch(console.error);
-        scannerRef.current = null;
-      }
+      stopCameraSafe();
       return;
     }
 
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
-      false
-    );
-    scannerRef.current = scanner;
-
-    scanner.render(
-      (decodedText) => {
-        if (decodedText === lastScanned) return;
-        setLastScanned(decodedText);
-        handleValidate(decodedText, false);
-      },
-      () => {
-        // Ignorar fallas continuas de lectura cuadro a cuadro
-      }
-    );
+    startCamera();
 
     return () => {
-      scanner.clear().catch(console.error);
-      scannerRef.current = null;
+      stopCameraSafe();
     };
-  }, [isAuthenticated, activeTab, salonKey, jornada, turnoKey, password, user, lastScanned]);
+  }, [isAuthenticated, activeTab, startCamera, stopCameraSafe]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -386,10 +522,88 @@ export default function ScannerPage() {
   };
 
   const handleLogout = () => {
+    stopCameraSafe();
     localStorage.removeItem("scanner_password");
     localStorage.removeItem("scanner_user");
     setIsAuthenticated(false);
   };
+
+  // Descarga del listado oficial de asistentes validados
+  const handleDownloadAsistencias = async () => {
+    setIsExporting(true);
+    setExportSuccessMsg(null);
+    try {
+      const items = await getAsistencias({
+        password: passwordRef.current,
+        salon: exportSalon,
+        jornada: exportJornada,
+        turno: exportTurno,
+      });
+
+      if (!items || items.length === 0) {
+        alert("No se encontraron asistentes validados en la pestaña Asistencias para los filtros seleccionados.");
+        return;
+      }
+
+      const headers = [
+        "Nº",
+        "ID",
+        "Cédula",
+        "Nombres y Apellidos",
+        "Tipo de Participante",
+        "Institución",
+        "Salón",
+        "Jornada",
+        "Turno",
+        "Horario",
+        "Validador",
+        "Fecha y Hora de Ingreso",
+      ];
+
+      const rows = items.map((a, idx) => [
+        idx + 1,
+        `"${(a.id || "").replace(/"/g, '""')}"`,
+        `"${(a.cedula || "").replace(/"/g, '""')}"`,
+        `"${(a.nombre || "").replace(/"/g, '""')}"`,
+        `"${(a.tipo || "").replace(/"/g, '""')}"`,
+        `"${(a.institucion || "").replace(/"/g, '""')}"`,
+        `"${(a.salonNombre || (a.salonKey === "alterno" ? "Salón Alterno (2)" : "Salón Principal (1)")).replace(/"/g, '""')}"`,
+        `"${(a.jornada || "").replace(/"/g, '""')}"`,
+        `"${(a.turnoKey === "tarde" ? "Tarde" : "Mañana").replace(/"/g, '""')}"`,
+        `"${(a.turnoHorario || "").replace(/"/g, '""')}"`,
+        `"${(a.validador || "").replace(/"/g, '""')}"`,
+        `"${(a.fechaHora || "").replace(/"/g, '""')}"`,
+      ]);
+
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const jStr = exportJornada === "all" ? "TodasLasJornadas" : exportJornada;
+      const tStr = exportTurno === "all" ? "TodosLosTurnos" : exportTurno;
+      const sStr = exportSalon === "all" ? "TodosLosSalones" : exportSalon;
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Asistencias_Validadas_${jStr}_${tStr}_${sStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportSuccessMsg(`✓ Se descargaron con éxito ${items.length} asistentes validados.`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert("Error al descargar asistencias: " + msg);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const currentSalon = SALONES_INFO[salonKey];
+  const currentTurno = TURNOS_HORARIOS[turnoKey];
+  const currentCapacity = currentSalon.capacity;
+  const remainingSeats = Math.max(0, currentCapacity - occupancy);
+  const activeAlert = computeAforoAlert(salonKey, occupancy);
+  const occupancyPercent = Math.min(100, Math.round((occupancy / currentCapacity) * 100));
 
   // Pantalla de inicio de sesión de validadores
   if (!isAuthenticated) {
@@ -409,7 +623,7 @@ export default function ScannerPage() {
           <div className="space-y-4 mb-6">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-ink-soft mb-2">
-                Nombre del Validador
+                Nombre del Validador / Puerta
               </label>
               <input
                 type="text"
@@ -445,7 +659,7 @@ export default function ScannerPage() {
           </div>
           <button
             type="submit"
-            className="w-full bg-brand-600 text-white font-bold py-3.5 rounded-xl hover:bg-brand-700 transition shadow-md shadow-brand-600/30 flex items-center justify-center gap-2"
+            className="w-full bg-brand-600 text-white font-bold py-3.5 rounded-xl hover:bg-brand-700 transition shadow-md shadow-brand-600/30 flex items-center justify-center gap-2 cursor-pointer"
           >
             <ShieldCheck className="size-5" />
             Iniciar Sesión
@@ -455,31 +669,30 @@ export default function ScannerPage() {
     );
   }
 
-  // Porcentaje de ocupación
-  const occupancyPercent = Math.min(100, Math.round((occupancy / currentCapacity) * 100));
-
   return (
     <main className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
       <div className="max-w-md mx-auto w-full min-h-screen flex flex-col bg-slate-950 border-x border-slate-800 shadow-2xl">
         {/* Cabecera superior */}
-        <header className="bg-slate-900/90 backdrop-blur px-4 py-3 border-b border-slate-800 flex justify-between items-center z-10 sticky top-0">
+        <header className="bg-slate-900/90 backdrop-blur px-4 py-3 border-b border-slate-800 flex justify-between items-center z-20 sticky top-0">
           <div>
             <div className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
               <h1 className="font-bold text-sm text-white tracking-tight">Scanner & Aforo Pineda</h1>
             </div>
-            <p className="text-[11px] text-slate-400">Validador: <span className="text-slate-200 font-semibold">{user}</span></p>
+            <p className="text-[11px] text-slate-400">
+              Validador: <span className="text-slate-200 font-semibold">{user}</span>
+            </p>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 font-semibold px-2.5 py-1.5 rounded-lg bg-rose-950/40 border border-rose-900/50 transition"
+            className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 font-semibold px-2.5 py-1.5 rounded-lg bg-rose-950/40 border border-rose-900/50 transition cursor-pointer"
           >
             <LogOut className="size-3.5" />
             Salir
           </button>
         </header>
 
-        {/* Panel de Configuración Rápida (Salón, Día y Turno con Horario) */}
+        {/* Panel de Configuración Rápida (Salón, Día y Turno) */}
         <section className="bg-slate-900 px-4 py-3 border-b border-slate-800 space-y-2.5">
           {/* Selector de Salón */}
           <div className="grid grid-cols-2 gap-2">
@@ -491,7 +704,7 @@ export default function ScannerPage() {
                   key={key}
                   type="button"
                   onClick={() => setSalonKey(key)}
-                  className={`p-2 rounded-xl text-left border transition text-xs font-semibold flex flex-col justify-between ${
+                  className={`p-2 rounded-xl text-left border transition text-xs font-semibold flex flex-col justify-between cursor-pointer ${
                     isSelected
                       ? "bg-brand-600/30 border-brand-500 text-brand-200 shadow-sm"
                       : "bg-slate-800/60 border-slate-700/60 text-slate-300 hover:bg-slate-800"
@@ -501,7 +714,7 @@ export default function ScannerPage() {
                     <span className="font-bold">{info.name}</span>
                     {isSelected && <Check className="size-3.5 text-brand-400" />}
                   </div>
-                  <span className="text-[10px] text-slate-400 mt-0.5">Cap: {info.capacity} puestos</span>
+                  <span className="text-[10px] text-slate-400 mt-0.5">Capacidad: {info.capacity} puestos</span>
                 </button>
               );
             })}
@@ -554,7 +767,7 @@ export default function ScannerPage() {
           </div>
         </section>
 
-        {/* Tarjeta de Aforo en Tiempo Real y Restante de Espacio */}
+        {/* Tarjeta de Aforo en Tiempo Real */}
         <section className="bg-slate-900/60 p-4 border-b border-slate-800">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
@@ -565,7 +778,7 @@ export default function ScannerPage() {
             <button
               onClick={() => fetchOccupancy()}
               disabled={isRefreshingOccupancy}
-              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition disabled:opacity-50"
+              className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition disabled:opacity-50 cursor-pointer"
               title="Actualizar Aforo"
             >
               <RefreshCw className={`size-3 ${isRefreshingOccupancy ? "animate-spin text-brand-400" : ""}`} />
@@ -584,13 +797,15 @@ export default function ScannerPage() {
 
             <div className="text-right">
               <p className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Espacio Restante</p>
-              <div className={`inline-flex items-baseline gap-1 px-2.5 py-1 rounded-xl font-black text-lg mt-0.5 ${
-                remainingSeats === 0
-                  ? "bg-rose-900/50 text-rose-300 border border-rose-700/60"
-                  : remainingSeats <= (salonKey === "principal" ? 20 : 10)
-                  ? "bg-amber-900/50 text-amber-300 border border-amber-700/60"
-                  : "bg-emerald-950/60 text-emerald-300 border border-emerald-800/60"
-              }`}>
+              <div
+                className={`inline-flex items-baseline gap-1 px-2.5 py-1 rounded-xl font-black text-lg mt-0.5 ${
+                  remainingSeats === 0
+                    ? "bg-rose-900/50 text-rose-300 border border-rose-700/60"
+                    : remainingSeats <= (salonKey === "principal" ? 20 : 10)
+                    ? "bg-amber-900/50 text-amber-300 border border-amber-700/60"
+                    : "bg-emerald-950/60 text-emerald-300 border border-emerald-800/60"
+                }`}
+              >
                 <span>{remainingSeats}</span>
                 <span className="text-[11px] font-semibold text-slate-300">libres</span>
               </div>
@@ -641,25 +856,25 @@ export default function ScannerPage() {
             <button
               type="button"
               onClick={() => setShowExportPanel(!showExportPanel)}
-              className="flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white transition"
+              className="flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white transition cursor-pointer"
             >
               <FileSpreadsheet className="size-4 text-emerald-400" />
-              <span>Descargar Listado de Asistentes Validados</span>
+              <span>Descargar Asistentes Validados</span>
               {showExportPanel ? (
                 <ChevronUp className="size-3.5 text-slate-400" />
               ) : (
                 <ChevronDown className="size-3.5 text-slate-400" />
               )}
             </button>
-            <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md font-mono">
-              CSV / Excel
+            <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-md font-mono">
+              Pestaña Asistencias
             </span>
           </div>
 
           {showExportPanel && (
             <div className="mt-3 pt-3 border-t border-slate-800 space-y-3 animate-in fade-in slide-in-from-top-1">
               <p className="text-[11px] text-slate-300">
-                Exporta la lista de participantes admitidos y validados por scanner en tiempo real:
+                Descarga el listado oficial de participantes validados por scanner (sincronizado con Google Sheets):
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -671,7 +886,7 @@ export default function ScannerPage() {
                   <select
                     value={exportSalon}
                     onChange={(e) => setExportSalon(e.target.value)}
-                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none"
+                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none cursor-pointer"
                   >
                     <option value="all">Todos los salones</option>
                     <option value="principal">Salón Principal (1)</option>
@@ -687,7 +902,7 @@ export default function ScannerPage() {
                   <select
                     value={exportJornada}
                     onChange={(e) => setExportJornada(e.target.value)}
-                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none"
+                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none cursor-pointer"
                   >
                     <option value="all">Todas las jornadas</option>
                     {DAYS_CONGRESO.map((d) => (
@@ -706,7 +921,7 @@ export default function ScannerPage() {
                   <select
                     value={exportTurno}
                     onChange={(e) => setExportTurno(e.target.value)}
-                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none"
+                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none cursor-pointer"
                   >
                     <option value="all">Todos los turnos</option>
                     <option value="manana">Mañana (08:00 a 12:45)</option>
@@ -720,10 +935,10 @@ export default function ScannerPage() {
                   type="button"
                   onClick={handleDownloadAsistencias}
                   disabled={isExporting}
-                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 transition disabled:opacity-50"
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 transition disabled:opacity-50 cursor-pointer"
                 >
                   <Download className={`size-4 ${isExporting ? "animate-bounce" : ""}`} />
-                  <span>{isExporting ? "Generando descarga..." : "Descargar Listado (CSV)"}</span>
+                  <span>{isExporting ? "Generando descarga..." : "Descargar Listado Oficial (CSV)"}</span>
                 </button>
               </div>
 
@@ -741,7 +956,7 @@ export default function ScannerPage() {
           <button
             type="button"
             onClick={() => setActiveTab("camera")}
-            className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition ${
+            className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === "camera"
                 ? "border-brand-500 text-white bg-slate-800/40"
                 : "border-transparent text-slate-400 hover:text-slate-200"
@@ -753,7 +968,7 @@ export default function ScannerPage() {
           <button
             type="button"
             onClick={() => setActiveTab("manual")}
-            className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition ${
+            className={`flex-1 py-3 flex items-center justify-center gap-2 border-b-2 transition cursor-pointer ${
               activeTab === "manual"
                 ? "border-brand-500 text-white bg-slate-800/40"
                 : "border-transparent text-slate-400 hover:text-slate-200"
@@ -765,12 +980,87 @@ export default function ScannerPage() {
         </div>
 
         {/* Área Principal de Entrada */}
-        <div className="flex-grow flex flex-col relative bg-slate-950">
+        <div className="flex-grow flex flex-col relative bg-slate-950 min-h-[360px]">
           {activeTab === "camera" ? (
-            <div className="flex-1 flex flex-col justify-center items-center relative min-h-[340px] bg-black">
-              <div id="reader" className="w-full h-full border-none" />
-              <p className="text-[11px] text-slate-400 p-2 text-center absolute bottom-0 inset-x-0 bg-black/70 backdrop-blur">
-                Apunta la cámara al código QR impreso o en el teléfono del asistente.
+            <div className="flex-1 flex flex-col justify-center items-center relative bg-black overflow-hidden">
+              {/* Contenedor del video html5-qrcode */}
+              <div id="qr-reader" className="w-full h-full min-h-[350px] flex items-center justify-center" />
+
+              {/* Marco visor / retícula de enfoque */}
+              {cameraReady && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="relative size-60 rounded-2xl border-2 border-brand-400/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]">
+                    {/* Esquinas destacadas */}
+                    <span className="absolute -top-1 -left-1 size-5 border-t-4 border-l-4 border-brand-400 rounded-tl-lg" />
+                    <span className="absolute -top-1 -right-1 size-5 border-t-4 border-r-4 border-brand-400 rounded-tr-lg" />
+                    <span className="absolute -bottom-1 -left-1 size-5 border-b-4 border-l-4 border-brand-400 rounded-bl-lg" />
+                    <span className="absolute -bottom-1 -right-1 size-5 border-b-4 border-r-4 border-brand-400 rounded-br-lg" />
+
+                    {/* Línea láser de escaneo */}
+                    <div className="absolute inset-x-2 h-0.5 bg-gradient-to-r from-transparent via-brand-400 to-transparent top-1/2 -translate-y-1/2 animate-pulse" />
+                  </div>
+                </div>
+              )}
+
+              {/* Botones de control flotantes sobre la cámara */}
+              {cameraReady && (
+                <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+                  {hasTorch && (
+                    <button
+                      type="button"
+                      onClick={toggleTorch}
+                      className={`p-2 rounded-xl backdrop-blur transition cursor-pointer ${
+                        torchOn
+                          ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30"
+                          : "bg-black/60 text-slate-200 border border-slate-700/60 hover:text-white"
+                      }`}
+                      title="Activar Linterna"
+                    >
+                      <Zap className="size-4" />
+                    </button>
+                  )}
+
+                  {camerasList.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={toggleCamera}
+                      className="p-2 rounded-xl bg-black/60 text-slate-200 border border-slate-700/60 hover:text-white backdrop-blur transition cursor-pointer"
+                      title="Cambiar Cámara"
+                    >
+                      <SwitchCamera className="size-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Error de cámara */}
+              {cameraError && (
+                <div className="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-10">
+                  <AlertTriangle className="size-12 text-amber-400 mb-3" />
+                  <h3 className="font-bold text-white text-base mb-1">Acceso a la Cámara</h3>
+                  <p className="text-xs text-slate-300 mb-5 max-w-xs">{cameraError}</p>
+                  <div className="flex flex-col gap-2 w-full max-w-xs">
+                    <button
+                      type="button"
+                      onClick={() => startCamera()}
+                      className="w-full bg-brand-600 hover:bg-brand-500 text-white font-bold py-2.5 rounded-xl transition text-xs shadow-md cursor-pointer"
+                    >
+                      Reintentar Conexión de Cámara
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("manual")}
+                      className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 rounded-xl transition text-xs cursor-pointer"
+                    >
+                      Usar Búsqueda por Cédula
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Pie de instrucciones en cámara */}
+              <p className="text-[11px] text-slate-300 p-2.5 text-center absolute bottom-0 inset-x-0 bg-black/75 backdrop-blur z-10">
+                Apunta al código QR de la credencial o comprobante del participante.
               </p>
             </div>
           ) : (
@@ -799,37 +1089,94 @@ export default function ScannerPage() {
                       <button
                         type="button"
                         onClick={() => setCedulaInput("")}
-                        className="absolute inset-y-0 right-0 pr-4 text-xs text-slate-400 hover:text-white"
+                        className="absolute inset-y-0 right-0 pr-4 text-xs text-slate-400 hover:text-white cursor-pointer"
                       >
                         Limpiar
                       </button>
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1.5">
-                    Puedes escribir solo los números (ej. 15482910) o el código de comprobante.
+                    Puedes escribir solo los números (ej. 15482910), con V- o el código de comprobante.
                   </p>
                 </div>
 
                 <button
                   type="submit"
                   disabled={!cedulaInput.trim() || validationResult.status === "loading"}
-                  className="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2"
+                  className="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <UserCheck className="size-5" />
                   <span>Validar Ingreso</span>
                 </button>
               </form>
 
-              {/* Atajos numéricos o ayuda */}
-              <div className="mt-8 p-3 rounded-2xl bg-slate-900/50 border border-slate-800 text-xs text-slate-400 space-y-1.5">
+              {/* Instrucciones para validadores */}
+              <div className="mt-6 p-3 rounded-2xl bg-slate-900/50 border border-slate-800 text-xs text-slate-400 space-y-1.5">
                 <p className="font-semibold text-slate-300 flex items-center gap-1.5">
                   <ShieldCheck className="size-4 text-brand-400" />
-                  Instrucciones para validadores
+                  Instrucciones de validación
                 </p>
-                <p>• Si el asistente no tiene su código QR a mano, solicita su documento de identidad.</p>
+                <p>• Si el asistente no tiene su código QR a mano, ingresa su documento de identidad.</p>
                 <p>• El sistema verifica automáticamente la asignación de salón para el día y turno en curso.</p>
-                <p>• Ante cualquier discrepancia de turno, se solicitará autorización antes de admitting.</p>
+                <p>• Ante cualquier discrepancia de turno, podrás autorizar un ingreso excepcional.</p>
               </div>
+            </div>
+          )}
+
+          {/* Historial de la sesión actual */}
+          {sessionHistory.length > 0 && (
+            <div className="border-t border-slate-800 bg-slate-900/40 p-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setShowHistory(!showHistory)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer"
+                >
+                  <History className="size-3.5 text-brand-400" />
+                  <span>Asistentes validados en esta sesión ({sessionHistory.length})</span>
+                  {showHistory ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
+                </button>
+
+                {showHistory && (
+                  <button
+                    type="button"
+                    onClick={() => setSessionHistory([])}
+                    className="text-[10px] text-slate-400 hover:text-rose-400 flex items-center gap-1 transition cursor-pointer"
+                    title="Limpiar historial visual"
+                  >
+                    <Trash2 className="size-3" />
+                    <span>Limpiar</span>
+                  </button>
+                )}
+              </div>
+
+              {showHistory && (
+                <div className="mt-2 space-y-1.5 max-h-40 overflow-y-auto pr-1 text-xs">
+                  {sessionHistory.map((item, idx) => (
+                    <div
+                      key={`${item.id}-${idx}`}
+                      className="flex items-center justify-between bg-slate-950/80 p-2 rounded-xl border border-slate-800/80"
+                    >
+                      <div className="truncate pr-2">
+                        <span className="font-bold text-white uppercase text-[11px] block truncate">
+                          {item.nombre}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {item.id} · {item.tipo}
+                        </span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] text-emerald-400 font-mono font-bold block">
+                          {item.time}
+                        </span>
+                        <span className="text-[9px] text-slate-400 truncate max-w-[110px] block">
+                          {item.salon}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -838,7 +1185,7 @@ export default function ScannerPage() {
             <div
               className={`absolute inset-0 z-50 flex flex-col items-center justify-center p-5 ${
                 validationResult.status === "loading"
-                  ? "bg-black/75 backdrop-blur-md"
+                  ? "bg-black/80 backdrop-blur-md"
                   : validationResult.status === "success"
                   ? "bg-emerald-950/95 backdrop-blur-md"
                   : validationResult.status === "warning"
@@ -863,17 +1210,23 @@ export default function ScannerPage() {
                   </div>
                   <h2 className="text-2xl font-black text-emerald-300 mb-1">{validationResult.message}</h2>
                   <p className="text-lg font-bold text-white mb-0.5">{validationResult.nombres}</p>
-                  <p className="text-xs text-emerald-200/90 font-mono mb-3">CI: {validationResult.cedula} · {validationResult.id}</p>
+                  <p className="text-xs text-emerald-200/90 font-mono mb-3">
+                    CI: {validationResult.cedula} · {validationResult.id}
+                  </p>
 
                   <div className="bg-emerald-900/60 border border-emerald-700/60 rounded-2xl p-3 text-left space-y-1.5 text-xs mb-4">
                     <div className="flex justify-between">
                       <span className="text-emerald-300">Tipo:</span>
                       <span className="font-semibold text-white">{validationResult.tipo}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-emerald-300">Institución:</span>
-                      <span className="font-semibold text-white">{validationResult.institucion}</span>
-                    </div>
+                    {validationResult.institucion && (
+                      <div className="flex justify-between gap-2">
+                        <span className="text-emerald-300 shrink-0">Institución:</span>
+                        <span className="font-semibold text-white truncate text-right">
+                          {validationResult.institucion}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-emerald-300">Salón:</span>
                       <span className="font-semibold text-white">{validationResult.salon}</span>
@@ -892,11 +1245,8 @@ export default function ScannerPage() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setValidationResult({ status: "idle", message: "" });
-                      setLastScanned("");
-                    }}
-                    className="w-full bg-white text-emerald-950 font-black py-3 rounded-xl hover:bg-emerald-100 transition shadow-lg"
+                    onClick={dismissModal}
+                    className="w-full bg-white text-emerald-950 font-black py-3 rounded-xl hover:bg-emerald-100 transition shadow-lg cursor-pointer"
                   >
                     Continuar Validando
                   </button>
@@ -911,10 +1261,12 @@ export default function ScannerPage() {
                   </div>
                   <h2 className="text-xl font-black text-amber-300 mb-2">Advertencia de Ingreso</h2>
                   <p className="text-sm font-semibold text-white mb-2 leading-snug">{validationResult.message}</p>
-                  
+
                   <div className="bg-amber-900/60 border border-amber-700/60 rounded-2xl p-3 text-left space-y-1.5 text-xs mb-4">
                     <p className="font-bold text-white text-sm">{validationResult.nombres}</p>
-                    <p className="text-amber-200 font-mono">CI: {validationResult.cedula} · {validationResult.id}</p>
+                    <p className="text-amber-200 font-mono">
+                      CI: {validationResult.cedula} · {validationResult.id}
+                    </p>
                     {validationResult.assignedSalon && (
                       <p className="text-amber-100">
                         <strong className="text-amber-300">Salón Programado:</strong> {validationResult.assignedSalon}
@@ -929,17 +1281,14 @@ export default function ScannerPage() {
                     <button
                       type="button"
                       onClick={() => handleValidate(validationResult.cedula || validationResult.id || "", true)}
-                      className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition shadow-lg"
+                      className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-3 rounded-xl transition shadow-lg cursor-pointer"
                     >
                       Autorizar Ingreso Excepcional
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setValidationResult({ status: "idle", message: "" });
-                        setLastScanned("");
-                      }}
-                      className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl transition"
+                      onClick={dismissModal}
+                      className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 rounded-xl transition cursor-pointer"
                     >
                       Rechazar / Cancelar
                     </button>
@@ -960,11 +1309,8 @@ export default function ScannerPage() {
 
                   <button
                     type="button"
-                    onClick={() => {
-                      setValidationResult({ status: "idle", message: "" });
-                      setLastScanned("");
-                    }}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition border border-slate-700"
+                    onClick={dismissModal}
+                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl transition border border-slate-700 cursor-pointer"
                   >
                     Intentar de Nuevo
                   </button>
@@ -975,11 +1321,29 @@ export default function ScannerPage() {
         </div>
 
         {/* Barra de estado inferior */}
-        <footer className="bg-slate-900 border-t border-slate-800 px-4 py-2 text-[11px] text-slate-400 flex justify-between items-center">
-          <span>{currentSalon.name}</span>
+        <footer className="bg-slate-900 border-t border-slate-800 px-4 py-2.5 text-[11px] text-slate-400 flex justify-between items-center">
+          <span className="font-medium">{currentSalon.name}</span>
           <span className="font-semibold text-slate-300">{currentTurno.label}</span>
         </footer>
       </div>
+
+      {/* Estilos específicos para que el video de la cámara mantenga proporciones y no genere scroll */}
+      <style jsx global>{`
+        #qr-reader {
+          width: 100% !important;
+          height: 100% !important;
+          position: relative;
+        }
+        #qr-reader video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          border-radius: 0;
+        }
+        #qr-reader__scan_region {
+          min-height: 350px !important;
+        }
+      `}</style>
     </main>
   );
 }

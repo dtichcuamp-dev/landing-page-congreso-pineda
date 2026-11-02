@@ -194,11 +194,15 @@ export default function AdminDashboard() {
       const nom = (a.nombre || "").toLowerCase();
       const id = (a.id || "").toLowerCase();
       const ced = (a.cedula || "").toLowerCase();
+      const inst = (a.institucion || "").toLowerCase();
+      const tipo = (a.tipo || "").toLowerCase();
       const cedClean = ced.replace(/\D/g, "");
       return (
         nom.includes(q) ||
         id.includes(q) ||
         ced.includes(q) ||
+        inst.includes(q) ||
+        tipo.includes(q) ||
         (qClean && cedClean.includes(qClean))
       );
     });
@@ -217,6 +221,7 @@ export default function AdminDashboard() {
         "Cédula",
         "Nombres y Apellidos",
         "Tipo de Participante",
+        "Institución",
         "Salón",
         "Jornada",
         "Turno",
@@ -231,7 +236,8 @@ export default function AdminDashboard() {
         `"${(a.cedula || "").replace(/"/g, '""')}"`,
         `"${(a.nombre || "").replace(/"/g, '""')}"`,
         `"${(a.tipo || "").replace(/"/g, '""')}"`,
-        `"${(a.salonNombre || a.salonKey || "").replace(/"/g, '""')}"`,
+        `"${(a.institucion || "").replace(/"/g, '""')}"`,
+        `"${(a.salonNombre || (a.salonKey === "alterno" ? "Salón Alterno (2)" : "Salón Principal (1)")).replace(/"/g, '""')}"`,
         `"${(a.jornada || "").replace(/"/g, '""')}"`,
         `"${(a.turnoKey === "tarde" ? "Tarde" : "Mañana").replace(/"/g, '""')}"`,
         `"${(a.turnoHorario || "").replace(/"/g, '""')}"`,
@@ -1516,6 +1522,7 @@ export default function AdminDashboard() {
                     <th className="p-3">Cédula</th>
                     <th className="p-3">Participante</th>
                     <th className="p-3">Tipo</th>
+                    <th className="p-3">Institución</th>
                     <th className="p-3">Salón</th>
                     <th className="p-3">Jornada</th>
                     <th className="p-3">Turno</th>
@@ -1531,6 +1538,9 @@ export default function AdminDashboard() {
                       <td className="p-3 font-mono text-slate-700">{a.cedula}</td>
                       <td className="p-3 font-bold text-ink uppercase">{a.nombre}</td>
                       <td className="p-3 text-slate-600">{a.tipo}</td>
+                      <td className="p-3 text-slate-600 max-w-xs truncate" title={a.institucion || ""}>
+                        {a.institucion || "—"}
+                      </td>
                       <td className="p-3">
                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
                           a.salonKey === "principal" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"

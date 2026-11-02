@@ -343,6 +343,7 @@ export interface AsistenciaItem {
   cedula: string;
   nombre: string;
   tipo: string;
+  institucion?: string;
   salonKey: string;
   salonNombre: string;
   jornada: string;

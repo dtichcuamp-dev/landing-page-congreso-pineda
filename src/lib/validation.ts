@@ -111,3 +111,66 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
 
   return e;
 }
+
+/**
+ * Normaliza y extrae de forma inteligente el identificador de un participante,
+ * soportando URLs con ?id= o ?cedula=, códigos de registro CP26-XXXX, JSON,
+ * y números de cédula con o sin formato (V-, puntos, espacios).
+ */
+export function extractParticipantQuery(input: string): {
+  type: "id" | "cedula" | "raw";
+  value: string;
+  display: string;
+} {
+  const raw = (input || "").trim();
+  if (!raw) return { type: "raw", value: "", display: "" };
+
+  // 1. Si es una URL (escaneada de QR o enlace web)
+  if (raw.startsWith("http://") || raw.startsWith("https://")) {
+    try {
+      const url = new URL(raw);
+      const idParam = url.searchParams.get("id") || url.searchParams.get("code");
+      if (idParam) {
+        const val = idParam.trim().toUpperCase();
+        return { type: "id", value: val, display: val };
+      }
+      const cedParam = url.searchParams.get("cedula") || url.searchParams.get("ci");
+      if (cedParam) {
+        const val = cedParam.replace(/\D/g, "");
+        return { type: "cedula", value: val, display: `CI: ${val}` };
+      }
+    } catch (_) {}
+  }
+
+  // 2. Si contiene código de comprobante CP26-XXXX
+  const cpMatch = raw.match(/CP\d{2}-[\w\d]+/i);
+  if (cpMatch) {
+    const val = cpMatch[0].toUpperCase();
+    return { type: "id", value: val, display: val };
+  }
+
+  // 3. Si viene como objeto JSON (ej. {"id":"CP26-0001"} o {"cedula":"12345678"})
+  if (raw.startsWith("{") && raw.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.id) {
+        const val = String(parsed.id).trim().toUpperCase();
+        return { type: "id", value: val, display: val };
+      }
+      if (parsed.cedula) {
+        const val = String(parsed.cedula).replace(/\D/g, "");
+        return { type: "cedula", value: val, display: `CI: ${val}` };
+      }
+    } catch (_) {}
+  }
+
+  // 4. Cédula con prefijo V- / E- o formato numérico
+  const digitsOnly = raw.replace(/\D/g, "");
+  const hasMultipleLetters = /[a-zA-Z]{2,}/.test(raw);
+  if (digitsOnly.length >= 5 && !hasMultipleLetters) {
+    return { type: "cedula", value: digitsOnly, display: `CI: ${digitsOnly}` };
+  }
+
+  // 5. Por defecto código o ID en mayúsculas
+  return { type: "raw", value: raw.toUpperCase(), display: raw.toUpperCase() };
+}
