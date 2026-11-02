@@ -33,6 +33,7 @@ import {
 import {
   ACTIVE_PARTICIPANT_TYPES_HCUAMP,
   ACTIVE_PARTICIPANT_TYPES_OTRA,
+  ALL_PARTICIPANT_TYPES,
   CAPACIDADES_SALON,
   DAYS_CONGRESO,
   ESPECIALIDADES_CONGRESO,
@@ -81,6 +82,7 @@ export function RegistrationForm() {
   const [formEnabled, setFormEnabled] = useState<boolean | null>(null);
   const [checkingDuplicate, setCheckingDuplicate] = useState(false);
   const [alreadyRegistered, setAlreadyRegistered] = useState<ExistingRegistrationInfo | null>(null);
+  const [alreadyRegisteredModalOpen, setAlreadyRegisteredModalOpen] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [result, setResult] = useState<RegistrationResult | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -153,6 +155,69 @@ export function RegistrationForm() {
     setAlreadyRegistered(null);
   };
 
+  const applyExistingData = (dup: ExistingRegistrationInfo) => {
+    setValues((prev) => {
+      let turnos = prev.turnos;
+      if (dup.turnosJson) {
+        try {
+          const parsed = typeof dup.turnosJson === "string" ? JSON.parse(dup.turnosJson) : dup.turnosJson;
+          if (parsed && typeof parsed === "object" && Object.keys(parsed).length > 0) {
+            turnos = parsed;
+          }
+        } catch (_) {}
+      }
+
+      let tipoParticipante = prev.tipoParticipante;
+      if (dup.tipoParticipante) {
+        tipoParticipante = dup.tipoParticipante as ParticipantTypeId;
+      } else if (dup.tipoLabel) {
+        const lower = dup.tipoLabel.toLowerCase();
+        const found = ALL_PARTICIPANT_TYPES.find(
+          (t) => t.label.toLowerCase() === lower || lower.includes(t.label.toLowerCase()) || t.id.toLowerCase() === lower
+        );
+        if (found) tipoParticipante = found.id;
+      }
+
+      const origen: InstitucionOrigen = (dup.origen as InstitucionOrigen) || prev.origenInstitucion;
+
+      return {
+        ...prev,
+        origenInstitucion: origen,
+        institucion: (dup.institucion || prev.institucion).toUpperCase(),
+        nombres: (dup.nombres || prev.nombres).toUpperCase(),
+        apellidos: (dup.apellidos || prev.apellidos).toUpperCase(),
+        cedula: dup.cedula ? cleanCedula(dup.cedula) : prev.cedula,
+        sexo: (dup.sexo as "M" | "F") || prev.sexo,
+        fechaNacimiento: dup.fechaNacimiento || prev.fechaNacimiento,
+        telefono: dup.telefono || prev.telefono,
+        correo: dup.correo || prev.correo,
+        pais: (dup.pais || prev.pais || "VENEZUELA").toUpperCase(),
+        estado: (dup.estado || prev.estado || "LARA").toUpperCase(),
+        municipio: (dup.municipio || prev.municipio).toUpperCase(),
+        parroquia: (dup.parroquia || prev.parroquia).toUpperCase(),
+        tipoParticipante: tipoParticipante || prev.tipoParticipante,
+        turnos,
+        isUpdate: true,
+        existingId: dup.id,
+      };
+    });
+
+    const isHcuamp = dup.origen === "HCUAMP" || values.origenInstitucion === "HCUAMP";
+    if (isHcuamp && dup.cedula) {
+      setHcuampVerifiedCedula(cleanCedula(dup.cedula));
+      setHcuampFeedback({
+        status: "found",
+        message: "✓ Participante ya registrado (Comprobante " + (dup.id || "") + "). Datos institucionales validados.",
+      });
+    }
+
+    setErrors((e) => {
+      const copy = { ...e };
+      delete copy.cedula;
+      return copy;
+    });
+  };
+
   const checkCedulaDuplicate = async (rawCed: string) => {
     const cleaned = cleanCedula(rawCed);
     if (!cleaned || cleaned.length < 5) return;
@@ -160,10 +225,10 @@ export function RegistrationForm() {
       const dup = await checkExistingRegistration(cleaned, values.correo);
       if (dup.registered) {
         setAlreadyRegistered(dup);
-        setErrors((e) => ({
-          ...e,
-          cedula: `Esta cédula ya está registrada en el Congreso (Comprobante ${dup.id}). No se permiten inscripciones duplicadas para no quitar cupo a otros participantes.`,
-        }));
+        applyExistingData(dup);
+        setAlreadyRegisteredModalOpen(true);
+      } else {
+        setAlreadyRegistered(null);
       }
     } catch (_) {}
   };
@@ -177,20 +242,19 @@ export function RegistrationForm() {
 
     setSearchingHcuamp(true);
     setHcuampFeedback({ status: "idle" });
-    setAlreadyRegistered(null);
     try {
       // 1. Verificar primero si este participante ya se encuentra registrado
       const dup = await checkExistingRegistration(rawCed, values.correo);
       if (dup.registered) {
         setAlreadyRegistered(dup);
-        setErrors((e) => ({
-          ...e,
-          cedula: `Esta persona ya se encuentra registrada en el Congreso (Comprobante ${dup.id}). No se permiten registros duplicados.`,
-        }));
+        applyExistingData(dup);
+        setAlreadyRegisteredModalOpen(true);
+        setSearchingHcuamp(false);
         return;
       }
 
-      // 2. Si no está registrado, buscar en nómina HCUAMP
+      // 2. Si no está registrado previamente, buscar en nómina HCUAMP
+      setAlreadyRegistered(null);
       const res = await lookupHcuamp(rawCed);
       if (res.found && res.data) {
         setValues((v) => ({
@@ -205,6 +269,11 @@ export function RegistrationForm() {
         setHcuampFeedback({
           status: "found",
           message: "✓ Cédula validada en nómina institucional HCUAMP. Este dato ha sido protegido y bloqueado contra alteraciones.",
+        });
+        setErrors((e) => {
+          const copy = { ...e };
+          delete copy.cedula;
+          return copy;
         });
       } else {
         setHcuampVerifiedCedula(null);
@@ -269,19 +338,14 @@ export function RegistrationForm() {
       }
     }
 
-    // ── Paso 0: Verificación estricta de Participante Único (Anti-Duplicados) ──
+    // ── Paso 0: Verificación de Participante (Nuevo o Ya Registrado) ──
     if (step === 0 && Object.keys(e).length === 0) {
       setCheckingDuplicate(true);
       try {
         const dup = await checkExistingRegistration(values.cedula, values.correo);
         if (dup.registered) {
-          setCheckingDuplicate(false);
           setAlreadyRegistered(dup);
-          setErrors({
-            ...e,
-            cedula: `Esta persona ya se encuentra registrada en el Congreso (ID: ${dup.id}). No se permite duplicar registros para garantizar el cupo a otros participantes.`,
-          });
-          return;
+          applyExistingData(dup);
         }
       } catch (err) {
         console.warn("Error verificando participante único:", err);
@@ -292,13 +356,20 @@ export function RegistrationForm() {
 
     // ── Paso 1: Verificación estricta de Aforo en Tiempo Real ──
     if (step === 1 && Object.keys(e).length === 0) {
-      // Verificación estricta de aforo en tiempo real para evitar depósitos bancarios errados
+      let prevTurnosMap: any = {};
+      if (alreadyRegistered?.turnosJson) {
+        try {
+          prevTurnosMap = typeof alreadyRegistered.turnosJson === "string" ? JSON.parse(alreadyRegistered.turnosJson) : alreadyRegistered.turnosJson;
+        } catch (_) {}
+      }
+
       for (const [diaId, t] of Object.entries(values.turnos)) {
         if (t.manana) {
+          const alreadyHad = prevTurnosMap[diaId]?.manana === t.manana;
           const key = `${diaId}_manana_${t.manana}`;
           const occ = capacities[key] || 0;
           const cap = CAPACIDADES_SALON[t.manana];
-          if (occ >= cap) {
+          if (!alreadyHad && occ >= cap) {
             const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
             const salonName = t.manana === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)";
             setErrors({
@@ -309,10 +380,11 @@ export function RegistrationForm() {
           }
         }
         if (t.tarde) {
+          const alreadyHad = prevTurnosMap[diaId]?.tarde === t.tarde;
           const key = `${diaId}_tarde_${t.tarde}`;
           const occ = capacities[key] || 0;
           const cap = CAPACIDADES_SALON[t.tarde];
-          if (occ >= cap) {
+          if (!alreadyHad && occ >= cap) {
             const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
             const salonName = t.tarde === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)";
             setErrors({
@@ -355,14 +427,23 @@ export function RegistrationForm() {
     }
 
     // Verificación final de aforo antes del envío
+    let prevTurnosMap: any = {};
+    if (alreadyRegistered?.turnosJson) {
+      try {
+        prevTurnosMap = typeof alreadyRegistered.turnosJson === "string" ? JSON.parse(alreadyRegistered.turnosJson) : alreadyRegistered.turnosJson;
+      } catch (_) {}
+    }
+
     for (const [diaId, t] of Object.entries(values.turnos)) {
-      if (t.manana && (capacities[`${diaId}_manana_${t.manana}`] || 0) >= CAPACIDADES_SALON[t.manana]) {
+      const alreadyHadM = prevTurnosMap[diaId]?.manana === t.manana;
+      if (t.manana && !alreadyHadM && (capacities[`${diaId}_manana_${t.manana}`] || 0) >= CAPACIDADES_SALON[t.manana]) {
         const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
         setServerError(`El Salón ${t.manana === "principal" ? "Principal (1)" : "Alterno (2)"} para el turno Mañana del ${diaMeta?.dateLabel || diaId} se encuentra agotado. No realices transferencias para este horario.`);
         goTo(1);
         return;
       }
-      if (t.tarde && (capacities[`${diaId}_tarde_${t.tarde}`] || 0) >= CAPACIDADES_SALON[t.tarde]) {
+      const alreadyHadT = prevTurnosMap[diaId]?.tarde === t.tarde;
+      if (t.tarde && !alreadyHadT && (capacities[`${diaId}_tarde_${t.tarde}`] || 0) >= CAPACIDADES_SALON[t.tarde]) {
         const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
         setServerError(`El Salón ${t.tarde === "principal" ? "Principal (1)" : "Alterno (2)"} para el turno Tarde del ${diaMeta?.dateLabel || diaId} se encuentra agotado. No realices transferencias para este horario.`);
         goTo(1);
@@ -370,16 +451,17 @@ export function RegistrationForm() {
       }
     }
 
-    // Verificación final de participante único antes del envío
-    const dupFinal = await checkExistingRegistration(values.cedula, values.correo);
-    if (dupFinal.registered) {
-      setAlreadyRegistered(dupFinal);
-      setServerError(
-        `Esta persona ya se encuentra registrada en el Congreso (Comprobante ID: ${dupFinal.id}). No se permite duplicar registros para garantizar el cupo a otros participantes.`
-      );
-      goTo(0);
-      return;
-    }
+    // Verificación final de participante antes del envío (detectar o actualizar)
+    let isUpdate = Boolean(values.isUpdate || alreadyRegistered?.registered);
+    let existingId = values.existingId || alreadyRegistered?.id;
+    try {
+      const dupFinal = await checkExistingRegistration(values.cedula, values.correo);
+      if (dupFinal.registered) {
+        isUpdate = true;
+        existingId = dupFinal.id || existingId;
+        setAlreadyRegistered(dupFinal);
+      }
+    } catch (_) {}
 
     // Verificación final de integridad para HCUAMP
     if (values.origenInstitucion === "HCUAMP") {
@@ -397,6 +479,8 @@ export function RegistrationForm() {
     try {
       const upperValues: RegistrationValues = {
         ...values,
+        isUpdate,
+        existingId,
         institucion: (
           values.origenInstitucion === "HCUAMP"
             ? "HOSPITAL CENTRAL UNIVERSITARIO DR. ANTONIO MARÍA PINEDA (HCUAMP)"
@@ -467,10 +551,12 @@ export function RegistrationForm() {
             <CheckCircle2 className="size-9" aria-hidden />
           </span>
           <h3 className="mt-4 text-2xl font-black text-ink sm:text-3xl">
-            ¡Inscripción Exitosa!
+            {result.isUpdate ? "¡Turnos Actualizados con Éxito!" : "¡Inscripción Exitosa!"}
           </h3>
           <p className="mt-1 text-sm text-ink-soft">
-            Tu pase digital de acceso y código QR para los salones han sido generados exitosamente.
+            {result.isUpdate
+              ? `Tus jornadas y salones han sido actualizados en el sistema para el comprobante ${result.id}.`
+              : "Tu pase digital de acceso y código QR para los salones han sido generados exitosamente."}
           </p>
         </div>
 
@@ -484,7 +570,7 @@ export function RegistrationForm() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-clinic-300">
-                  Pase Oficial de Acceso
+                  {result.isUpdate ? "Pase Oficial Actualizado" : "Pase Oficial de Acceso"}
                 </span>
                 <h4 className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
                   XIV CONGRESO PINEDA 2026
@@ -1134,14 +1220,14 @@ export function RegistrationForm() {
                 </div>
 
                 {alreadyRegistered && (
-                  <div className="mt-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-950 border border-amber-300 flex items-start gap-2.5 animate-in fade-in">
-                    <ShieldAlert className="size-4 shrink-0 mt-0.5 text-amber-600" />
-                    <div>
-                      <p className="font-bold text-amber-900">
-                        Participante ya registrado (Comprobante {alreadyRegistered.id}):
+                  <div className="mt-2.5 rounded-xl bg-emerald-50 p-3.5 text-xs text-emerald-950 border border-emerald-300 flex items-start gap-2.5 animate-in fade-in">
+                    <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-emerald-600" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-emerald-900">
+                        ✓ Participante ya registrado (Comprobante {alreadyRegistered.id})
                       </p>
-                      <p className="mt-0.5 text-amber-800">
-                        Esta cédula ya tiene un registro activo. No se permiten inscripciones duplicadas para no quitarle el cupo a otra persona.
+                      <p className="text-emerald-800 leading-relaxed">
+                        Tus datos han sido precargados. Puedes continuar al Paso 2 para <b>seleccionar o añadir otros turnos disponibles</b> de tu preferencia.
                       </p>
                     </div>
                   </div>
@@ -1350,6 +1436,21 @@ export function RegistrationForm() {
             )}
           </div>
 
+          {/* Aviso especial para participantes en actualización de turnos */}
+          {alreadyRegistered && (
+            <div className="rounded-2xl bg-blue-50/90 p-4 text-xs text-blue-950 border border-blue-200 flex items-start gap-3 shadow-sm animate-in fade-in">
+              <Calendar className="size-5 shrink-0 mt-0.5 text-blue-600" />
+              <div className="space-y-1">
+                <p className="font-bold text-blue-900">
+                  Actualización de Turnos · Comprobante {alreadyRegistered.id}
+                </p>
+                <p className="text-blue-800 leading-relaxed">
+                  Ya te encuentras formalmente inscrito. Puedes mantener tus turnos o seleccionar otros turnos donde haya disponibilidad física. Recuerda que <b>no se permite seleccionar dos salones distintos en el mismo turno</b>.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Selector interactivo de Días, Turnos y Salones */}
           <TurnosSalonPicker
             value={values.turnos}
@@ -1555,7 +1656,7 @@ export function RegistrationForm() {
       </div>
 
       {/* ────────────────── MODAL PARTICIPANTE YA REGISTRADO ────────────────── */}
-      {alreadyRegistered && (
+      {alreadyRegistered && alreadyRegisteredModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-sm animate-in fade-in duration-200"
           role="dialog"
@@ -1566,21 +1667,21 @@ export function RegistrationForm() {
             {/* Header del Modal con Icono */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 ring-4 ring-amber-50">
-                  <ShieldAlert className="size-6" />
+                <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 ring-4 ring-emerald-50">
+                  <CheckCircle2 className="size-6" />
                 </div>
                 <div>
                   <h3 id="modal-duplicate-title" className="text-lg font-black text-ink">
-                    Participante Ya Registrado
+                    ¡Bienvenido/a de nuevo!
                   </h3>
-                  <p className="text-xs font-semibold text-amber-600">
-                    Inscripción activa detectada en el sistema
+                  <p className="text-xs font-semibold text-emerald-700">
+                    Registro identificado en el XIV Congreso Pineda 2026
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setAlreadyRegistered(null)}
+                onClick={() => setAlreadyRegisteredModalOpen(false)}
                 className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-ink transition"
                 aria-label="Cerrar modal"
               >
@@ -1610,34 +1711,46 @@ export function RegistrationForm() {
                   </span>
                 </div>
               )}
+              {alreadyRegistered.turnosTexto && (
+                <div className="border-t border-slate-200 pt-2 mt-2">
+                  <span className="font-semibold text-ink-mute block mb-1">Turnos registrados previamente:</span>
+                  <span className="font-medium text-ink block bg-white p-2 rounded-lg border border-slate-200 text-[11px] leading-relaxed">
+                    {alreadyRegistered.turnosTexto}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* AVISO IMPORTANTE SOBRE AFORO Y NO DUPLICIDAD */}
-            <div className="rounded-2xl bg-amber-50 p-4 text-xs text-amber-950 border border-amber-200 space-y-1.5">
-              <p className="font-bold text-amber-900">
-                Garantía de aforo y cupo de asistencia para todos los colegas:
+            {/* AVISO IMPORTANTE SOBRE DISPONIBILIDAD Y TURNOS */}
+            <div className="rounded-2xl bg-blue-50/80 p-4 text-xs text-blue-950 border border-blue-200 space-y-1.5">
+              <p className="font-bold text-blue-900">
+                Selección de otros turnos disponibles:
               </p>
-              <p className="text-amber-800 leading-relaxed">
-                Para asegurar que todos los profesionales de la salud tengan la oportunidad de asistir al Congreso y <b>evitar que se le quite el cupo a otra persona</b>, el sistema restringe el registro a <b>una sola inscripción por participante</b>.
-              </p>
-            </div>
-
-            {/* ¿Qué hacer si ya estás registrado? */}
-            <div className="rounded-xl bg-blue-50/70 p-3.5 text-xs text-blue-900 ring-1 ring-blue-100 space-y-1">
-              <p className="font-bold">¿Necesitas tu credencial o código QR?</p>
               <p className="text-blue-800 leading-relaxed">
-                Tu registro ya está guardado de forma segura en la base de datos oficial. Si no has recibido tu comprobante con código QR en tu correo o deseas consultar tu asignación de salones, el administrador del sistema puede reenviártelo o validarlo con tu número de cédula el día del evento.
+                Tus datos están guardados de forma segura. De existir cupos disponibles, puedes seleccionar otros turnos para tus jornadas, manteniendo la regla de <b>no inscribirte en un mismo día y turno en dos salones distintos</b>.
               </p>
             </div>
 
-            {/* Botón de Cierre */}
-            <button
-              type="button"
-              onClick={() => setAlreadyRegistered(null)}
-              className="w-full rounded-2xl bg-gradient-to-r from-brand-600 to-clinic-600 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-brand-500/25 transition hover:brightness-110"
-            >
-              Entendido
-            </button>
+            {/* Botones de Acción */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAlreadyRegisteredModalOpen(false);
+                  goTo(1);
+                }}
+                className="flex-1 rounded-2xl bg-gradient-to-r from-brand-600 to-clinic-600 py-3 text-xs sm:text-sm font-bold text-white shadow-lg shadow-brand-500/25 transition hover:brightness-110"
+              >
+                Acceder y Modificar Turnos
+              </button>
+              <button
+                type="button"
+                onClick={() => setAlreadyRegisteredModalOpen(false)}
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Revisar Mis Datos
+              </button>
+            </div>
           </div>
         </div>
       )}

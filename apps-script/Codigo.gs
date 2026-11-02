@@ -144,6 +144,10 @@ function doGet(e) {
       try { q = MailApp.getRemainingDailyQuota(); } catch (_) {}
       return json_({ ok: true, quota: q });
     }
+    if (action === 'get_asistencias') {
+      if (p.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: getAsistenciasList_(p.jornada, p.turno, p.salon) });
+    }
 
     return json_({
       ok: true,
@@ -216,6 +220,10 @@ function doPost(e) {
       if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
       return json_({ ok: true, data: validateAccess_(body) });
     }
+    if (body.action === 'get_asistencias') {
+      if (body.token !== CONFIG.ADMIN_TOKEN) throw new UserError_('Token inválido.');
+      return json_({ ok: true, data: getAsistenciasList_(body.jornada, body.turno, body.salon) });
+    }
 
     // Honeypot anti-spam
     if (body.website) return json_({ ok: true, id: 'CP26-0000', total: 0 });
@@ -231,16 +239,27 @@ function doPost(e) {
     // 2. Subir comprobante a Google Drive si aplica
     uploaded = saveReceipt_(body.comprobante, data);
 
-    // 3. Registrar fila en Google Sheets (con lock service concurrente)
-    var result = appendRow_(data, uploaded);
+    // 3. Registrar o Actualizar fila en Google Sheets (con lock service concurrente)
+    var result;
+    if (body.isUpdate || data.isUpdate) {
+      result = updateRegistration_(data, uploaded, body.existingId || data.existingId);
+    } else {
+      result = appendRow_(data, uploaded);
+    }
     uploaded = null; // No limpiar archivo en Drive porque ya se vinculó con éxito
 
     // 4. Enviar correo de confirmación
     if (CONFIG.SEND_CONFIRMATION_EMAIL) {
-      sendEmail_(data, result.id);
+      sendEmail_(data, result.id, !!result.isUpdate);
     }
 
-    return json_({ ok: true, id: result.id, total: data.total, exonerated: data.total === 0 });
+    return json_({
+      ok: true,
+      id: result.id,
+      total: data.total,
+      exonerated: data.total === 0,
+      isUpdate: !!result.isUpdate
+    });
   } catch (err) {
     if (uploaded) { try { uploaded.setTrashed(true); } catch (_) {} }
 
@@ -377,6 +396,34 @@ function lookupHcuamp_(rawCedula) {
 
 // ───────────────────────────── PARTICIPANTE ÚNICO (ANTI-DUPLICADOS) ─────────────────────────────
 
+function buildParticipantRecord_(r) {
+  return {
+    id: String(r[0] || ''),
+    fecha: r[1] instanceof Date ? Utilities.formatDate(r[1], 'America/Caracas', 'dd/MM/yyyy HH:mm') : String(r[1] || ''),
+    origen: String(r[2] || ''),
+    institucion: String(r[3] || ''),
+    nombres: String(r[4] || ''),
+    apellidos: String(r[5] || ''),
+    cedula: String(r[6] || ''),
+    sexo: String(r[7] || ''),
+    fechaNacimiento: r[8] instanceof Date ? Utilities.formatDate(r[8], 'America/Caracas', 'yyyy-MM-dd') : String(r[8] || ''),
+    telefono: String(r[9] || ''),
+    correo: String(r[10] || ''),
+    tipoLabel: String(r[11] || ''),
+    detalleExtra: String(r[12] || ''),
+    pais: String(r[13] || ''),
+    estado: String(r[14] || ''),
+    municipio: String(r[15] || ''),
+    parroquia: String(r[16] || ''),
+    diasLabel: String(r[17] || ''),
+    numDias: r[18] || 1,
+    turnosTexto: String(r[19] || ''),
+    turnosJson: String(r[20] || ''),
+    total: r[22] || 0,
+    estadoPago: String(r[24] || '')
+  };
+}
+
 /**
  * Verifica si un participante ya se encuentra registrado por Cédula o Correo.
  * Previene la duplicación de registros y la pérdida de cupos para otros participantes.
@@ -388,45 +435,94 @@ function checkExistingRegistration_(rawCedula, rawEmail) {
 
   var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
   var sh = ss.getSheetByName(CONFIG.SHEET_NAME);
-  if (!sh || sh.getLastRow() < 2) return { ok: true, registered: false };
+  if (sh && sh.getLastRow() >= 2) {
+    var numCols = Math.min(sh.getLastColumn(), 26);
+    var data = sh.getRange(2, 1, sh.getLastRow() - 1, numCols).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      var rowCed = String(row[6] || '').replace(/\D/g, '');
+      var rowEmail = String(row[10] || '').trim().toLowerCase();
 
-  var data = sh.getRange(2, 1, sh.getLastRow() - 1, 11).getValues();
-  for (var i = 0; i < data.length; i++) {
-    var rowCed = String(data[i][6] || '').replace(/\D/g, '');
-    var rowEmail = String(data[i][10] || '').trim().toLowerCase();
+      if (cleanCed && rowCed && cleanCed === rowCed) {
+        return {
+          ok: true,
+          registered: true,
+          by: 'cedula',
+          data: buildParticipantRecord_(row),
+          message: 'La cédula ' + row[6] + ' ya se encuentra formalmente registrada con el comprobante N.º ' + row[0] + '.'
+        };
+      }
 
-    if (cleanCed && rowCed && cleanCed === rowCed) {
-      return {
-        ok: true,
-        registered: true,
-        by: 'cedula',
-        data: {
-          id: String(data[i][0] || ''),
-          fecha: data[i][1],
-          nombres: String(data[i][4] || ''),
-          apellidos: String(data[i][5] || ''),
-          cedula: String(data[i][6] || ''),
-          correo: String(data[i][10] || '')
-        },
-        message: 'La cédula ' + data[i][6] + ' ya se encuentra formalmente registrada con el comprobante N.º ' + data[i][0] + '.'
-      };
+      if (cleanEmail && rowEmail && cleanEmail === rowEmail) {
+        return {
+          ok: true,
+          registered: true,
+          by: 'correo',
+          data: buildParticipantRecord_(row),
+          message: 'El correo ' + row[10] + ' ya se encuentra formalmente registrado con el comprobante N.º ' + row[0] + '.'
+        };
+      }
     }
+  }
 
-    if (cleanEmail && rowEmail && cleanEmail === rowEmail) {
-      return {
-        ok: true,
-        registered: true,
-        by: 'correo',
-        data: {
-          id: String(data[i][0] || ''),
-          fecha: data[i][1],
-          nombres: String(data[i][4] || ''),
-          apellidos: String(data[i][5] || ''),
-          cedula: String(data[i][6] || ''),
-          correo: String(data[i][10] || '')
-        },
-        message: 'El correo ' + data[i][10] + ' ya se encuentra formalmente registrado con el comprobante N.º ' + data[i][0] + '.'
-      };
+  // Verificar también en hoja 'Bachilleres - Estudiantes de Pregrado'
+  var shBach = ss.getSheetByName('Bachilleres - Estudiantes de Pregrado');
+  if (shBach && shBach.getLastRow() >= 2) {
+    var bachData = shBach.getDataRange().getValues();
+    var bachHeaders = bachData[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
+    var bColCed = -1, bColNom = -1, bColAp = -1, bColMail = -1, bColTlf = -1, bColJson = -1, bColTxt = -1, bColDias = -1, bColId = -1;
+    for (var bc = 0; bc < bachHeaders.length; bc++) {
+      var bh = bachHeaders[bc];
+      if (bh === 'ID') bColId = bc;
+      else if (bh.indexOf('CÉDULA') !== -1 || bh.indexOf('CEDULA') !== -1 || bh === 'CI') bColCed = bc;
+      else if (bh.indexOf('NOMBRES') !== -1 && bh.indexOf('APELLIDOS') === -1) bColNom = bc;
+      else if (bh.indexOf('APELLIDOS') !== -1 && bh.indexOf('NOMBRES') === -1) bColAp = bc;
+      else if (bh.indexOf('CORREO') !== -1 || bh.indexOf('EMAIL') !== -1) bColMail = bc;
+      else if (bh.indexOf('TELÉFONO') !== -1 || bh.indexOf('TELEFONO') !== -1) bColTlf = bc;
+      else if (bh.indexOf('TURNOS (JSON)') !== -1 || bh.indexOf('JSON') !== -1) bColJson = bc;
+      else if (bh.indexOf('TURNOS Y SALONES') !== -1) bColTxt = bc;
+      else if (bh.indexOf('DÍAS') !== -1 || bh.indexOf('DIAS') !== -1) bColDias = bc;
+    }
+    if (bColCed !== -1) {
+      for (var bi = 1; bi < bachData.length; bi++) {
+        var bRow = bachData[bi];
+        var bCed = String(bRow[bColCed] || '').replace(/\D/g, '');
+        var bMail = bColMail !== -1 ? String(bRow[bColMail] || '').trim().toLowerCase() : '';
+        if ((cleanCed && bCed && cleanCed === bCed) || (cleanEmail && bMail && cleanEmail === bMail)) {
+          var bId = bColId !== -1 ? String(bRow[bColId] || '').trim() : '';
+          return {
+            ok: true,
+            registered: true,
+            by: cleanCed === bCed ? 'cedula' : 'correo',
+            data: {
+              id: bId || 'CP26-BACH-' + bi,
+              fecha: '',
+              origen: 'OTRA',
+              institucion: 'UNIVERSIDAD / INSTITUCIÓN EDUCATIVA',
+              nombres: bColNom !== -1 ? String(bRow[bColNom] || '').trim() : '',
+              apellidos: bColAp !== -1 ? String(bRow[bColAp] || '').trim() : '',
+              cedula: String(bRow[bColCed] || ''),
+              sexo: '',
+              fechaNacimiento: '',
+              telefono: bColTlf !== -1 ? String(bRow[bColTlf] || '').trim() : '',
+              correo: bMail,
+              tipoLabel: 'BACHILLER / ESTUDIANTE DE PREGRADO',
+              detalleExtra: '',
+              pais: 'VENEZUELA',
+              estado: 'LARA',
+              municipio: '',
+              parroquia: '',
+              diasLabel: bColDias !== -1 ? String(bRow[bColDias] || '') : '',
+              numDias: 1,
+              turnosTexto: bColTxt !== -1 ? String(bRow[bColTxt] || '') : '',
+              turnosJson: bColJson !== -1 ? String(bRow[bColJson] || '') : '',
+              total: 0,
+              estadoPago: 'Exonerado 100%'
+            },
+            message: 'El participante ya se encuentra registrado bajo la categoría Bachiller / Pregrado.'
+          };
+        }
+      }
     }
   }
 
@@ -529,13 +625,16 @@ function validate_(b) {
   var correo = str_(b.correo, 120).toLowerCase();
   if (!emailRe.test(correo)) throw new UserError_('Correo electrónico inválido.');
 
-  // Verificación estricta de participante único (prevenir doble registro y duplicidad de cupos)
+  // Verificación de participante (prevenir duplicados no autorizados pero permitir actualización de turnos)
   var dup = checkExistingRegistration_(cedula, correo);
+  var isUpdateMode = !!(b.isUpdate || b.existingId);
   if (dup.registered) {
-    throw new UserError_(
-      'El participante con Cédula ' + cedula + ' ya se encuentra formalmente registrado en el XIV Congreso Pineda (Comprobante ' +
-      dup.data.id + '). Cada persona solo puede registrarse una sola vez para no quitarle cupo a otro participante.'
-    );
+    if (!isUpdateMode) {
+      throw new UserError_(
+        'El participante con Cédula ' + cedula + ' ya se encuentra formalmente registrado en el XIV Congreso Pineda (Comprobante ' +
+        dup.data.id + '). Cada persona solo puede registrarse una sola vez para no quitarle cupo a otro participante.'
+      );
+    }
   }
 
   // País, Estado, Municipio, Parroquia (ALMACENAR EN MAYÚSCULAS)
@@ -548,9 +647,9 @@ function validate_(b) {
 
   // 3. Tipo de participante y tarifa (ALMACENAR EN MAYÚSCULAS)
   var tipoId = b.tipoParticipante;
-  var closedTypes = ['bachiller', 'acompanante', 'conferencista', 'estudiante_pregrado_otra', 'acompanante_otra'];
+  var closedTypes = ['acompanante', 'conferencista', 'acompanante_otra'];
   if (closedTypes.indexOf(tipoId) !== -1 || closedTypes.indexOf(b.tipoParticipante) !== -1) {
-    throw new UserError_('El registro para la categoría seleccionada (Acompañante, Bachiller, Estudiante de Pregrado, Conferencista) ya no se encuentra disponible.');
+    throw new UserError_('El registro para la categoría seleccionada (Acompañante o Conferencista) ya no se encuentra disponible.');
   }
   if (tipoId === 'terapeutas' || tipoId === 'terapeutas_otra' || tipoId === 'fisioterapeuta' || tipoId === 'terapeuta') {
     tipoId = origenInstitucion === 'HCUAMP' ? 'terapeutas' : 'terapeutas_otra';
@@ -608,6 +707,14 @@ function validate_(b) {
   var resumenTurnosArr = [];
   var occupied = getOccupiedSeats_();
 
+  // Si es actualización, obtenemos los turnos previos del participante para no descontarlos de su propio aforo
+  var prevTurnos = {};
+  if (isUpdateMode && dup && dup.registered && dup.data && dup.data.turnosJson) {
+    try {
+      prevTurnos = JSON.parse(dup.data.turnosJson) || {};
+    } catch (_) {}
+  }
+
   for (var diaId in DIAS_CONGRESO) {
     var tDia = turnos[diaId];
     if (tDia) {
@@ -620,7 +727,8 @@ function validate_(b) {
         }
         var keyM = diaId + '_manana_' + tDia.manana;
         var maxM = CAPACITIES[tDia.manana];
-        if ((occupied[keyM] || 0) + 1 > maxM) {
+        var alreadyHadMorningSeat = prevTurnos[diaId] && prevTurnos[diaId].manana === tDia.manana;
+        if (!alreadyHadMorningSeat && ((occupied[keyM] || 0) + 1 > maxM)) {
           var salonNom = tDia.manana === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)';
           throw new UserError_('El ' + salonNom + ' para el turno de la Mañana del ' + diaLabel + ' ha alcanzado el aforo máximo permitido (' + maxM + ' puestos).');
         }
@@ -633,7 +741,8 @@ function validate_(b) {
         }
         var keyT = diaId + '_tarde_' + tDia.tarde;
         var maxT = CAPACITIES[tDia.tarde];
-        if ((occupied[keyT] || 0) + 1 > maxT) {
+        var alreadyHadAfternoonSeat = prevTurnos[diaId] && prevTurnos[diaId].tarde === tDia.tarde;
+        if (!alreadyHadAfternoonSeat && ((occupied[keyT] || 0) + 1 > maxT)) {
           var salonNomT = tDia.tarde === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)';
           throw new UserError_('El ' + salonNomT + ' para el turno de la Tarde del ' + diaLabel + ' ha alcanzado el aforo máximo permitido (' + maxT + ' puestos).');
         }
@@ -663,6 +772,8 @@ function validate_(b) {
   }
 
   return {
+    isUpdate: isUpdateMode,
+    existingId: b.existingId || (dup && dup.data && dup.data.id) || '',
     origenInstitucion: origenInstitucion,
     institucion: institucion.toUpperCase(),
     nombres: nombres.toUpperCase(),
@@ -823,9 +934,93 @@ function appendRow_(d, receiptFile) {
   }
 }
 
+function updateRegistration_(d, receiptFile, existingId) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var sh = getSheet_();
+    var lastRow = sh.getLastRow();
+    if (lastRow < 2) throw new UserError_('No se encontró el registro para actualizar.');
+
+    var numCols = Math.min(sh.getLastColumn(), 26);
+    var allRows = sh.getRange(2, 1, lastRow - 1, numCols).getValues();
+    var cleanTargetCed = String(d.cedula || '').replace(/\D/g, '');
+    var targetRowIndex = -1;
+    var foundId = existingId || '';
+
+    for (var i = 0; i < allRows.length; i++) {
+      var rId = String(allRows[i][0] || '').trim();
+      var rCed = String(allRows[i][6] || '').replace(/\D/g, '');
+      if ((existingId && rId === String(existingId).trim()) || (cleanTargetCed && rCed === cleanTargetCed)) {
+        targetRowIndex = i + 2;
+        foundId = rId || existingId;
+        break;
+      }
+    }
+
+    if (targetRowIndex === -1) {
+      throw new UserError_('No se encontró el registro previo con la cédula ' + d.cedula + '.');
+    }
+
+    var currentObs = String(allRows[targetRowIndex - 2][25] || '');
+    var updateNote = 'Actualización de turnos (' + Utilities.formatDate(new Date(), 'America/Caracas', 'dd/MM/yyyy HH:mm') + ')';
+    var newObs = currentObs ? currentObs + ' | ' + updateNote : updateNote;
+
+    sh.getRange(targetRowIndex, 18).setValue(d.diasLabel);
+    sh.getRange(targetRowIndex, 19).setValue(d.diasActivos.length);
+    sh.getRange(targetRowIndex, 20).setValue(safe_(d.resumenTurnos));
+    sh.getRange(targetRowIndex, 21).setValue(JSON.stringify(d.turnos));
+    sh.getRange(targetRowIndex, 22).setValue(d.rate);
+    sh.getRange(targetRowIndex, 23).setValue(d.total);
+    if (receiptFile) {
+      sh.getRange(targetRowIndex, 24).setValue(receiptFile.getUrl());
+      if (d.total > 0) {
+        sh.getRange(targetRowIndex, 25).setValue('Pendiente de verificación');
+      }
+    }
+    sh.getRange(targetRowIndex, 26).setValue(newObs);
+
+    // Sincronizar en hoja 'Bachilleres - Estudiantes de Pregrado' si existe
+    try {
+      var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+      var shBach = ss.getSheetByName('Bachilleres - Estudiantes de Pregrado');
+      if (shBach && shBach.getLastRow() >= 2) {
+        var bData = shBach.getDataRange().getValues();
+        var bHeaders = bData[0].map(function (h) { return String(h || '').trim().toUpperCase(); });
+        var bColCed = -1, bColTxt = -1, bColJson = -1, bColDias = -1;
+        for (var bc = 0; bc < bHeaders.length; bc++) {
+          var bh = bHeaders[bc];
+          if (bh.indexOf('CÉDULA') !== -1 || bh.indexOf('CEDULA') !== -1 || bh === 'CI') bColCed = bc;
+          else if (bh.indexOf('TURNOS Y SALONES') !== -1) bColTxt = bc;
+          else if (bh.indexOf('TURNOS (JSON)') !== -1 || bh.indexOf('JSON') !== -1) bColJson = bc;
+          else if (bh.indexOf('DÍAS') !== -1 || bh.indexOf('DIAS') !== -1) bColDias = bc;
+        }
+        if (bColCed !== -1) {
+          for (var bi = 1; bi < bData.length; bi++) {
+            var bCed = String(bData[bi][bColCed] || '').replace(/\D/g, '');
+            if (bCed === cleanTargetCed) {
+              if (bColTxt !== -1) shBach.getRange(bi + 1, bColTxt + 1).setValue(safe_(d.resumenTurnos));
+              if (bColJson !== -1) shBach.getRange(bi + 1, bColJson + 1).setValue(JSON.stringify(d.turnos));
+              if (bColDias !== -1) shBach.getRange(bi + 1, bColDias + 1).setValue(d.diasLabel);
+              break;
+            }
+          }
+        }
+      }
+    } catch (bErr) {
+      console.warn('Error sincronizando hoja Bachilleres:', bErr);
+    }
+
+    SpreadsheetApp.flush();
+    return { id: foundId, row: targetRowIndex, isUpdate: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ─────────────────────────────── CORREO ───────────────────────────────
 
-function sendEmail_(d, id) {
+function sendEmail_(d, id, isUpdate) {
   try {
     var monto = d.total === 0 ? 'Exonerado 100% (0$)' : 'USD ' + d.total + ' (al cambio oficial BCV)';
     var qrUrl = 'https://quickchart.io/qr?size=320&text=' + encodeURIComponent(id);
@@ -845,17 +1040,25 @@ function sendEmail_(d, id) {
       qrImgSrc = qrUrl;
     }
 
+    var subject = isUpdate
+      ? 'Actualización de Turnos · Pase Oficial ' + id + ' · XIV Congreso Pineda 2026'
+      : 'Pase Oficial de Acceso y Comprobante ' + id + ' · XIV Congreso Pineda 2026';
+
     var html =
       '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:auto;color:#0b2545;line-height:1.5;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;overflow:hidden">' +
       '<div style="text-align:center;padding:24px 20px 20px 20px;background:#0b2545;color:#ffffff">' +
       '<span style="font-size:11px;font-weight:bold;letter-spacing:2px;color:#93c5fd;text-transform:uppercase">XIV CONGRESO PINEDA 2026</span>' +
-      '<h2 style="color:#ffffff;margin:8px 0 4px 0;font-size:22px;font-weight:900">Pase Oficial de Acceso y Comprobante</h2>' +
+      '<h2 style="color:#ffffff;margin:8px 0 4px 0;font-size:22px;font-weight:900">' + (isUpdate ? 'Actualización de Turnos y Pase de Acceso' : 'Pase Oficial de Acceso y Comprobante') + '</h2>' +
       '<p style="font-size:12px;color:#dbeafe;margin:0">Hospital Central Universitario «Dr. Antonio María Pineda»</p>' +
       '</div>' +
 
       '<div style="padding:24px 20px">' +
       '<p style="font-size:15px;margin-top:0">Hola <b>' + esc_(d.nombres) + ' ' + esc_(d.apellidos || '') + '</b>,</p>' +
-      '<p style="font-size:14px;color:#334155;margin-bottom:20px">Confirmamos la recepción y el registro exitoso de tu inscripción para el <b>XIV Congreso Pineda 2026</b>, a celebrarse del <b>2 al 6 de noviembre de 2026</b> en el Hotel Biotel Suites, Barquisimeto.</p>' +
+      '<p style="font-size:14px;color:#334155;margin-bottom:20px">' +
+      (isUpdate
+        ? 'Confirmamos la <b>actualización exitosa de tus turnos y jornadas de asistencia</b> para el <b>XIV Congreso Pineda 2026</b>, a celebrarse del <b>2 al 6 de noviembre de 2026</b> en el Hotel Biotel Suites, Barquisimeto.'
+        : 'Confirmamos la recepción y el registro exitoso de tu inscripción para el <b>XIV Congreso Pineda 2026</b>, a celebrarse del <b>2 al 6 de noviembre de 2026</b> en el Hotel Biotel Suites, Barquisimeto.') +
+      '</p>' +
 
       // Bloque Destacado del Código QR
       '<div style="background:#f8fafc;padding:20px;border-radius:14px;text-align:center;margin:20px 0;border:1.5px solid #cbd5e1">' +
@@ -903,7 +1106,7 @@ function sendEmail_(d, id) {
 
     var mailOptions = {
       to: d.correo,
-      subject: 'Pase de Acceso Oficial y Código QR · XIV Congreso Pineda 2026 · ' + id,
+      subject: subject,
       htmlBody: html,
       name: CONFIG.EMAIL_SENDER_NAME
     };
@@ -1494,6 +1697,60 @@ function validateAccess_(body) {
 // Alias para retrocompatibilidad
 function scanQr_(body) {
   return validateAccess_(body);
+}
+
+/**
+ * Retorna el listado de personas asistentes validadas por scanner,
+ * con soporte para filtrar por jornada, turno y salón.
+ */
+function getAsistenciasList_(jornada, turno, salon) {
+  var ss = SpreadsheetApp.openById(CONFIG.SPREADSHEET_ID);
+  var shAsist = getAsistenciasSheet_(ss);
+  if (!shAsist || shAsist.getLastRow() < 2) {
+    return [];
+  }
+  var data = shAsist.getDataRange().getValues();
+  var results = [];
+
+  var filterJornada = (jornada && jornada !== 'all' && jornada !== 'todas') ? String(jornada).trim() : null;
+  var filterTurno = (turno && turno !== 'all' && turno !== 'todos') ? parseTurnoKey_(turno).key : null;
+  var filterSalon = (salon && salon !== 'all' && salon !== 'todos') ? parseSalonKey_(salon).key : null;
+
+  for (var i = 1; i < data.length; i++) {
+    var r = data[i];
+    var rId = String(r[0] || '').trim();
+    if (!rId) continue;
+    var rCedula = String(r[1] || '').trim();
+    var rNombre = String(r[2] || '').trim();
+    var rTipo = String(r[3] || '').trim();
+    var rSalonKey = String(arSalonVal_(r)).toLowerCase();
+    var rSalonNombre = String(r[5] || (rSalonKey === 'alterno' ? 'Salón Alterno (2)' : 'Salón Principal (1)')).trim();
+    var rJornada = String(r[6] || r[5] || '').trim();
+    var rTurnoKey = String(r[7] || '').toLowerCase();
+    var rTurnoHorario = String(r[8] || '').trim();
+    var rValidador = String(r[9] || '').trim();
+    var rFechaHora = r[10] ? (r[10] instanceof Date ? Utilities.formatDate(r[10], 'America/Caracas', 'yyyy-MM-dd HH:mm:ss') : String(r[10])) : '';
+
+    if (filterJornada && rJornada !== filterJornada) continue;
+    if (filterTurno && rTurnoKey !== filterTurno) continue;
+    if (filterSalon && rSalonKey !== filterSalon) continue;
+
+    results.push({
+      id: rId,
+      cedula: rCedula,
+      nombre: rNombre,
+      tipo: rTipo,
+      salonKey: rSalonKey,
+      salonNombre: rSalonNombre,
+      jornada: rJornada,
+      turnoKey: rTurnoKey,
+      turnoHorario: rTurnoHorario,
+      validador: rValidador,
+      fechaHora: rFechaHora
+    });
+  }
+
+  return results;
 }
 
 // ───────────────────────────── CONFIRMACIÓN BACHILLERES ─────────────────────────────

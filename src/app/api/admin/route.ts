@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const scannerPassword = process.env.SCANNER_PASSWORD || correctPassword;
 
     const isScannerAction =
-      action === "scan_qr" || action === "validate_access" || action === "get_occupancy";
+      action === "scan_qr" || action === "validate_access" || action === "get_occupancy" || action === "get_asistencias";
     if (isScannerAction) {
       if (!scannerPassword || (password !== scannerPassword && password !== correctPassword)) {
         return NextResponse.json({ ok: false, error: "Contraseña incorrecta." }, { status: 401 });
@@ -53,6 +53,14 @@ export async function POST(req: Request) {
     } else if (action === "get_occupancy") {
       payload = {
         action: "get_occupancy",
+        token: adminToken,
+        salon: body.salon,
+        jornada: body.jornada,
+        turno: body.turno,
+      };
+    } else if (action === "get_asistencias") {
+      payload = {
+        action: "get_asistencias",
         token: adminToken,
         salon: body.salon,
         jornada: body.jornada,

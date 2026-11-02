@@ -108,6 +108,20 @@ export interface ExistingRegistrationInfo {
   apellidos?: string;
   cedula?: string;
   correo?: string;
+  telefono?: string;
+  sexo?: "M" | "F" | "";
+  fechaNacimiento?: string;
+  origen?: "HCUAMP" | "OTRA";
+  institucion?: string;
+  tipoLabel?: string;
+  tipoParticipante?: string;
+  pais?: string;
+  estado?: string;
+  municipio?: string;
+  parroquia?: string;
+  turnosJson?: string;
+  turnosTexto?: string;
+  total?: number;
   message?: string;
 }
 
@@ -147,6 +161,20 @@ export async function checkExistingRegistration(
         apellidos: data.data?.apellidos,
         cedula: data.data?.cedula,
         correo: data.data?.correo,
+        telefono: data.data?.telefono,
+        sexo: data.data?.sexo,
+        fechaNacimiento: data.data?.fechaNacimiento,
+        origen: data.data?.origen,
+        institucion: data.data?.institucion,
+        tipoLabel: data.data?.tipoLabel,
+        tipoParticipante: data.data?.tipoParticipante,
+        pais: data.data?.pais,
+        estado: data.data?.estado,
+        municipio: data.data?.municipio,
+        parroquia: data.data?.parroquia,
+        turnosJson: data.data?.turnosJson,
+        turnosTexto: data.data?.turnosTexto,
+        total: data.data?.total,
         message: data.message,
       };
     }
@@ -272,6 +300,8 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
     montoCliente: total,
     website: v.website,
     comprobante: await buildFilePayload(v.comprobante),
+    isUpdate: v.isUpdate,
+    existingId: v.existingId,
   };
 
   const controller = new AbortController();
@@ -290,6 +320,7 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
       id: data.id,
       total: data.total,
       exonerated: data.total === 0,
+      isUpdate: !!data.isUpdate,
       nombres: v.nombres,
       apellidos: v.apellidos,
       cedula: `${v.nacionalidad}-${cleanCedula(v.cedula)}`,
@@ -305,4 +336,42 @@ export async function submitRegistration(v: RegistrationValues): Promise<Registr
   } finally {
     clearTimeout(timer);
   }
+}
+
+export interface AsistenciaItem {
+  id: string;
+  cedula: string;
+  nombre: string;
+  tipo: string;
+  salonKey: string;
+  salonNombre: string;
+  jornada: string;
+  turnoKey: string;
+  turnoHorario: string;
+  validador: string;
+  fechaHora: string;
+}
+
+export async function getAsistencias(params: {
+  password: string;
+  salon?: string;
+  jornada?: string;
+  turno?: string;
+}): Promise<AsistenciaItem[]> {
+  const res = await fetch("/api/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "get_asistencias",
+      password: params.password,
+      salon: params.salon || "all",
+      jornada: params.jornada || "all",
+      turno: params.turno || "all",
+    }),
+  });
+  const json = await res.json();
+  if (!json.ok) {
+    throw new ApiError(json.error || "No se pudo obtener el listado de asistencias.");
+  }
+  return json.data || [];
 }

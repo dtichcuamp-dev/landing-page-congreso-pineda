@@ -20,6 +20,10 @@ import {
   UserCheck,
   AlertCircle,
   Check,
+  Download,
+  FileSpreadsheet,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import {
   SALONES_INFO,
@@ -29,6 +33,7 @@ import {
   type SalonKey,
   type TurnoKey,
 } from "@/data/pricing";
+import { getAsistencias, type AsistenciaItem } from "@/lib/api";
 
 interface ValidationResult {
   status: "idle" | "loading" | "success" | "warning" | "error";
@@ -78,6 +83,78 @@ export default function ScannerPage() {
   // Prevenir escaneos dobles rápidos en cámara
   const [lastScanned, setLastScanned] = useState("");
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+
+  // Descarga y exportación de asistencias
+  const [showExportPanel, setShowExportPanel] = useState(false);
+  const [exportJornada, setExportJornada] = useState<string>("all");
+  const [exportTurno, setExportTurno] = useState<string>("all");
+  const [exportSalon, setExportSalon] = useState<string>("all");
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccessMsg, setExportSuccessMsg] = useState<string | null>(null);
+
+  const handleDownloadAsistencias = async () => {
+    setIsExporting(true);
+    setExportSuccessMsg(null);
+    try {
+      const items = await getAsistencias({
+        password,
+        salon: exportSalon,
+        jornada: exportJornada,
+        turno: exportTurno,
+      });
+
+      if (!items || items.length === 0) {
+        alert("No se encontraron asistentes registrados por scanner para los filtros seleccionados.");
+        return;
+      }
+
+      const headers = [
+        "ID",
+        "Cédula",
+        "Nombres y Apellidos",
+        "Tipo de Participante",
+        "Salón",
+        "Jornada",
+        "Turno",
+        "Horario",
+        "Validador",
+        "Fecha y Hora de Ingreso",
+      ];
+
+      const rows = items.map((a) => [
+        `"${(a.id || "").replace(/"/g, '""')}"`,
+        `"${(a.cedula || "").replace(/"/g, '""')}"`,
+        `"${(a.nombre || "").replace(/"/g, '""')}"`,
+        `"${(a.tipo || "").replace(/"/g, '""')}"`,
+        `"${(a.salonNombre || a.salonKey || "").replace(/"/g, '""')}"`,
+        `"${(a.jornada || "").replace(/"/g, '""')}"`,
+        `"${(a.turnoKey === "tarde" ? "Tarde" : "Mañana").replace(/"/g, '""')}"`,
+        `"${(a.turnoHorario || "").replace(/"/g, '""')}"`,
+        `"${(a.validador || "").replace(/"/g, '""')}"`,
+        `"${(a.fechaHora || "").replace(/"/g, '""')}"`,
+      ]);
+
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const jStr = exportJornada === "all" ? "TodasLasJornadas" : exportJornada;
+      const tStr = exportTurno === "all" ? "TodosLosTurnos" : exportTurno;
+      const sStr = exportSalon === "all" ? "TodosLosSalones" : exportSalon;
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Asistencias_Scanner_${jStr}_${tStr}_${sStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setExportSuccessMsg(`✓ Se descargaron ${items.length} asistentes validados.`);
+    } catch (err: any) {
+      alert("Error al descargar asistencias: " + (err.message || String(err)));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const currentSalon = SALONES_INFO[salonKey];
   const currentTurno = TURNOS_HORARIOS[turnoKey];
@@ -554,6 +631,107 @@ export default function ScannerPage() {
             >
               <AlertTriangle className="size-4 shrink-0 text-current" />
               <div className="leading-tight">{activeAlert.text}</div>
+            </div>
+          )}
+        </section>
+
+        {/* Sección de Descarga de Asistencias Validadas */}
+        <section className="bg-slate-900/80 p-3.5 border-b border-slate-800">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setShowExportPanel(!showExportPanel)}
+              className="flex items-center gap-2 text-xs font-bold text-slate-200 hover:text-white transition"
+            >
+              <FileSpreadsheet className="size-4 text-emerald-400" />
+              <span>Descargar Listado de Asistentes Validados</span>
+              {showExportPanel ? (
+                <ChevronUp className="size-3.5 text-slate-400" />
+              ) : (
+                <ChevronDown className="size-3.5 text-slate-400" />
+              )}
+            </button>
+            <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md font-mono">
+              CSV / Excel
+            </span>
+          </div>
+
+          {showExportPanel && (
+            <div className="mt-3 pt-3 border-t border-slate-800 space-y-3 animate-in fade-in slide-in-from-top-1">
+              <p className="text-[11px] text-slate-300">
+                Exporta la lista de participantes admitidos y validados por scanner en tiempo real:
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {/* Filtro Salón */}
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                    Salón
+                  </label>
+                  <select
+                    value={exportSalon}
+                    onChange={(e) => setExportSalon(e.target.value)}
+                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none"
+                  >
+                    <option value="all">Todos los salones</option>
+                    <option value="principal">Salón Principal (1)</option>
+                    <option value="alterno">Salón Alterno (2)</option>
+                  </select>
+                </div>
+
+                {/* Filtro Día */}
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                    Jornada
+                  </label>
+                  <select
+                    value={exportJornada}
+                    onChange={(e) => setExportJornada(e.target.value)}
+                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none"
+                  >
+                    <option value="all">Todas las jornadas</option>
+                    {DAYS_CONGRESO.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.shortLabel} ({d.weekday})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filtro Turno */}
+                <div>
+                  <label className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">
+                    Turno
+                  </label>
+                  <select
+                    value={exportTurno}
+                    onChange={(e) => setExportTurno(e.target.value)}
+                    className="w-full bg-slate-950 text-white text-xs rounded-xl p-2 border border-slate-700 outline-none"
+                  >
+                    <option value="all">Todos los turnos</option>
+                    <option value="manana">Mañana (08:00 a 12:45)</option>
+                    <option value="tarde">Tarde (13:00 a 18:00)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleDownloadAsistencias}
+                  disabled={isExporting}
+                  className="w-full sm:w-auto flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:brightness-110 transition disabled:opacity-50"
+                >
+                  <Download className={`size-4 ${isExporting ? "animate-bounce" : ""}`} />
+                  <span>{isExporting ? "Generando descarga..." : "Descargar Listado (CSV)"}</span>
+                </button>
+              </div>
+
+              {exportSuccessMsg && (
+                <p className="text-[11px] text-emerald-400 font-medium">
+                  {exportSuccessMsg}
+                </p>
+              )}
             </div>
           )}
         </section>

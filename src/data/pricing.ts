@@ -44,10 +44,8 @@ export const PARTICIPANT_TYPES_OTRA: ParticipantTypeInfo[] = [
 
 /** Categorías de participantes cuyo registro ha sido cerrado oficialmente */
 export const CLOSED_PARTICIPANT_TYPE_IDS = [
-  "bachiller",
   "acompanante",
   "conferencista",
-  "estudiante_pregrado_otra",
   "acompanante_otra",
 ] as const;
 

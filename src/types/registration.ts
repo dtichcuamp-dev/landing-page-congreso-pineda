@@ -70,6 +70,10 @@ export interface RegistrationValues {
 
   /** Honeypot anti-spam: debe permanecer vacío. */
   website: string;
+
+  /** Modo de actualización de turnos para participantes ya registrados */
+  isUpdate?: boolean;
+  existingId?: string;
 }
 
 export type FieldErrors = Partial<Record<keyof RegistrationValues, string>>;
@@ -103,6 +107,7 @@ export interface RegistrationResult {
   id: string;
   total: number;
   exonerated: boolean;
+  isUpdate?: boolean;
   nombres?: string;
   apellidos?: string;
   cedula?: string;
@@ -137,4 +142,6 @@ export interface RegistrationPayload {
   montoCliente: number;
   website: string;
   comprobante: { nombre: string; mimeType: string; base64: string } | null;
+  isUpdate?: boolean;
+  existingId?: string;
 }

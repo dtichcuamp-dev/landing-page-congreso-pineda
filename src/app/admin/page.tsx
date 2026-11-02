@@ -29,6 +29,8 @@ import {
   Power,
   PowerOff,
   PauseCircle,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   usd,
@@ -40,7 +42,7 @@ import {
   type SalonKey,
   type TurnoKey,
 } from "@/data/pricing";
-import { getCapacities } from "@/lib/api";
+import { getCapacities, getAsistencias, type AsistenciaItem } from "@/lib/api";
 import {
   BarChart,
   Bar,
@@ -150,6 +152,113 @@ export default function AdminDashboard() {
   const [rosterModal, setRosterModal] = useState<RosterModalState | null>(null);
   const [rosterSearch, setRosterSearch] = useState<string>("");
 
+  // Reporte y Descarga de Asistencias Validadas por Scanner
+  const [asistenciasList, setAsistenciasList] = useState<AsistenciaItem[]>([]);
+  const [loadingAsistencias, setLoadingAsistencias] = useState<boolean>(false);
+  const [asistJornada, setAsistJornada] = useState<string>("all");
+  const [asistTurno, setAsistTurno] = useState<string>("all");
+  const [asistSalon, setAsistSalon] = useState<string>("all");
+  const [asistSearch, setAsistSearch] = useState<string>("");
+  const [isDownloadingAsistCsv, setIsDownloadingAsistCsv] = useState<boolean>(false);
+
+  const fetchAsistencias = async (pass = password, j = asistJornada, t = asistTurno, s = asistSalon) => {
+    if (!pass) return;
+    setLoadingAsistencias(true);
+    try {
+      const items = await getAsistencias({
+        password: pass,
+        jornada: j,
+        turno: t,
+        salon: s,
+      });
+      setAsistenciasList(items || []);
+    } catch (err: any) {
+      console.warn("Error cargando asistencias:", err);
+    } finally {
+      setLoadingAsistencias(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && password) {
+      fetchAsistencias(password, asistJornada, asistTurno, asistSalon);
+    }
+  }, [isAuthenticated, asistJornada, asistTurno, asistSalon]);
+
+  const filteredAsistencias = useMemo(() => {
+    if (!asistenciasList) return [];
+    if (!asistSearch.trim()) return asistenciasList;
+    const q = asistSearch.trim().toLowerCase();
+    const qClean = q.replace(/\D/g, "");
+    return asistenciasList.filter((a) => {
+      const nom = (a.nombre || "").toLowerCase();
+      const id = (a.id || "").toLowerCase();
+      const ced = (a.cedula || "").toLowerCase();
+      const cedClean = ced.replace(/\D/g, "");
+      return (
+        nom.includes(q) ||
+        id.includes(q) ||
+        ced.includes(q) ||
+        (qClean && cedClean.includes(qClean))
+      );
+    });
+  }, [asistenciasList, asistSearch]);
+
+  const handleExportAsistencias = () => {
+    if (!filteredAsistencias || filteredAsistencias.length === 0) {
+      alert("No hay registros de asistencias para exportar con los filtros actuales.");
+      return;
+    }
+    setIsDownloadingAsistCsv(true);
+    try {
+      const headers = [
+        "Nº",
+        "ID",
+        "Cédula",
+        "Nombres y Apellidos",
+        "Tipo de Participante",
+        "Salón",
+        "Jornada",
+        "Turno",
+        "Horario",
+        "Validador",
+        "Fecha y Hora de Ingreso",
+      ];
+
+      const rows = filteredAsistencias.map((a, idx) => [
+        idx + 1,
+        `"${(a.id || "").replace(/"/g, '""')}"`,
+        `"${(a.cedula || "").replace(/"/g, '""')}"`,
+        `"${(a.nombre || "").replace(/"/g, '""')}"`,
+        `"${(a.tipo || "").replace(/"/g, '""')}"`,
+        `"${(a.salonNombre || a.salonKey || "").replace(/"/g, '""')}"`,
+        `"${(a.jornada || "").replace(/"/g, '""')}"`,
+        `"${(a.turnoKey === "tarde" ? "Tarde" : "Mañana").replace(/"/g, '""')}"`,
+        `"${(a.turnoHorario || "").replace(/"/g, '""')}"`,
+        `"${(a.validador || "").replace(/"/g, '""')}"`,
+        `"${(a.fechaHora || "").replace(/"/g, '""')}"`,
+      ]);
+
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const jStr = asistJornada === "all" ? "TodasLasJornadas" : asistJornada;
+      const tStr = asistTurno === "all" ? "TodosLosTurnos" : asistTurno;
+      const sStr = asistSalon === "all" ? "TodosLosSalones" : asistSalon;
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Asistencias_Validadas_Scanner_${jStr}_${tStr}_${sStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert("Error al exportar asistencias: " + (err.message || String(err)));
+    } finally {
+      setIsDownloadingAsistCsv(false);
+    }
+  };
+
   // Recuperar sesión si ya existe
   useEffect(() => {
     const saved = sessionStorage.getItem("admin_password");
@@ -186,6 +295,7 @@ export default function AdminDashboard() {
         const caps = await getCapacities();
         if (caps) setServerCapacities(caps);
       } catch (_) {}
+      fetchAsistencias(pass);
     } catch (err: any) {
       setError(err.message);
       setIsAuthenticated(false);
@@ -1274,6 +1384,175 @@ export default function AdminDashboard() {
               );
             })()
           )}
+        </div>
+
+        {/* ──────── REPORTE Y DESCARGA DE ASISTENCIAS VALIDADAS POR SCANNER ──────── */}
+        <div className="glass rounded-3xl p-6 space-y-5 shadow-sm border border-slate-200/80 bg-white/70">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 shadow-sm ring-4 ring-emerald-50">
+                <FileSpreadsheet className="size-5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-black text-ink">
+                    Asistencias Validadas por Scanner
+                  </h2>
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-black text-emerald-800 border border-emerald-200">
+                    {filteredAsistencias.length} {filteredAsistencias.length === 1 ? "asistente" : "asistentes"}
+                  </span>
+                </div>
+                <p className="text-xs text-ink-soft">
+                  Control de ingresos físicos en puerta filtrados por día, turno y salón
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fetchAsistencias(password, asistJornada, asistTurno, asistSalon)}
+                disabled={loadingAsistencias}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition disabled:opacity-50"
+                title="Actualizar listado de asistencias"
+              >
+                <RefreshCw className={`size-3.5 ${loadingAsistencias ? "animate-spin text-brand-600" : ""}`} />
+                <span>Actualizar</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportAsistencias}
+                disabled={isDownloadingAsistCsv || filteredAsistencias.length === 0}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:brightness-110 transition disabled:opacity-50"
+              >
+                <Download className={`size-4 ${isDownloadingAsistCsv ? "animate-bounce" : ""}`} />
+                <span>{isDownloadingAsistCsv ? "Descargando..." : "Descargar Listado (CSV)"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Filtros de Asistencia */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 text-xs">
+            {/* Salón */}
+            <div>
+              <label className="font-bold text-ink-mute block mb-1">Salón:</label>
+              <select
+                value={asistSalon}
+                onChange={(e) => setAsistSalon(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white p-2 font-semibold text-ink focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+              >
+                <option value="all">Todos los salones</option>
+                <option value="principal">Salón Principal (1)</option>
+                <option value="alterno">Salón Alterno (2)</option>
+              </select>
+            </div>
+
+            {/* Día / Jornada */}
+            <div>
+              <label className="font-bold text-ink-mute block mb-1">Día / Jornada:</label>
+              <select
+                value={asistJornada}
+                onChange={(e) => setAsistJornada(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white p-2 font-semibold text-ink focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+              >
+                <option value="all">Todas las jornadas (2 al 6 Nov)</option>
+                {DAYS_CONGRESO.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.shortLabel} ({d.weekday})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Turno */}
+            <div>
+              <label className="font-bold text-ink-mute block mb-1">Turno:</label>
+              <select
+                value={asistTurno}
+                onChange={(e) => setAsistTurno(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white p-2 font-semibold text-ink focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+              >
+                <option value="all">Todos los turnos</option>
+                <option value="manana">Mañana (08:00 a 12:45)</option>
+                <option value="tarde">Tarde (13:00 a 18:00)</option>
+              </select>
+            </div>
+
+            {/* Buscador */}
+            <div>
+              <label className="font-bold text-ink-mute block mb-1">Buscar en lista:</label>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cédula, nombre o ID..."
+                  value={asistSearch}
+                  onChange={(e) => setAsistSearch(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white pl-8 pr-2.5 py-2 font-medium text-ink placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Tabla de Asistencias */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white max-h-96 overflow-y-auto">
+            {loadingAsistencias ? (
+              <div className="p-8 text-center text-xs text-ink-mute flex items-center justify-center gap-2">
+                <RefreshCw className="size-4 animate-spin text-brand-600" />
+                <span>Cargando registros de asistencia...</span>
+              </div>
+            ) : filteredAsistencias.length === 0 ? (
+              <div className="p-8 text-center text-xs text-ink-mute space-y-1">
+                <p className="font-bold text-slate-600">No hay asistencias registradas con los filtros seleccionados.</p>
+                <p className="text-[11px] text-slate-400">Los registros aparecerán automáticamente cuando el personal escanee los códigos QR en puerta.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left text-xs whitespace-nowrap">
+                <thead className="bg-slate-50/90 text-ink-soft font-bold sticky top-0 border-b border-slate-200 z-10">
+                  <tr>
+                    <th className="p-3 pl-4 w-12 text-center">Nº</th>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Cédula</th>
+                    <th className="p-3">Participante</th>
+                    <th className="p-3">Tipo</th>
+                    <th className="p-3">Salón</th>
+                    <th className="p-3">Jornada</th>
+                    <th className="p-3">Turno</th>
+                    <th className="p-3">Scanner</th>
+                    <th className="p-3 pr-4">Fecha y Hora</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredAsistencias.map((a, idx) => (
+                    <tr key={`${a.id}-${a.jornada}-${a.turnoKey}-${idx}`} className="hover:bg-slate-50/60 transition">
+                      <td className="p-3 pl-4 text-center font-mono text-slate-400">{idx + 1}</td>
+                      <td className="p-3 font-mono font-bold text-brand-700">{a.id}</td>
+                      <td className="p-3 font-mono text-slate-700">{a.cedula}</td>
+                      <td className="p-3 font-bold text-ink uppercase">{a.nombre}</td>
+                      <td className="p-3 text-slate-600">{a.tipo}</td>
+                      <td className="p-3">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-bold ${
+                          a.salonKey === "principal" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        }`}>
+                          {a.salonNombre || (a.salonKey === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)")}
+                        </span>
+                      </td>
+                      <td className="p-3 font-medium text-slate-700">{a.jornada}</td>
+                      <td className="p-3">
+                        <span className="font-semibold text-slate-800">
+                          {a.turnoKey === "tarde" ? "Tarde" : "Mañana"}
+                        </span>
+                        {a.turnoHorario && <span className="text-[10px] text-slate-400 block">{a.turnoHorario}</span>}
+                      </td>
+                      <td className="p-3 text-slate-600">{a.validador || "Scanner"}</td>
+                      <td className="p-3 pr-4 font-mono text-[11px] text-slate-500">{a.fechaHora}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
         {/* Gráficos Estadísticos Demográficos */}

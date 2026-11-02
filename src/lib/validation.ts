@@ -61,7 +61,7 @@ export function validateStep(step: number, v: RegistrationValues): FieldErrors {
       e.tipoParticipante = "Selecciona tu tipo de participante.";
     } else if (isParticipantTypeClosed(v.tipoParticipante)) {
       e.tipoParticipante =
-        "El registro para esta categoría (Acompañante, Bachiller, Estudiante de Pregrado, Conferencista) ya no se encuentra disponible.";
+        "El registro para esta categoría (Acompañante o Conferencista) ya no se encuentra disponible.";
     }
 
     if (v.origenInstitucion === "HCUAMP") {
