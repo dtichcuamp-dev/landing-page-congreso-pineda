@@ -49,7 +49,7 @@ export function JornadaPicker({ selected, onChange, error }: Props) {
       </div>
 
       <p className="mt-1.5 text-xs text-ink-mute">
-        La tarifa se cobra por día (cubre tanto el bloque de la mañana como de la tarde).
+        Para otras instituciones la tarifa se calcula por cada turno seleccionado.
       </p>
       {error && (
         <p id="jornadas-error" role="alert" className="mt-1 text-xs font-medium text-red-600">

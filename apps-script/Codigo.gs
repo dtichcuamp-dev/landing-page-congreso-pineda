@@ -55,7 +55,7 @@ var DIAS_CONGRESO = {
   '2026-11-06': 'Vie 06/11'
 };
 
-/** Tarifas oficiales en USD por día */
+/** Tarifas oficiales en USD por turno */
 var RATES = {
   // HCUAMP (Exonerados)
   bachiller: { label: 'Bachiller (HCUAMP)', rate: 0, hcuamp: true },
@@ -71,7 +71,7 @@ var RATES = {
   conferencista: { label: 'Conferencista (HCUAMP)', rate: 0, hcuamp: true },
   residente_ultimo_anio: { label: 'Residente de último año (HCUAMP)', rate: 0, hcuamp: true },
 
-  // Otra Institución (Tarifas USD por día)
+  // Otra Institución (Tarifas USD por turno)
   estudiante_pregrado_otra: { label: 'Bachiller / Estudiante de pregrado', rate: 0, hcuamp: false },
   medico_general_especialista: { label: 'Médico general y especialista', rate: 20, hcuamp: false },
   medico_residente: { label: 'Médico residente', rate: 15, hcuamp: false },
@@ -710,6 +710,7 @@ function validate_(b) {
   var diasActivos = [];
   var resumenTurnosArr = [];
   var occupied = getOccupiedSeats_();
+  var turnosCount = 0;
 
   // Si es actualización, obtenemos los turnos previos del participante para no descontarlos de su propio aforo
   var prevTurnos = {};
@@ -734,6 +735,7 @@ function validate_(b) {
         var alreadyHadMorningSeat = prevTurnos[diaId] && prevTurnos[diaId].manana === tDia.manana;
         // Restricción de aforo en registro desactivada: el acceso físico se gestiona por orden de llegada en sede.
         partesDia.push('Mañana: ' + (tDia.manana === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)'));
+        turnosCount++;
       }
 
       if (tDia.tarde) {
@@ -745,6 +747,7 @@ function validate_(b) {
         var alreadyHadAfternoonSeat = prevTurnos[diaId] && prevTurnos[diaId].tarde === tDia.tarde;
         // Restricción de aforo en registro desactivada: el acceso físico se gestiona por orden de llegada en sede.
         partesDia.push('Tarde: ' + (tDia.tarde === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)'));
+        turnosCount++;
       }
 
       if (partesDia.length > 0) {
@@ -758,12 +761,12 @@ function validate_(b) {
     throw new UserError_('Debes seleccionar al menos un día y turno de participación.');
   }
 
-  // 5. Cálculo del monto (tarifa por día)
+  // 5. Cálculo del monto (tarifa por turno de cada día)
   var total = 0;
   if (origenInstitucion === 'HCUAMP') {
     total = 0; // Exoneración total
   } else {
-    total = tipo.rate * diasActivos.length;
+    total = tipo.rate * turnosCount;
     if (total > 0 && !b.comprobante) {
       throw new UserError_('Debes adjuntar el comprobante de pago.');
     }
@@ -789,6 +792,7 @@ function validate_(b) {
     municipio: municipio.toUpperCase(),
     parroquia: parroquia.toUpperCase(),
     turnos: turnos,
+    turnosCount: turnosCount,
     diasActivos: diasActivos,
     diasLabel: diasActivos.map(function (d) { return DIAS_CONGRESO[d]; }).join(', '),
     resumenTurnos: resumenTurnosArr.join('; '),

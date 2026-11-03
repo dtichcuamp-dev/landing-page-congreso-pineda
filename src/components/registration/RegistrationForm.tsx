@@ -1332,7 +1332,7 @@ export function RegistrationForm() {
                     ))
                   : ACTIVE_PARTICIPANT_TYPES_OTRA.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.label} — {p.rate === 0 ? "Exonerado 100% (0$)" : `${usd(p.rate)} por día`}
+                        {p.label} — {p.rate === 0 ? "Exonerado 100% (0$)" : `${usd(p.rate)} por turno`}
                       </option>
                     ))}
               </select>

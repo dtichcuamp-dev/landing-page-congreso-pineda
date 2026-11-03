@@ -45,6 +45,10 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
   };
 
   const countActiveDays = Object.values(value).filter((d) => d.manana || d.tarde).length;
+  const countTurnos = Object.values(value).reduce(
+    (acc, d) => acc + (d.manana ? 1 : 0) + (d.tarde ? 1 : 0),
+    0
+  );
 
   return (
     <fieldset className="space-y-4" aria-describedby={error ? "turnos-error" : undefined}>
@@ -53,7 +57,7 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
           Días, Turnos y Salones de Asistencia<span className="ml-0.5 text-brand-500">*</span>
         </legend>
         <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full self-start sm:self-auto ring-1 ring-brand-200">
-          {countActiveDays} {countActiveDays === 1 ? "día seleccionado" : "días seleccionados"}
+          {countTurnos} {countTurnos === 1 ? "turno seleccionado" : "turnos seleccionados"} ({countActiveDays} {countActiveDays === 1 ? "día" : "días"})
         </span>
       </div>
 
@@ -399,7 +403,7 @@ export function TurnosSalonPicker({ value, onChange, capacities = {}, error }: P
       <p className="flex items-start gap-1.5 text-xs text-ink-mute leading-relaxed">
         <Info className="size-3.5 shrink-0 mt-0.5 text-brand-600" aria-hidden />
         <span>
-          En un mismo turno solo es posible registrarse en un salón. Puedes asistir tanto en la mañana como en la tarde; la tarifa se calcula por día asistido.
+          En un mismo turno solo es posible registrarse en un salón. Puedes asistir tanto en la mañana como en la tarde; para otras instituciones la tarifa se calcula por cada turno seleccionado.
         </span>
       </p>
 

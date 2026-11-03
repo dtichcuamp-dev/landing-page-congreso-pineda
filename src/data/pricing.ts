@@ -9,7 +9,7 @@ import type {
 export interface ParticipantTypeInfo {
   id: ParticipantTypeId;
   label: string;
-  /** Tarifa USD por día. 0 = exonerado. */
+  /** Tarifa USD por turno. 0 = exonerado. */
   rate: number;
   description?: string;
 }
@@ -30,7 +30,7 @@ export const PARTICIPANT_TYPES_HCUAMP: ParticipantTypeInfo[] = [
   { id: "residente_ultimo_anio", label: "Residente de último año", rate: 0 },
 ];
 
-/** Tipos de participantes para Otras Instituciones (Tarifas por día). */
+/** Tipos de participantes para Otras Instituciones (Tarifas por turno). */
 export const PARTICIPANT_TYPES_OTRA: ParticipantTypeInfo[] = [
   { id: "estudiante_pregrado_otra", label: "Bachiller / Estudiante de pregrado", rate: 0 },
   { id: "medico_general_especialista", label: "Médico general y especialista", rate: 20 },
@@ -206,8 +206,8 @@ export function computeAforoAlert(salonKey: SalonKey, occupancy: number): AforoA
 }
 
 /**
- * Calcula los días seleccionados y el total a pagar.
- * El pago es POR DÍA (cubriendo 1 o 2 turnos de ese día).
+ * Calcula los días seleccionados, turnos y el total a pagar.
+ * El monto a pagar por participantes de otras instituciones es por cada turno (mañana y/o tarde) de cada día seleccionado.
  * Si la institución es HCUAMP, el monto es 0$ (exonerado).
  */
 export function calcTotal(
@@ -215,7 +215,7 @@ export function calcTotal(
   turnosOrJornadas: SeleccionTurnos | string[],
   origen: InstitucionOrigen = "HCUAMP",
 ) {
-  // Obtener los días activos
+  // Obtener los días activos y contar turnos
   let diasActivos: string[] = [];
   let turnosCount = 0;
 
@@ -238,12 +238,12 @@ export function calcTotal(
   const isHcuamp = origen === "HCUAMP";
   const type = tipoId ? PARTICIPANT_BY_ID[tipoId] : undefined;
   const rate = isHcuamp ? 0 : (type?.rate ?? 0);
-  const total = isHcuamp ? 0 : rate * diasCount;
+  const total = isHcuamp ? 0 : rate * turnosCount;
 
   return {
     rate,
     diasCount,
-    count: diasCount, // compatibilidad
+    count: turnosCount, // compatibilidad
     turnosCount,
     diasActivos,
     total,

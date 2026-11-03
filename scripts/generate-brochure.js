@@ -1377,7 +1377,7 @@ async function buildBrochure() {
       color: GREEN_TEXT
     });
 
-    // TARJETA 2: OTRAS INSTITUCIONES (Tarifas por día)
+    // TARJETA 2: OTRAS INSTITUCIONES (Tarifas por turno)
     page.drawRectangle({
       x: 36,
       y: PAGE_HEIGHT - 395,
@@ -1395,14 +1395,14 @@ async function buildBrochure() {
       height: 25,
       color: NAVY
     });
-    page.drawText('PARTICIPANTES DE OTRAS INSTITUCIONES · TARIFAS OFICIALES POR DÍA', {
+    page.drawText('PARTICIPANTES DE OTRAS INSTITUCIONES · TARIFAS OFICIALES POR TURNO', {
       x: 50,
       y: PAGE_HEIGHT - 240,
       size: 9,
       font: fontBold,
       color: WHITE
     });
-    page.drawText('El pago es por día e incluye acceso a los turnos seleccionados (mañana y/o tarde) de esa jornada:', {
+    page.drawText('El pago es por cada turno seleccionado (mañana y/o tarde) de las jornadas elegidas:', {
       x: 50,
       y: PAGE_HEIGHT - 264,
       size: 8,
@@ -1411,13 +1411,13 @@ async function buildBrochure() {
     });
 
     const rates = [
-      { cat: 'Médico General y Médico Especialista', price: '20 USD / día' },
-      { cat: 'Médico Residente de Postgrado', price: '15 USD / día' },
-      { cat: 'Licenciados(as) y Técnicos(as) en Enfermería', price: '10 USD / día' },
-      { cat: 'Fisioterapeuta / Terapeuta Ocupacional', price: '15 USD / día' },
-      { cat: 'Psicólogo / Psiquiatra', price: '15 USD / día' },
-      { cat: 'Otro Personal Afín a la Salud', price: '15 USD / día' },
-      { cat: 'Acompañante de Participante', price: '15 USD / día' },
+      { cat: 'Médico General y Médico Especialista', price: '20 USD / turno' },
+      { cat: 'Médico Residente de Postgrado', price: '15 USD / turno' },
+      { cat: 'Licenciados(as) y Técnicos(as) en Enfermería', price: '10 USD / turno' },
+      { cat: 'Fisioterapeuta / Terapeuta Ocupacional', price: '15 USD / turno' },
+      { cat: 'Psicólogo / Psiquiatra', price: '15 USD / turno' },
+      { cat: 'Otro Personal Afín a la Salud', price: '15 USD / turno' },
+      { cat: 'Acompañante de Participante', price: '15 USD / turno' },
       { cat: 'Bachiller / Estudiante de pregrado', price: '0 USD (Exonerado 100%)', exonerated: true }
     ];
 

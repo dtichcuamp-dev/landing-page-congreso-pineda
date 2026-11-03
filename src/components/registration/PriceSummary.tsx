@@ -55,7 +55,7 @@ export function PriceSummary({ tipo, turnos, origen = "HCUAMP" }: Props) {
       ) : (
         <div className="mt-2.5 space-y-1">
           <p className="text-xs font-medium text-ink-soft">
-            <b className="text-ink">{label}</b> · {usd(rate)} por día
+            <b className="text-ink">{label}</b> · {usd(rate)} por turno
           </p>
           <div className="flex items-baseline gap-2">
             <p className="text-3xl font-extrabold tracking-tight text-ink">
@@ -63,7 +63,7 @@ export function PriceSummary({ tipo, turnos, origen = "HCUAMP" }: Props) {
               <span className="ml-1 text-sm font-semibold text-ink-mute">USD</span>
             </p>
             <span className="text-xs text-ink-soft">
-              ({usd(rate)} × {diasCount} {diasCount === 1 ? "día" : "días"})
+              ({usd(rate)} × {turnosCount} {turnosCount === 1 ? "turno" : "turnos"})
             </span>
           </div>
           {rateBcv && (
