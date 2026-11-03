@@ -732,10 +732,7 @@ function validate_(b) {
         var keyM = diaId + '_manana_' + tDia.manana;
         var maxM = CAPACITIES[tDia.manana];
         var alreadyHadMorningSeat = prevTurnos[diaId] && prevTurnos[diaId].manana === tDia.manana;
-        if (!alreadyHadMorningSeat && ((occupied[keyM] || 0) + 1 > maxM)) {
-          var salonNom = tDia.manana === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)';
-          throw new UserError_('El ' + salonNom + ' para el turno de la Mañana del ' + diaLabel + ' ha alcanzado el aforo máximo permitido (' + maxM + ' puestos).');
-        }
+        // Restricción de aforo en registro desactivada: el acceso físico se gestiona por orden de llegada en sede.
         partesDia.push('Mañana: ' + (tDia.manana === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)'));
       }
 
@@ -746,10 +743,7 @@ function validate_(b) {
         var keyT = diaId + '_tarde_' + tDia.tarde;
         var maxT = CAPACITIES[tDia.tarde];
         var alreadyHadAfternoonSeat = prevTurnos[diaId] && prevTurnos[diaId].tarde === tDia.tarde;
-        if (!alreadyHadAfternoonSeat && ((occupied[keyT] || 0) + 1 > maxT)) {
-          var salonNomT = tDia.tarde === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)';
-          throw new UserError_('El ' + salonNomT + ' para el turno de la Tarde del ' + diaLabel + ' ha alcanzado el aforo máximo permitido (' + maxT + ' puestos).');
-        }
+        // Restricción de aforo en registro desactivada: el acceso físico se gestiona por orden de llegada en sede.
         partesDia.push('Tarde: ' + (tDia.tarde === 'principal' ? 'Salón Principal (1)' : 'Salón Alterno (2)'));
       }
 
@@ -1094,6 +1088,11 @@ function sendEmail_(d, id, isUpdate) {
       (d.total === 0
         ? '<b>Inscripción 100% Exonerada:</b> Tu participación ha sido validada. Conserva este correo con tu código QR como tu credencial oficial para el acceso a las salas de conferencias.'
         : '<b>Comprobante de Inscripción:</b> Tu comprobante y registro están procesados. Presenta este correo y tu código QR al momento de ingresar a las salas y retirar tu kit.') +
+      '</div>' +
+
+      // Aviso importante sobre acceso y orden de llegada
+      '<div style="background:#fffbeb;padding:12px 14px;border-radius:10px;font-size:12px;color:#92400e;margin-top:12px;border-left:4px solid #f59e0b">' +
+      '<b>Importante sobre el ingreso a sala:</b> El acceso a las conferencias se efectúa por <b>estricto orden de llegada</b> hasta completar la capacidad física de cada salón. Les recomendamos <b>llegar temprano a cada ponencia para garantizar su puesto</b>.' +
       '</div>' +
 
       // Sede

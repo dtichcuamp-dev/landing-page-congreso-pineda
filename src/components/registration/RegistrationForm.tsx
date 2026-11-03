@@ -354,49 +354,6 @@ export function RegistrationForm() {
       }
     }
 
-    // ── Paso 1: Verificación estricta de Aforo en Tiempo Real ──
-    if (step === 1 && Object.keys(e).length === 0) {
-      let prevTurnosMap: any = {};
-      if (alreadyRegistered?.turnosJson) {
-        try {
-          prevTurnosMap = typeof alreadyRegistered.turnosJson === "string" ? JSON.parse(alreadyRegistered.turnosJson) : alreadyRegistered.turnosJson;
-        } catch (_) {}
-      }
-
-      for (const [diaId, t] of Object.entries(values.turnos)) {
-        if (t.manana) {
-          const alreadyHad = prevTurnosMap[diaId]?.manana === t.manana;
-          const key = `${diaId}_manana_${t.manana}`;
-          const occ = capacities[key] || 0;
-          const cap = CAPACIDADES_SALON[t.manana];
-          if (!alreadyHad && occ >= cap) {
-            const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
-            const salonName = t.manana === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)";
-            setErrors({
-              ...e,
-              turnos: `El ${salonName} para el turno Mañana del ${diaMeta?.dateLabel || diaId} ha alcanzado su cupo máximo (0 libres). NO realices depósitos para este turno. Por favor selecciona otro salón o turno con disponibilidad.`,
-            });
-            return;
-          }
-        }
-        if (t.tarde) {
-          const alreadyHad = prevTurnosMap[diaId]?.tarde === t.tarde;
-          const key = `${diaId}_tarde_${t.tarde}`;
-          const occ = capacities[key] || 0;
-          const cap = CAPACIDADES_SALON[t.tarde];
-          if (!alreadyHad && occ >= cap) {
-            const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
-            const salonName = t.tarde === "principal" ? "Salón Principal (1)" : "Salón Alterno (2)";
-            setErrors({
-              ...e,
-              turnos: `El ${salonName} para el turno Tarde del ${diaMeta?.dateLabel || diaId} ha alcanzado su cupo máximo (0 libres). NO realices depósitos para este turno. Por favor selecciona otro salón o turno con disponibilidad.`,
-            });
-            return;
-          }
-        }
-      }
-    }
-
     setErrors(e);
     if (Object.keys(e).length === 0) {
       goTo(step + 1);
@@ -422,31 +379,6 @@ export function RegistrationForm() {
       if (Object.keys(e).length > 0) {
         setErrors(e);
         goTo(s);
-        return;
-      }
-    }
-
-    // Verificación final de aforo antes del envío
-    let prevTurnosMap: any = {};
-    if (alreadyRegistered?.turnosJson) {
-      try {
-        prevTurnosMap = typeof alreadyRegistered.turnosJson === "string" ? JSON.parse(alreadyRegistered.turnosJson) : alreadyRegistered.turnosJson;
-      } catch (_) {}
-    }
-
-    for (const [diaId, t] of Object.entries(values.turnos)) {
-      const alreadyHadM = prevTurnosMap[diaId]?.manana === t.manana;
-      if (t.manana && !alreadyHadM && (capacities[`${diaId}_manana_${t.manana}`] || 0) >= CAPACIDADES_SALON[t.manana]) {
-        const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
-        setServerError(`El Salón ${t.manana === "principal" ? "Principal (1)" : "Alterno (2)"} para el turno Mañana del ${diaMeta?.dateLabel || diaId} se encuentra agotado. No realices transferencias para este horario.`);
-        goTo(1);
-        return;
-      }
-      const alreadyHadT = prevTurnosMap[diaId]?.tarde === t.tarde;
-      if (t.tarde && !alreadyHadT && (capacities[`${diaId}_tarde_${t.tarde}`] || 0) >= CAPACIDADES_SALON[t.tarde]) {
-        const diaMeta = DAYS_CONGRESO.find((d) => d.id === diaId);
-        setServerError(`El Salón ${t.tarde === "principal" ? "Principal (1)" : "Alterno (2)"} para el turno Tarde del ${diaMeta?.dateLabel || diaId} se encuentra agotado. No realices transferencias para este horario.`);
-        goTo(1);
         return;
       }
     }
@@ -726,6 +658,23 @@ export function RegistrationForm() {
                     ? "Como personal del HCUAMP, tu participación está 100% exonerada."
                     : "Como bachiller / estudiante de pregrado, tu participación está 100% exonerada (0$)."
                   : `Inscripción por un monto de ${usd(result.total)}. Conserva el correo con tu código QR para el control de acceso en la sede.`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ──────── RECORDATORIO: LLEGAR TEMPRANO PARA PUESTO EN SALA ──────── */}
+        <div className="mx-auto max-w-lg rounded-2xl bg-amber-50/90 p-4 text-left ring-1 ring-amber-200">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-600 text-white shadow-sm">
+              <AlertTriangle className="size-5" />
+            </span>
+            <div className="space-y-1">
+              <h5 className="text-xs font-bold text-amber-950 uppercase tracking-wide">
+                Garantiza tu puesto en sala
+              </h5>
+              <p className="text-xs text-amber-900 leading-relaxed">
+                El acceso a las conferencias es por <b>estricto orden de llegada</b> hasta completar la capacidad física de la sala. Les recordamos que <b>deben llegar temprano a cada ponencia para garantizar su puesto</b>.
               </p>
             </div>
           </div>
@@ -1722,12 +1671,12 @@ export function RegistrationForm() {
             </div>
 
             {/* AVISO IMPORTANTE SOBRE DISPONIBILIDAD Y TURNOS */}
-            <div className="rounded-2xl bg-blue-50/80 p-4 text-xs text-blue-950 border border-blue-200 space-y-1.5">
-              <p className="font-bold text-blue-900">
-                Selección de otros turnos disponibles:
+            <div className="rounded-2xl bg-amber-50/80 p-4 text-xs text-amber-950 border border-amber-200 space-y-1.5">
+              <p className="font-bold text-amber-900">
+                Selección y actualización de turnos:
               </p>
-              <p className="text-blue-800 leading-relaxed">
-                Tus datos están guardados de forma segura. De existir cupos disponibles, puedes seleccionar otros turnos para tus jornadas, manteniendo la regla de <b>no inscribirte en un mismo día y turno en dos salones distintos</b>.
+              <p className="text-amber-800 leading-relaxed">
+                Tus datos están guardados de forma segura. Puedes seleccionar otros turnos para tus jornadas, recordando que el acceso a cada sala se realiza por <b>orden de llegada</b> y <b>debes llegar temprano para garantizar tu puesto</b>, manteniendo la regla de <b>no inscribirte en un mismo día y turno en dos salones distintos</b>.
               </p>
             </div>
 
